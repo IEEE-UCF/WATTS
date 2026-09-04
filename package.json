@@ -1,0 +1,25 @@
+{
+  "name": "watts",
+  "version": "0.0.0",
+  "private": true,
+  "description": "IEEE@UCF monorepo — website (apps/ieeeucfcom) and Discord bot (apps/dbot).",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/IEEE-UCF/WATTS.git"
+  },
+  "license": "MIT",
+  "packageManager": "pnpm@11.1.2",
+  "engines": {
+    "node": ">=22",
+    "pnpm": ">=11"
+  },
+  "scripts": {
+    "web": "pnpm --filter @watts/web",
+    "bot": "pnpm --filter @watts/bot",
+    "lint": "pnpm -r --parallel lint",
+    "build": "pnpm -r build"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3"
+  }
+}

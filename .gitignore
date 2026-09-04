@@ -1,0 +1,50 @@
+# Root .gitignore — common rules for the whole monorepo.
+# Per-app rules still live in apps/*/.gitignore.
+
+# --- dependencies ---
+node_modules/
+.pnp
+.pnp.*
+
+# --- build output ---
+.next/
+out/
+dist/
+build/
+.turbo/
+*.tsbuildinfo
+next-env.d.ts
+
+# --- env / secrets ---
+.env
+.env.*
+!.env.example
+
+# --- test / coverage ---
+coverage/
+*.lcov
+
+# --- logs ---
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# --- os ---
+.DS_Store
+*.pem
+*.dng
+
+# --- deploy ---
+.vercel
+
+# --- local docker stack data (bind mounts) ---
+apps/*/docker/data/
+apps/*/deploy/data/
+
+# --- standardize on pnpm: never commit other package managers' lockfiles ---
+package-lock.json
+yarn.lock
+bun.lock
+bun.lockb

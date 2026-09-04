@@ -1,0 +1,32 @@
+# pnpm workspace — the single source of truth for package layout and install rules.
+# One lockfile (./pnpm-lock.yaml) covers every package below.
+packages:
+  - 'apps/*'
+  - 'packages/*'
+
+# Dependencies allowed to run install/build lifecycle scripts (pnpm blocks the rest
+# by default). Managed by `pnpm approve-builds`.
+allowBuilds:
+  esbuild: true
+  react-vertical-timeline-component: true
+  sharp: true
+
+# Repo-wide dependency pins.
+#   esbuild — carries over from the bot (dev-server advisory).
+#
+#   drizzle-orm + the DB driver stack (pg / @neondatabase/serverless / postgres):
+#   these are pinned to the exact versions the production website resolved before
+#   the monorepo merge. drizzle-orm peer-keys on every DB driver, so when apps/dbot
+#   (drizzle-orm ^0.45, pg ^8.17) and apps/ieeeucfcom (drizzle-orm ^0.44.7, pg
+#   8.16.3 exact) share one lockfile, pnpm builds TWO peer-resolved copies of
+#   drizzle-orm and the site's db types stop matching (@auth/drizzle-adapter in
+#   src/lib/auth.ts). Pinning collapses it to one instance and keeps the live site
+#   byte-identical.
+#   TODO: align both apps onto a single current drizzle-orm + pg in a dedicated PR,
+#         with a website smoke test, then drop these pins.
+overrides:
+  esbuild: ^0.25.0
+  drizzle-orm: 0.44.7
+  pg: 8.16.3
+  '@neondatabase/serverless': 1.0.2
+  postgres: 3.4.8
