@@ -1,0 +1,618 @@
+import { pgTable, uuid, foreignKey, varchar, boolean, date, integer, text, timestamp, pgEnum, index, unique } from 'drizzle-orm/pg-core';
+import { sql } from 'drizzle-orm/sql/sql';
+import { relations } from "drizzle-orm";
+
+// ==== Enums ====
+
+export const majorEnums = pgEnum("major_enum", [
+// Arts and Humanities
+	"Art (BA)",
+	"Bachelor of Design in Architecture (BDes)",
+	"Emerging Media (BFA)",
+	"English (BA)",
+	"French and Francophone Studies (BA)",
+	"History (BA)",
+	"Humanities and Cultural Studies (BA)",
+	"Latin American Caribbean and Latinx Studies (BA)",
+	"Music (BA)",
+	"Music Education (BME)",
+	"Music: Performance (BM)",
+	"Philosophy (BA)",
+	"Religion and Cultural Studies (BA)",
+	"Spanish (BA)",
+	"Studio Art (BFA)",
+	"Theatre (BA)",
+	"Theatre (BFA)",
+	"Writing and Rhetoric (BA)",
+
+	// Business
+	"Accounting (BSBA)",
+	"Business Economics (BSBA)",
+	"Economics (BS)",
+	"Finance (BSBA)",
+	"Integrated Business (BSBA)",
+	"Management (BSBA)",
+	"Marketing (BSBA)",
+	"Real Estate (BSBA)",
+
+	// Community Innovation and Education
+	"Career and Technical Education (BS)",
+	"Criminal Justice (BA)",
+	"Criminal Justice (BS)",
+	"Early Childhood Development and Education (BS)",
+	"Elementary Education (BS)",
+	"Emergency Management (BA)",
+	"Emergency Management (BS)",
+	"Environmental Science (BS)",
+	"Exceptional Student Education (BS)",
+	"Health Informatics (BS)",
+	"Health Informatics and Information Management (BS)",
+	"Health Information Management (BS)",
+	"Health Services Administration (BS)",
+	"Integrative General Studies (BGS)",
+	"Interdisciplinary Studies (BA)",
+	"Interdisciplinary Studies (BS)",
+	"Leadership (BA)",
+	"Leadership (BS)",
+	"Legal Studies (BA)",
+	"Legal Studies (BS)",
+	"Nonprofit Management (BA)",
+	"Nonprofit Management (BS)",
+	"Public Administration (BA)",
+	"Public Administration (BS)",
+	"Secondary Education (BS)",
+	"Sustainability (BA)",
+	"Sustainability (BS)",
+	"Teacher Education (BS)",
+
+	// Engineering and Computer Science
+	"Aerospace Engineering (BSAE)",
+	"Civil Engineering (BSCE)",
+	"Computer Engineering (BSCpE)",
+	"Computer Science (BS)",
+	"Construction Engineering (BSConE)",
+	"Electrical Engineering (BSEE)",
+	"Environmental Engineering (BSVE)",
+	"Industrial Engineering (BSIE)",
+	"Information Technology (BS)",
+	"Materials Science and Engineering (BS)",
+	"Mechanical Engineering (BSME)",
+
+	// Health Professions and Sciences
+	"Communication Sciences and Disorders (BS)",
+	"General Health Studies (BS)",
+	"Health Sciences (BS)",
+	"Interdisciplinary Healthcare Studies (BS)",
+	"Kinesiology (BS)",
+	"Social Work (BSW)",
+
+	// Hospitality Management
+	"Entertainment Management (BS)",
+	"Event Management (BS)",
+	"Hospitality Management (BS)",
+	"Lifestyle Community Management (BS)",
+	"Lodging and Restaurant Management (BS)",
+	"Senior Living Management (BS)",
+	"Theme Park and Attraction Management (BS)",
+
+	// Medicine
+	"Biomedical Sciences (BS)",
+	"Biotechnology (BS)",
+	"Medical Laboratory Sciences (BS)",
+	"Molecular and Cellular Biology (BS)",
+	"Molecular Microbiology (BS)",
+
+	// Nursing
+	"Nursing (BSN)",
+	"Nursing RN (BSN)",
+
+	// Optics and Photonics
+	"Photonic Science and Engineering (BSPSE)",
+
+	// Sciences
+	"Actuarial Science (BS)",
+	"Advertising / Public Relations (BA)",
+	"Anthropology (BA)",
+	"Biology (BS)",
+	"Chemistry (BA)",
+	"Chemistry (BS)",
+	"Communication (BA)",
+	"Communication and Conflict (BA)",
+	"Data Science (BS)",
+	"Digital Media (BA)",
+	"Film (BA)",
+	"Film (BFA)",
+	"Forensic Science (BS)",
+	"Integrated Sciences and Technology (BS)",
+	"International and Global Studies (BA)",
+	"Journalism (BA)",
+	"Mathematics (BS)",
+	"Media Production and Management (BA)",
+	"Physics (BA)",
+	"Physics (BS)",
+	"Political Science (BA)",
+	"Psychology (BS)",
+	"Social Sciences (BS)",
+	"Sociology (BA)",
+	"Sociology (BS)",
+	"Statistics (BS)",
+
+	// Pre-professional Programs
+	"Biology (BS) - Pre-Health Professional",
+	"Biology (BS) - Zoology and Pre-Veterinarian Science",
+	"Business Economics (BSBA) - Pre-Law",
+	"Pre-chiropractic",
+	"Pre-dental",
+	"Health Sciences (BS) - Pre-Clinical Track",
+	"Pre-medical",
+	"Pre-optometry",
+	"Pre-osteopathy",
+	"Pre-pharmacy",
+	"Pre-podiatry",
+	"Political Science (BA) - Prelaw",
+	"Undecided",
+
+]);
+
+// Officer Roles: Executive Chair, Executive Vice Chair, Executive Secretary, Executive Treasurer, Committee Lead
+export const officerRoleEnum = pgEnum('officer_role_enum', [
+	'Executive Chair',
+	'Vice Chair',
+	'Treasurer',
+	'Secretary',
+	'Project Chair',
+	'Workshop Chair',
+	'Conference Chair',
+	'Outreach Chair',
+	'Service Chair',
+	'Social Chair',
+	'Professional Development Chair',
+	'Marketing Chair',
+	'Software Chair',
+]);
+
+// Granular capability grants live in member_permissions.permission as a plain string.
+// The vocabulary is defined in code — see src/lib/permissions.ts (CAPABILITIES).
+
+// Gender: Male (M), Female (F), Non-Binary (NB), Other (O), Prefer Not to Say (PNTS)
+export const genderEnum = pgEnum('gender_enum', [
+	'M', 'F', 'NB', 'O', 'PNTS',
+]);
+
+// Sponsorship Tiers: Bronze, Silver, Gold
+export const sponsorshipTierEnum = pgEnum('sponsorship_tier_enum', [
+	'Bronze',
+	'Silver',
+	'Gold',
+]);
+
+// Event Host Types: club, committee, project, member
+export const eventHostTypeEnum = pgEnum('event_host_type_enum', [
+	'club',
+	'committee',
+	'project',
+	'member',
+]);
+
+// Visibility for uploaded event photos
+export const photoVisibilityEnum = pgEnum('photo_visibility_enum', [
+	'public',
+	'members',
+	'private',
+]);
+
+// ==== Schemas ====
+
+// basically we need this for authentication with nextauth and drizzle, and we need to link it in members
+export const Users = pgTable("users", {
+  	id: uuid("id").primaryKey().defaultRandom(),
+  	name: text("name"),
+  	email: varchar("email", { length: 255 }).notNull().unique(),
+  	emailVerified: timestamp("email_verified", { withTimezone: true }),
+  	image: text("image"), // pull from discord
+  	discordId: varchar("discord_id", { length: 64 }),
+});
+
+export const Accounts = pgTable("accounts", {
+	id: uuid("id").primaryKey().defaultRandom(),
+	userId: uuid("user_id").notNull().references(() => Users.id, { onDelete: "cascade" }),
+	type: varchar("type", { length: 255 }).$type<"oauth">().notNull(),
+	provider: varchar("provider", { length: 255 }).notNull(),
+	providerAccountId: varchar("provider_account_id", { length: 255 }).notNull(),
+	refresh_token: text("refresh_token"),
+	access_token: text("access_token"),
+	expires_at: integer("expires_at"), // must be integer for NextAuth
+	token_type: varchar("token_type", { length: 255 }),
+	scope: varchar("scope", { length: 255 }),
+	id_token: text("id_token"),
+	session_state: varchar("session_state", { length: 255 }),
+});
+
+export const Sessions = pgTable("sessions", {
+	sessionToken: varchar("session_token", { length: 255 }).primaryKey(),
+	userId: uuid("user_id").notNull().references(() => Users.id, { onDelete: "cascade" }),
+	expires: timestamp("expires", { withTimezone: true }).notNull(),
+});
+
+// Members
+export const Members = pgTable('members', {
+	id: uuid('id').primaryKey().defaultRandom(),
+	userId: uuid("user_id").references(() => Users.id, { onDelete: "cascade" }), // we reference that authentication information
+	firstName: varchar('first_name', { length: 255 }).notNull(),
+	middleName: varchar('middle_name', { length: 255 }),
+	lastName: varchar('last_name', { length: 255 }).notNull(),
+	officerRole: officerRoleEnum('officer_role'),
+	administrator: boolean('administrator').notNull().default(false),
+	officerStatus: boolean('officer_status').notNull().default(false),
+	biography: text('biography'),
+	duesPaid: boolean('dues_paid').notNull().default(false),
+	discordId: varchar('discord_id', { length: 64 }).unique(),
+	dateOfBirth: date('date_of_birth').notNull(),
+	personalEmail: varchar('personal_email', { length: 255 }).notNull().unique(),
+	ucfEmail: varchar('ucf_email', { length: 255 }).notNull().unique(),
+	phoneNumber: varchar('phone_number', { length: 20 }),
+	major: majorEnums('major').notNull(), // Check on this to maybe add like a default list of majors or smth similar
+	gender: genderEnum('gender').notNull(),
+	graduationYear: integer('graduation_year').notNull(),
+	portraitUrl: varchar('portrait_url', { length: 500 }),
+	resumeURL: text('resume_url'), // app-facing retrieval path: /api/files/resume/{memberId}
+	resumeKey: varchar('resume_key', { length: 512 }), // storage key (e.g. resumes/{userId}.pdf)
+	resumeFileName: varchar('resume_file_name', { length: 255 }), // sanitized original filename, display only
+	resumeUploadedAt: timestamp('resume_uploaded_at', { withTimezone: true }),
+	resumeOnedrivePath: text('resume_onedrive_path'), // set by the archive job
+	linkedinURL: text('linkedin_url'),
+	githubURL: text('github_url'),
+	websiteURL: text('website_url'),
+	active: boolean('active').notNull().default(true),
+	createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+	updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow().$onUpdate(() => sql`now()`),
+}, (table) => [
+	index('members_idx_id').on(table.id),
+	index('members_idx_discordId').on(table.discordId),
+	index('members_idx_personal_email').on(table.personalEmail),
+	index('members_idx_ucf_email').on(table.ucfEmail),
+	index('members_idx_officer_status').on(table.officerStatus),
+	index('members_idx_officer_role').on(table.officerRole),
+	index('members_idx_administrator').on(table.administrator),
+	index('members_idx_dues_paid').on(table.duesPaid),
+	index('members_idx_graduation_year').on(table.graduationYear),
+	index('members_idx_major').on(table.major),
+	index('members_idx_gender').on(table.gender),
+	index('members_idx_created_at').on(table.createdAt),
+	index('members_idx_updated_at').on(table.updatedAt),
+	index('members_idx_full_name').on(table.firstName, table.lastName),
+]);
+
+// Committees
+export const Committees = pgTable('committees', {
+	id: uuid('id').primaryKey().defaultRandom(),
+	title: varchar('title', { length: 255 }).notNull(),
+	slug: varchar('slug', { length: 64 }).unique(), // URL-friendly identifier, smth like "software" committee or "solarcar" project
+	about: text('about').notNull(),
+	chairId: uuid('chair_id').notNull().references(() => Members.id, { onDelete: 'cascade' }),
+	discordRoleId: varchar('discord_role_id', { length: 64 }),
+	active: boolean('active').notNull().default(true),
+	createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+	updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow().$onUpdate(() => sql`now()`),
+}, (table) => [
+	index('committees_idx_id').on(table.id),
+	index('committees_idx_title').on(table.title),
+	index('committees_idx_slug').on(table.slug),
+	index('committees_idx_chair_id').on(table.chairId),
+	index('committees_idx_created_at').on(table.createdAt),
+	index('committees_idx_updated_at').on(table.updatedAt),
+]);
+// CommitteeMembers: Join table for many-to-many relation between Committees and Members
+export const CommitteeMembers = pgTable('committee_members', {
+	id: uuid('id').primaryKey().defaultRandom(),
+	committeeId: uuid('committee_id').notNull().references(() => Committees.id, { onDelete: 'cascade' }),
+	memberId: uuid('member_id').notNull().references(() => Members.id, { onDelete: 'cascade' }),
+	isChair: boolean('is_chair').notNull().default(false),
+}, (table) => [
+	index('committee_members_idx_id').on(table.id),
+	index('committee_members_idx_committee_id').on(table.committeeId),
+	index('committee_members_idx_member_id').on(table.memberId),
+	index('committee_members_idx_is_chair').on(table.isChair),
+	unique('committee_member_unique').on(table.committeeId, table.memberId),
+]);
+
+// Events
+export const Events = pgTable("events", {
+	id: uuid().defaultRandom().primaryKey().notNull(),
+	title: varchar({ length: 255 }).notNull(),
+	location: varchar({ length: 255 }).notNull(),
+	committeeId: uuid("committee_id"),
+	description: text().notNull(),
+	flyerUrl: varchar("flyer_url", { length: 500 }),
+	rsvpLink: varchar("rsvp_link", { length: 500 }),
+	photoUrls: text("photo_urls"),
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	slug: varchar({ length: 64 }),
+	startTime: timestamp("start_time", { withTimezone: true, mode: 'string' }).notNull(),
+	endTime: timestamp("end_time", { withTimezone: true, mode: 'string' }),
+	requiresDues: boolean("requires_dues").default(false).notNull(),
+	active: boolean().default(true).notNull(),
+}, (table) => [
+	index("events_idx_committee_id").using("btree", table.committeeId.asc().nullsLast().op("uuid_ops")),
+	index("events_idx_created_at").using("btree", table.createdAt.asc().nullsLast().op("timestamptz_ops")),
+	index("events_idx_id").using("btree", table.id.asc().nullsLast().op("uuid_ops")),
+	index("events_idx_location").using("btree", table.location.asc().nullsLast().op("text_ops")),
+	index("events_idx_start_time").using("btree", table.startTime.asc().nullsLast().op("timestamptz_ops")),
+	index("events_idx_time_desc").using("btree", table.startTime.desc().nullsFirst().op("timestamptz_ops")),
+	index("events_idx_title").using("btree", table.title.asc().nullsLast().op("text_ops")),
+	index("events_idx_updated_at").using("btree", table.updatedAt.asc().nullsLast().op("timestamptz_ops")),
+	foreignKey({
+		columns: [table.committeeId],
+		foreignColumns: [Committees.id],
+		name: "events_committee_id_committees_id_fk",
+	}).onDelete("cascade"),
+	unique("events_slug_unique").on(table.slug),
+]);
+// EventAttendees: Join table for many-to-many relation between Events and Members
+export const EventAttendees = pgTable('event_attendees', {
+	id: uuid('id').primaryKey().defaultRandom(),
+	eventId: uuid('event_id').notNull().references(() => Events.id, { onDelete: 'cascade' }),
+	memberId: uuid('member_id').notNull().references(() => Members.id, { onDelete: 'cascade' }),
+	timestamp: timestamp('timestamp', { withTimezone: true }).notNull().defaultNow(),
+}, (table) => [
+	index('event_attendees_idx_id').on(table.id),
+	index('event_attendees_idx_event_id').on(table.eventId),
+	index('event_attendees_idx_member_id').on(table.memberId),
+	unique('event_attendee_unique').on(table.eventId, table.memberId),
+]);
+
+// Projects
+export const Projects = pgTable('projects', {
+	id: uuid('id').primaryKey().defaultRandom(),
+	title: varchar('title', { length: 255 }).notNull(),
+	slug: varchar('slug', { length: 64 }).unique(), // URL-friendly identifier, smth like "software" committee or "solarcar" project
+	overview: text('overview').notNull(),
+	projectLead: text('project_lead'), // Temporary plain-text lead name until ProjectMembers join is sufficient
+	hardwareInfo: text('hardware_info'),
+	softwareInfo: text('software_info'),
+	skills: text('skills'), // Comma-separated list of skills (e.g. "Python, C++, Machine Learning")
+	photoUrls: text('photo_urls').$type<string[]>(),
+	discordRoleId: varchar('discord_role_id', { length: 64 }),
+	active: boolean('active').notNull().default(true),
+	createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+	updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow().$onUpdate(() => sql`now()`),
+}, (table) => [
+	index('projects_idx_id').on(table.id),
+	index('projects_idx_title').on(table.title),
+	index('projects_idx_slug').on(table.slug),
+	index('projects_idx_created_at').on(table.createdAt),
+	index('projects_idx_updated_at').on(table.updatedAt),
+]);
+// ProjectMembers: Join table for many-to-many relation between Projects and Members
+export const ProjectMembers = pgTable('project_members', {
+	id: uuid('id').primaryKey().defaultRandom(),
+	projectId: uuid('project_id').notNull().references(() => Projects.id, { onDelete: 'cascade' }),
+	memberId: uuid('member_id').notNull().references(() => Members.id, { onDelete: 'cascade' }),
+	isLead: boolean('is_lead').notNull().default(false),
+}, (table) => [
+	index('project_members_idx_id').on(table.id),
+	index('project_members_idx_project_id').on(table.projectId),
+	index('project_members_idx_member_id').on(table.memberId),
+	index('project_members_idx_is_lead').on(table.isLead),
+	unique('project_member_unique').on(table.projectId, table.memberId),
+]);
+
+// Sponsorships
+export const Sponsorships = pgTable('sponsorships', {
+	id: uuid('id').primaryKey().defaultRandom(),
+	companyName: varchar('company_name', { length: 255 }).notNull(),
+	moneyDonated: integer('money_donated').notNull(),
+	description: text('description'),
+	tier: sponsorshipTierEnum('tier').notNull(),
+	companyLogoUrl: varchar('company_logo_url', { length: 500 }),
+	websiteUrl: varchar('website_url', { length: 500 }),
+	contactEmail: varchar('contact_email', { length: 255 }).notNull(),
+	active: boolean('active').notNull().default(true),
+	createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+	updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow().$onUpdate(() => sql`now()`),
+}, (table) => [
+	index('sponsorships_idx_id').on(table.id),
+	index('sponsorships_idx_company_name').on(table.companyName),
+	index('sponsorships_idx_tier').on(table.tier),
+	index('sponsorships_idx_created_at').on(table.createdAt),
+	index('sponsorships_idx_updated_at').on(table.updatedAt),
+]);
+
+// Awards
+export const Awards = pgTable('awards', {
+	id: uuid('id').primaryKey().defaultRandom(),
+	category: varchar('category', { length: 255 }).notNull(),
+	eventName: varchar('event_name', { length: 255 }).notNull(),
+	place: varchar('place', { length: 64 }).notNull(),
+	year: integer('year').notNull(),
+	projectId: uuid('project_id').references(() => Projects.id, { onDelete: 'set null' }),
+	memberId: uuid('member_id').references(() => Members.id, { onDelete: 'set null' }),
+	description: text('description'),
+	active: boolean('active').notNull().default(true),
+	createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+	updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow().$onUpdate(() => sql`now()`),
+}, (table) => [
+	index('awards_idx_id').on(table.id),
+	index('awards_idx_year').on(table.year),
+	index('awards_idx_project_id').on(table.projectId),
+	index('awards_idx_member_id').on(table.memberId),
+]);
+
+// AppSettings — generic key/value config an admin edits in-app (feature flags etc.).
+export const AppSettings = pgTable('app_settings', {
+	key: varchar('key', { length: 64 }).primaryKey(),
+	value: text('value').notNull(), // JSON-encoded
+	updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow().$onUpdate(() => sql`now()`),
+});
+
+// MeetingTimes
+export const MeetingTimes = pgTable('meeting_times', {
+	id: uuid('id').primaryKey().defaultRandom(),
+	title: varchar('title', { length: 255 }).notNull(),
+	dayOfWeek: integer('day_of_week').notNull(),
+	startTime: varchar('start_time', { length: 8 }).notNull(),
+	endTime: varchar('end_time', { length: 8 }),
+	location: varchar('location', { length: 255 }),
+	active: boolean('active').notNull().default(true),
+	createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+	updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow().$onUpdate(() => sql`now()`),
+}, (table) => [
+	index('meeting_times_idx_id').on(table.id),
+	index('meeting_times_idx_day_of_week').on(table.dayOfWeek),
+]);
+
+// ==== Relations ====
+
+export const UsersRelations = relations(Users, ({ one }) => ({
+	member: one(Members, {
+		fields: [Users.id],
+		references: [Members.userId],
+	}),
+}));
+
+export const MembersRelations = relations(Members, ({ one }) => ({
+  	user: one(Users, {
+		fields: [Members.userId],
+		references: [Users.id],
+	}),
+}));
+
+export const AccountRelations = relations(Accounts, ({ one }) => ({
+	user: one(Users, {
+		fields: [Accounts.userId],
+		references: [Users.id],
+	}),
+}));
+
+export const SessionRelations = relations(Sessions, ({ one }) => ({
+	user: one(Users, {
+		fields: [Sessions.userId],
+		references: [Users.id],
+	}),
+}));
+
+// MemberPermissions: Delegated or custom permissions for members
+export const MemberPermissions = pgTable(
+	'member_permissions',
+	{
+		id: uuid('id').primaryKey().defaultRandom(),
+		memberId: uuid('member_id')
+			.notNull()
+			.references(() => Members.id, { onDelete: 'cascade' }),
+		grantedById: uuid('granted_by_id').references(() => Members.id, { onDelete: 'set null' }), // who granted the permission
+		contextType: varchar('context_type', { length: 32 }).notNull().default('global'), // 'global' | 'committee' | 'project'
+		contextId: uuid('context_id'), // links to a specific committee/project if applicable
+		permission: varchar('permission', { length: 64 }).notNull(), // capability key — see src/lib/permissions.ts
+		active: boolean('active').notNull().default(true),
+		createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+		expiresAt: timestamp('expires_at', { withTimezone: true }), // optional expiration for temporary access
+	},
+	(table) => [
+		index('member_permissions_idx_member').on(table.memberId),
+		index('member_permissions_idx_context').on(table.contextType, table.contextId),
+		unique('member_permission_unique').on(
+			table.memberId,
+			table.contextType,
+			table.contextId,
+			table.permission,
+		),
+	],
+);
+
+// EventPhotos: photos uploaded for an event (admin-uploaded in v1).
+// The row id doubles as the storage filename stem: {id}.jpg / {id}_thumb.jpg / {id}_orig.jpg
+export const EventPhotos = pgTable('event_photos', {
+	id: uuid('id').primaryKey().defaultRandom(),
+	eventId: uuid('event_id').notNull().references(() => Events.id, { onDelete: 'cascade' }),
+	uploadedByUserId: uuid('uploaded_by_user_id').references(() => Users.id, { onDelete: 'set null' }),
+
+	// bytes / location
+	webKey: varchar('web_key', { length: 512 }).notNull(),
+	thumbKey: varchar('thumb_key', { length: 512 }),
+	originalKey: varchar('original_key', { length: 512 }), // null once archived + deleted from live store
+	webUrl: text('web_url').notNull(), // public URL used by the gallery
+	onedrivePath: text('onedrive_path'), // set by the archive job
+	contentType: varchar('content_type', { length: 100 }).notNull(),
+	sizeBytes: integer('size_bytes').notNull(),
+	width: integer('width'),
+	height: integer('height'),
+	checksumSha256: varchar('checksum_sha256', { length: 64 }),
+	archivedAt: timestamp('archived_at', { withTimezone: true }),
+	originalDeletedAt: timestamp('original_deleted_at', { withTimezone: true }),
+
+	// provenance
+	sourceFilename: varchar('source_filename', { length: 255 }),
+
+	// classification / lookup
+	caption: text('caption'),
+	tags: text('tags').array().notNull().default(sql`'{}'::text[]`),
+	takenAt: timestamp('taken_at', { withTimezone: true }), // from EXIF, before re-encode strips it
+	featured: boolean('featured').notNull().default(false),
+	// All uploads land private (officers/admins only). A photo becomes visible in the
+	// public event feed only when explicitly set to 'public'.
+	visibility: photoVisibilityEnum('visibility').notNull().default('private'),
+	approved: boolean('approved').notNull().default(true), // officer uploads trusted; stays for phase-2 attendee uploads
+	searchText: text('search_text').notNull().default(''), // caption + tags + filename, populated by the app
+
+	createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+}, (table) => [
+	index('event_photos_idx_event_id').on(table.eventId),
+	index('event_photos_idx_uploaded_by').on(table.uploadedByUserId),
+	index('event_photos_idx_approved').on(table.approved),
+	index('event_photos_idx_featured').on(table.featured),
+	index('event_photos_idx_created_at').on(table.createdAt),
+	index('event_photos_idx_taken_at').on(table.takenAt),
+	index('event_photos_idx_search').using('gin', sql`to_tsvector('english', ${table.searchText})`),
+]);
+
+// UploadEvents: lightweight per-user, per-kind log for rate-limit cooldown checks (no Redis).
+export const UploadEvents = pgTable('upload_events', {
+	id: uuid('id').primaryKey().defaultRandom(),
+	userId: uuid('user_id').notNull().references(() => Users.id, { onDelete: 'cascade' }),
+	kind: varchar('kind', { length: 32 }).notNull(), // 'resume' | 'event-photo'
+	createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+}, (table) => [
+	index('upload_events_idx_user_kind_created').on(table.userId, table.kind, table.createdAt),
+]);
+
+export const EventPhotosRelations = relations(EventPhotos, ({ one }) => ({
+	event: one(Events, {
+		fields: [EventPhotos.eventId],
+		references: [Events.id],
+	}),
+	uploadedBy: one(Users, {
+		fields: [EventPhotos.uploadedByUserId],
+		references: [Users.id],
+	}),
+}));
+
+// Infer Types
+export type Member = typeof Members.$inferSelect;
+export type NewMember = typeof Members.$inferInsert;
+export type Event = typeof Events.$inferSelect;
+export type NewEvent = typeof Events.$inferInsert;
+export type EventAttendee = typeof EventAttendees.$inferSelect;
+export type NewEventAttendee = typeof EventAttendees.$inferInsert;
+export type Project = typeof Projects.$inferSelect;
+export type NewProject = typeof Projects.$inferInsert;
+export type ProjectMember = typeof ProjectMembers.$inferSelect;
+export type NewProjectMember = typeof ProjectMembers.$inferInsert;
+export type Committee = typeof Committees.$inferSelect;
+export type NewCommittee = typeof Committees.$inferInsert;
+export type CommitteeMember = typeof CommitteeMembers.$inferSelect;
+export type NewCommitteeMember = typeof CommitteeMembers.$inferInsert;
+export type Sponsorship = typeof Sponsorships.$inferSelect;
+export type NewSponsorship = typeof Sponsorships.$inferInsert;
+export type MemberPermission = typeof MemberPermissions.$inferSelect;
+export type NewMemberPermission = typeof MemberPermissions.$inferInsert;
+export type Award = typeof Awards.$inferSelect;
+export type NewAward = typeof Awards.$inferInsert;
+export type MeetingTime = typeof MeetingTimes.$inferSelect;
+export type NewMeetingTime = typeof MeetingTimes.$inferInsert;
+export type EventPhoto = typeof EventPhotos.$inferSelect;
+export type NewEventPhoto = typeof EventPhotos.$inferInsert;
+export type AppSetting = typeof AppSettings.$inferSelect;
+export type NewAppSetting = typeof AppSettings.$inferInsert;
+export type UploadEvent = typeof UploadEvents.$inferSelect;
+export type NewUploadEvent = typeof UploadEvents.$inferInsert;
