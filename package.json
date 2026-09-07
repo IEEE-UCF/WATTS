@@ -17,7 +17,17 @@
     "web": "pnpm --filter @watts/web",
     "bot": "pnpm --filter @watts/bot",
     "lint": "pnpm -r --parallel lint",
-    "build": "pnpm -r build"
+    "build": "pnpm -r build",
+    "bootstrap": "node infra/scripts/bootstrap.mjs",
+    "dev": "pnpm --filter @watts/web dev",
+    "infra:up": "docker compose -f infra/docker/docker-compose.yml up -d",
+    "infra:down": "docker compose -f infra/docker/docker-compose.yml down",
+    "infra:reset": "docker compose -f infra/docker/docker-compose.yml down -v",
+    "db:generate": "pnpm --filter @watts/web db:generate",
+    "db:migrate": "pnpm --filter @watts/web db:migrate",
+    "db:studio": "pnpm --filter @watts/web db:studio",
+    "db:seed": "pnpm --filter @watts/web db:seed",
+    "db:reset": "pnpm infra:reset && pnpm infra:up && node infra/scripts/wait-for-postgres.mjs && pnpm db:migrate && pnpm db:seed"
   },
   "devDependencies": {
     "typescript": "^5.9.3"

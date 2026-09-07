@@ -1,15 +1,11 @@
-import { config as loadEnv } from 'dotenv';
+import { loadRootEnv } from '@watts/config/load-env';
 import { defineConfig } from 'drizzle-kit';
 
-// drizzle-kit runs outside Next, so it doesn't get .env.local automatically.
-// Prefer .env.local (local dev), fall back to .env.
-loadEnv({ path: '.env.local' });
-loadEnv({ path: '.env' });
+// drizzle-kit runs outside Next — load the repo-root ./.env explicitly.
+loadRootEnv();
 
 if (!process.env.DATABASE_URL) {
-	throw new Error(
-		'DATABASE_URL is not set. Add it to .env.local (see .env.example) or pass it inline.',
-	);
+	throw new Error('DATABASE_URL is not set. Run `pnpm bootstrap`, or add it to ./.env (see .env.example).');
 }
 
 export default defineConfig({

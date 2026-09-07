@@ -1,3 +1,9 @@
+import { loadRootEnv } from '@watts/config/load-env';
+
+// Next only auto-loads .env* from this app dir. Pull in the repo-root ./.env so the
+// whole monorepo shares one env file. Must run before the config object is built.
+loadRootEnv();
+
 import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
@@ -26,6 +32,12 @@ const nextConfig: NextConfig = {
 			{
 				protocol: 'http',
 				hostname: 'localhost',
+				port: '9000',
+				pathname: '/**',
+			},
+			{
+				protocol: 'http',
+				hostname: '127.0.0.1',
 				port: '9000',
 				pathname: '/**',
 			},

@@ -39,9 +39,12 @@ yarn-error.log*
 # --- deploy ---
 .vercel
 
-# --- local docker stack data (bind mounts) ---
+# --- local docker stack data ---
 apps/*/docker/data/
 apps/*/deploy/data/
+infra/docker/data/
+infra/certs/*
+!infra/certs/.gitkeep
 
 # --- standardize on pnpm: never commit other package managers' lockfiles ---
 package-lock.json

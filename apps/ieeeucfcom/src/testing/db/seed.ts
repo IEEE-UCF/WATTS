@@ -1,109 +1,139 @@
-import path from 'path';
-import fs from 'fs';
-import { Client } from 'pg';
-import yargs from 'yargs';
-import { hideBin } from 'yargs/helpers';
+// Local dev seed. Default action: (re)create a working admin you can log in as via
+// /api/dev/login — no Discord, no manual SQL.
+//
+//   pnpm db:seed            # upsert the dev admin (user + account + member + session)
+//   pnpm db:seed --wipe     # drop every table in `public` (then run `pnpm db:migrate`)
+//   pnpm db:seed postgres://…/db   # target a specific database
+//
+// NOTE: schema is imported by relative path for now. When the schema moves to
+// @watts/db this file moves to infra/seed and imports the package.
 
-const DEFAULT_DB_URL = 'postgres://postgres:postgres@localhost:5432/ieee-website';
-const DATA_DIR = path.join(__dirname, 'data');
+import { loadRootEnv } from '@watts/config/load-env';
+import postgres from 'postgres';
+import { drizzle } from 'drizzle-orm/postgres-js';
+import { eq } from 'drizzle-orm';
+import * as schema from '../../lib/database/schema';
 
-const SEED_ORDER = [
-	'members',
-	'sponsorships',
-	'committees',
-	'projects',
-	'committee_members',
-	'project_members',
-	'events',
-	'event_attendees',
-	'member_permissions',
-];
+loadRootEnv();
 
-async function wipeDatabase(client: Client) {
-	console.log('Dropping all tables...');
-	const res = await client.query(`SELECT tablename FROM pg_tables WHERE schemaname = 'public';`);
-	for (const row of res.rows) {
-		await client.query(`DROP TABLE IF EXISTS "${row.tablename}" CASCADE;`);
-	}
-	console.log('Database fully wiped.');
+const { Users, Accounts, Members, Sessions } = schema;
+
+const DEV_ADMIN_EMAIL = process.env.DEV_ADMIN_EMAIL ?? 'admin@watts.local';
+const DEV_SESSION_TOKEN = 'dev-admin-session';
+
+const urlArg = process.argv.find((a) => a.startsWith('postgres://') || a.startsWith('postgresql://'));
+const DATABASE_URL = urlArg ?? process.env.DATABASE_URL;
+if (!DATABASE_URL) {
+	console.error('No database URL. Run `pnpm bootstrap`, set DATABASE_URL in ./.env, or pass one as an argument.');
+	process.exit(1);
 }
 
-async function seedDatabase(client: Client, tablesToSeed: string[]) {
-	for (const tableName of tablesToSeed) {
-		console.log(`Seeding ${tableName}...`);
-		const filePath = path.join(DATA_DIR, `${tableName}.json`);
-		if (!fs.existsSync(filePath)) {
-			console.log(`No data file for ${tableName}. Skipping.`);
-			continue;
-		}
-		const data = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
-		if (!Array.isArray(data) || data.length === 0) {
-			console.log(`No data found for ${tableName}. Skipping.`);
-			continue;
-		}
-		const columns = Object.keys(data[0]);
-		const placeholders = columns.map((_, i) => `$${i + 1}`).join(', ');
-		const sql = `INSERT INTO ${tableName} (${columns.join(', ')}) VALUES (${placeholders})`;
-		for (const row of data) {
-			await client.query(
-				sql,
-				columns.map((col) => row[col]),
-			);
-		}
+const sql = postgres(DATABASE_URL, { max: 1 });
+const db = drizzle(sql, { schema });
+
+async function wipe() {
+	const rows = await sql<{ tablename: string }[]>`
+		SELECT tablename FROM pg_tables WHERE schemaname = 'public'
+	`;
+	for (const { tablename } of rows) {
+		await sql.unsafe(`DROP TABLE IF EXISTS "${tablename}" CASCADE`);
 	}
-	console.log('\nDatabase seeded successfully!');
+	console.log(`• dropped ${rows.length} tables in public — run \`pnpm db:migrate\` next`);
 }
 
-if (require.main === module) {
-	const parser = yargs(hideBin(process.argv))
-		.option('wipe', {
-			type: 'boolean',
-			default: false,
-			describe: 'Wipe all tables before seeding.',
-		})
-		.option('seed', {
-			type: 'string',
-			describe: 'Seed all tables (default) or only specified tables (comma-separated).',
-		})
-		.option('dburl', { type: 'string', describe: 'Database URL to use.' })
-		.positional('dburl', { type: 'string', describe: 'Database URL to use.' });
-	const argv = parser.parseSync();
+async function seedAdmin() {
+	const [existingUser] = await db
+		.select()
+		.from(Users)
+		.where(eq(Users.email, DEV_ADMIN_EMAIL))
+		.limit(1);
 
-	const dbUrl = argv.dburl || String(argv._[0]) || DEFAULT_DB_URL;
-	const client = new Client({ connectionString: dbUrl });
-	client
-		.connect()
-		.then(async () => {
-			if (argv.wipe) {
-				await wipeDatabase(client);
-				await client.end();
-				return;
-			}
+	let userId: string;
+	if (existingUser) {
+		userId = existingUser.id;
+		console.log(`• dev admin user already present (${DEV_ADMIN_EMAIL})`);
+	} else {
+		const [created] = await db
+			.insert(Users)
+			.values({ name: 'Dev Admin', email: DEV_ADMIN_EMAIL, discordId: 'dev-admin' })
+			.returning();
+		userId = created.id;
+		console.log(`• created dev admin user (${DEV_ADMIN_EMAIL})`);
+	}
 
-			let tablesToSeed: string[];
-			if (argv.seed) {
-				if (argv.seed === '' || argv.seed === 'true' || argv.seed === 'all') {
-					tablesToSeed = SEED_ORDER;
-				} else {
-					tablesToSeed = argv.seed
-						.split(',')
-						.map((s) => s.trim())
-						.filter((s) => SEED_ORDER.includes(s));
-					if (tablesToSeed.length === 0) {
-						console.log('No valid tables specified for seeding.');
-						await client.end();
-						return;
-					}
-				}
-			} else {
-				tablesToSeed = SEED_ORDER;
-			}
-
-			await seedDatabase(client, tablesToSeed);
-			await client.end();
-		})
-		.catch((err) => {
-			console.error('DB connection error:', err);
-			client.end();
+	const [account] = await db
+		.select()
+		.from(Accounts)
+		.where(eq(Accounts.userId, userId))
+		.limit(1);
+	if (!account) {
+		await db.insert(Accounts).values({
+			userId,
+			type: 'oauth',
+			provider: 'discord',
+			providerAccountId: 'dev-admin',
 		});
+		console.log('• linked a discord account row');
+	}
+
+	const [member] = await db
+		.select()
+		.from(Members)
+		.where(eq(Members.userId, userId))
+		.limit(1);
+	if (!member) {
+		await db.insert(Members).values({
+			userId,
+			firstName: 'Dev',
+			lastName: 'Admin',
+			administrator: true,
+			officerStatus: true,
+			officerRole: 'Executive Chair',
+			dateOfBirth: '2000-01-01',
+			personalEmail: DEV_ADMIN_EMAIL,
+			ucfEmail: 'dev.admin@ucf.edu',
+			major: 'Computer Science (BS)',
+			gender: 'PNTS',
+			graduationYear: 2027,
+		});
+		console.log('• created member profile (administrator + officer)');
+	} else if (!member.administrator || !member.officerStatus) {
+		await db
+			.update(Members)
+			.set({ administrator: true, officerStatus: true })
+			.where(eq(Members.id, member.id));
+		console.log('• promoted existing member to administrator + officer');
+	} else {
+		console.log('• member profile already an administrator + officer');
+	}
+
+	const [session] = await db
+		.select()
+		.from(Sessions)
+		.where(eq(Sessions.sessionToken, DEV_SESSION_TOKEN))
+		.limit(1);
+	if (!session) {
+		await db.insert(Sessions).values({
+			sessionToken: DEV_SESSION_TOKEN,
+			userId,
+			expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 365 * 100),
+		});
+		console.log('• created a long-lived dev session');
+	}
 }
+
+async function main() {
+	if (process.argv.includes('--wipe')) {
+		await wipe();
+		return;
+	}
+	await seedAdmin();
+	console.log('\n✅ seed complete — log in at http://127.0.0.1:3000/api/dev/login');
+}
+
+main()
+	.catch((err) => {
+		console.error(err);
+		process.exitCode = 1;
+	})
+	.finally(() => sql.end());

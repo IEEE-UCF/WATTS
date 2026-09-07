@@ -1,0 +1,15 @@
+{
+  "name": "@watts/config",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Root .env loading + zod-validated environment for every WATTS app and package.",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./load-env": "./load-env.mjs"
+  },
+  "dependencies": {
+    "dotenv": "^17.2.4",
+    "zod": "^4.3.6"
+  }
+}
