@@ -14,6 +14,9 @@ loadRootEnv();
 
 interface Config {
 	token: string;
+	/** Bot application id, for slash-command registration. Optional — falls back to
+	 *  the id encoded in the token. Distinct from the website's DISCORD_CLIENT_ID. */
+	clientId: string;
 	servers: {
 		main: {
 			id: string;
@@ -66,6 +69,8 @@ interface Config {
 
 const config: Config = {
 	token: process.env.DISCORD_TOKEN || '',
+
+	clientId: process.env.DISCORD_CLIENT_ID_BOT || '',
 
 	servers: {
 		main: {

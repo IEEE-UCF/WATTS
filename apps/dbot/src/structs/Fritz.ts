@@ -64,7 +64,9 @@ class Fritz extends Client {
 	 * Get client ID from token
 	 */
 	getClientId(): string {
-		// Discord bot tokens are base64 encoded with the client ID at the beginning
+		// Prefer the explicit id (DISCORD_CLIENT_ID_BOT); otherwise decode it from the
+		// token — Discord bot tokens base64-encode the application id in the first segment.
+		if (this.config.clientId) return this.config.clientId;
 		const tokenParts = this.config.token.split('.');
 		if (tokenParts.length >= 1) {
 			return atob(tokenParts[0]!);
