@@ -5,14 +5,14 @@
 //   pnpm db:seed --wipe     # drop every table in `public` (then run `pnpm db:migrate`)
 //   pnpm db:seed postgres://…/db   # target a specific database
 //
-// NOTE: schema is imported by relative path for now. When the schema moves to
-// @watts/db this file moves to infra/seed and imports the package.
+// The schema is pulled from the website via its `./schema` export. When it moves
+// to @watts/db, switch this import and drop that export from apps/ieeeucfcom.
 
 import { loadRootEnv } from '@watts/config/load-env';
 import postgres from 'postgres';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import { eq } from 'drizzle-orm';
-import * as schema from '../../lib/database/schema';
+import * as schema from '@watts/web/schema';
 
 loadRootEnv();
 

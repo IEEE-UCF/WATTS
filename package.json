@@ -26,7 +26,7 @@
     "db:generate": "pnpm --filter @watts/web db:generate",
     "db:migrate": "pnpm --filter @watts/web db:migrate",
     "db:studio": "pnpm --filter @watts/web db:studio",
-    "db:seed": "pnpm --filter @watts/web db:seed",
+    "db:seed": "pnpm --filter @watts/seed seed",
     "db:reset": "pnpm infra:reset && pnpm infra:up && pnpm db:migrate && pnpm db:seed"
   },
   "devDependencies": {
