@@ -17,6 +17,9 @@ part of the WATTS monorepo. It shares the website's database via `@watts/db`
   (weekly board, reminders, sweeps, voice idle timer) and where the scheduler
   is headed.
 
+Scripts: `pnpm --filter @watts/bot check:whois` validates the shared `/whois`
+lookup + prose formatter against the seeded DB (run `pnpm db:reset` first).
+
 ## Local development (runs on the host)
 
 From the **repo root**:

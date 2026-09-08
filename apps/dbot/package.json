@@ -31,6 +31,7 @@
     "build": "tsc",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
+    "check:whois": "tsx scripts/whois-check.mts",
     "docker:build": "docker build -t discord-bot .",
     "docker:run": "docker run discord-bot"
   },

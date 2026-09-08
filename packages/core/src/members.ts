@@ -5,7 +5,10 @@ import {
 	Users,
 	Committees,
 	CommitteeMembers,
+	Projects,
 	ProjectMembers,
+	Events,
+	EventAttendees,
 	MemberPermissions,
 	majorEnums,
 	officerRoleEnum,
@@ -458,4 +461,183 @@ export async function setMemberOfficer(
 		.returning();
 	if (!updated) throw new DomainError('NOT_FOUND', 'Member not found');
 	return { member: updated };
+}
+
+// ---- whois: DB lookup + prose summary (used by the Discord bot's /whois) ----
+
+export interface Pronouns {
+	/** he / she / they */
+	subject: string;
+	/** him / her / them */
+	object: string;
+	/** his / her / their */
+	possessive: string;
+}
+
+/**
+ * Derive pronouns from the `members.gender` enum (`M | F | NB | O | PNTS`).
+ * `NB`, `O`, and `PNTS` all resolve to they/them — the safe neutral default.
+ * There is no dedicated `pronouns` column yet.
+ */
+export function pronounsForGender(gender: string | null | undefined): Pronouns {
+	if (gender === 'M') return { subject: 'he', object: 'him', possessive: 'his' };
+	if (gender === 'F') return { subject: 'she', object: 'her', possessive: 'her' };
+	return { subject: 'they', object: 'them', possessive: 'their' };
+}
+
+type WhoisMember = typeof Members.$inferSelect;
+
+export interface WhoisProfile {
+	member: WhoisMember;
+	pronouns: Pronouns;
+	committees: { title: string; isChair: boolean }[];
+	projects: { title: string; isLead: boolean }[];
+	lastEvent: { title: string; startTime: string; attendedAt: Date } | null;
+}
+
+export type WhoisResult =
+	| { status: 'found'; profile: WhoisProfile }
+	/** a Discord user with no `members` row */
+	| { status: 'not-registered'; query: string }
+	/** a name search that matched nothing */
+	| { status: 'no-match'; query: string }
+	/** a name search that matched more than one active member */
+	| { status: 'ambiguous'; query: string; names: string[] };
+
+async function hydrateWhois(db: WattsDb, member: WhoisMember): Promise<WhoisProfile> {
+	const committees = await db
+		.select({ title: Committees.title, isChair: CommitteeMembers.isChair })
+		.from(CommitteeMembers)
+		.innerJoin(Committees, eq(Committees.id, CommitteeMembers.committeeId))
+		.where(eq(CommitteeMembers.memberId, member.id));
+
+	const projects = await db
+		.select({ title: Projects.title, isLead: ProjectMembers.isLead })
+		.from(ProjectMembers)
+		.innerJoin(Projects, eq(Projects.id, ProjectMembers.projectId))
+		.where(eq(ProjectMembers.memberId, member.id));
+
+	const [lastEvent] = await db
+		.select({
+			title: Events.title,
+			startTime: Events.startTime,
+			attendedAt: EventAttendees.timestamp,
+		})
+		.from(EventAttendees)
+		.innerJoin(Events, eq(Events.id, EventAttendees.eventId))
+		.where(eq(EventAttendees.memberId, member.id))
+		// check-in time first; `startTime desc` breaks ties (seed rows share a timestamp)
+		.orderBy(desc(EventAttendees.timestamp), desc(Events.startTime))
+		.limit(1);
+
+	return {
+		member,
+		pronouns: pronounsForGender(member.gender),
+		committees,
+		projects,
+		lastEvent: lastEvent
+			? {
+					title: lastEvent.title,
+					startTime: lastEvent.startTime,
+					attendedAt: lastEvent.attendedAt as Date,
+				}
+			: null,
+	};
+}
+
+/**
+ * Resolve a `/whois` lookup by Discord id or by (fuzzy) name.
+ *  - `{ discordId }` — exact match on `members.discord_id`; a miss is `not-registered`.
+ *  - `{ name }` — case-insensitive substring on "First Last" over *active* members;
+ *    0 → `no-match`, >1 → `ambiguous`, 1 → `found`.
+ */
+export async function resolveWhois(
+	db: WattsDb,
+	query: { discordId: string; label?: string } | { name: string },
+): Promise<WhoisResult> {
+	if ('discordId' in query) {
+		const [member] = await db
+			.select()
+			.from(Members)
+			.where(eq(Members.discordId, query.discordId))
+			.limit(1);
+		if (!member) {
+			return { status: 'not-registered', query: query.label ?? query.discordId };
+		}
+		return { status: 'found', profile: await hydrateWhois(db, member) };
+	}
+
+	const needle = query.name.trim().toLowerCase();
+	const active = await db.select().from(Members).where(eq(Members.active, true));
+	const matches = active.filter((m) =>
+		`${m.firstName} ${m.lastName}`.toLowerCase().includes(needle),
+	);
+
+	const [first] = matches;
+	if (!first) return { status: 'no-match', query: query.name };
+	if (matches.length > 1) {
+		return {
+			status: 'ambiguous',
+			query: query.name,
+			names: matches.slice(0, 10).map((m) => `${m.firstName} ${m.lastName}`),
+		};
+	}
+	return { status: 'found', profile: await hydrateWhois(db, first) };
+}
+
+const capFirst = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+
+/**
+ * One-paragraph natural-language summary of a `resolveWhois` result. Pure — no
+ * discord.js. `opts.mention` (a pre-rendered `<@id>` or a bare name) leads the
+ * sentence when present.
+ */
+export function formatWhois(result: WhoisResult, opts: { mention?: string } = {}): string {
+	if (result.status === 'not-registered') {
+		return `**${result.query}** isn't registered on the IEEE website.`;
+	}
+	if (result.status === 'no-match') {
+		return `No member matches **${result.query}**.`;
+	}
+	if (result.status === 'ambiguous') {
+		return `Multiple members match **${result.query}** — be more specific:\n${result.names.join('\n')}`;
+	}
+
+	const { member, pronouns, lastEvent } = result.profile;
+	const fullName = [member.firstName, member.middleName, member.lastName]
+		.filter(Boolean)
+		.join(' ');
+	const lead = opts.mention ?? `**${fullName}**`;
+	const isThey = pronouns.subject === 'they';
+	const verbPresent = isThey ? 'are' : 'is';
+	const verbPast = isThey ? 'were' : 'was';
+	const inactive = member.active ? '' : ' _(inactive)_';
+
+	const sentences = [
+		`${lead} is **${fullName}**, a **${member.major}** major expecting to graduate in **${member.graduationYear}**.${inactive}`,
+		member.officerStatus && member.officerRole
+			? `${capFirst(pronouns.subject)} ${verbPresent} also an officer, serving as **${member.officerRole}**.`
+			: `${capFirst(pronouns.subject)} ${verbPresent} a general member.`,
+	];
+
+	if (lastEvent) {
+		const when = new Date(lastEvent.startTime).toLocaleDateString('en-US', {
+			month: 'long',
+			day: 'numeric',
+			year: 'numeric',
+		});
+		sentences.push(
+			`${capFirst(pronouns.subject)} ${verbPast} last seen at **${lastEvent.title}** on ${when}.`,
+		);
+	}
+
+	const links: string[] = [];
+	if (member.linkedinURL) links.push(`[LinkedIn](${member.linkedinURL})`);
+	if (member.githubURL) links.push(`[GitHub](${member.githubURL})`);
+	if (member.websiteURL) links.push(`[Website](${member.websiteURL})`);
+	if (links.length > 0) {
+		sentences.push(`Find ${pronouns.object} online: ${links.join(' · ')}.`);
+	}
+
+	return sentences.join(' ');
 }

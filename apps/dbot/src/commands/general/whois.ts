@@ -1,15 +1,18 @@
-import { SlashCommandBuilder, ChatInputCommandInteraction, type SlashCommandOptionsOnlyBuilder, EmbedBuilder } from 'discord.js';
+import {
+	SlashCommandBuilder,
+	ChatInputCommandInteraction,
+	type SlashCommandOptionsOnlyBuilder,
+} from 'discord.js';
 import { Command } from '../../structs/Command.ts';
 import { PermissionLevel } from '../../modules/helpers/Utils.ts';
-import * as schema from '@watts/db/schema';
-import { eq } from 'drizzle-orm';
+import { resolveWhois, formatWhois, type WhoisResult } from '@watts/core/members';
 
 export class WhoisCommand extends Command {
 	constructor(client: any) {
 		super(client, {
 			name: 'whois',
-			description: 'Gets detailed information about a member.',
-			usage: 'whois <name>',
+			description: 'Look someone up in the IEEE database (defaults to you).',
+			usage: 'whois [user] [name]',
 			category: 'general',
 			permissionLevel: PermissionLevel.GUEST,
 			guildOnly: false,
@@ -21,10 +24,17 @@ export class WhoisCommand extends Command {
 		return new SlashCommandBuilder()
 			.setName(this.name)
 			.setDescription(this.description)
-			.addStringOption(option =>
-				option.setName('name')
-					.setDescription('Full name or partial name of the member')
-					.setRequired(true),
+			.addUserOption((option) =>
+				option
+					.setName('user')
+					.setDescription('The Discord user to look up')
+					.setRequired(false),
+			)
+			.addStringOption((option) =>
+				option
+					.setName('name')
+					.setDescription('Full or partial name (use instead of a Discord user)')
+					.setRequired(false),
 			);
 	}
 
@@ -32,150 +42,112 @@ export class WhoisCommand extends Command {
 		await interaction.deferReply();
 
 		try {
-			const searchName = interaction.options.getString('name', true).toLowerCase();
+			const db = this.client.database.getDB();
+			const userOpt = interaction.options.getUser('user', false);
+			const nameOpt = interaction.options.getString('name', false);
 
-			// Search for member by name
-			const allMembers = await this.client.database.getDB().select().from(schema.Members);
-
-			const matchingMembers = allMembers.filter((m: any) => {
-				const fullName = `${m.firstName} ${m.lastName}`.toLowerCase();
-				return m.active && fullName.includes(searchName);
-			});
-
-			if (matchingMembers.length === 0) {
-				await interaction.editReply({
-					content: `No member found matching "${searchName}".`,
+			let result: WhoisResult;
+			if (userOpt) {
+				result = await resolveWhois(db, {
+					discordId: userOpt.id,
+					label: `@${userOpt.username}`,
 				});
+			} else if (nameOpt) {
+				result = await resolveWhois(db, { name: nameOpt });
+			} else {
+				// no args → look up the caller
+				result = await resolveWhois(db, {
+					discordId: interaction.user.id,
+					label: `@${interaction.user.username}`,
+				});
+			}
+
+			const mention =
+				result.status === 'found' && result.profile.member.discordId
+					? `<@${result.profile.member.discordId}>`
+					: undefined;
+
+			const content = formatWhois(result, { mention });
+
+			if (result.status !== 'found') {
+				await interaction.editReply({ content });
 				return;
 			}
 
-			if (matchingMembers.length > 1) {
-				const names = matchingMembers
-					.slice(0, 10)
-					.map((m: any) => `${m.firstName} ${m.lastName}`)
-					.join('\n');
-
-				await interaction.editReply({
-					content: `Multiple members found. Please be more specific:\n${names}`,
-				});
-				return;
-			}
-
-			const member = matchingMembers[0];
-
-			// Get related data
-			const [committees, projects] = await Promise.all([
-				this.client.database.getDB()
-					.select()
-					.from(schema.CommitteeMembers)
-					.where(eq(schema.CommitteeMembers.memberId, member.id)),
-				this.client.database.getDB()
-					.select()
-					.from(schema.ProjectMembers)
-					.where(eq(schema.ProjectMembers.memberId, member.id)),
-			]);
-
-			// Get committee names
-			const committeeNames: string[] = [];
-			for (const cm of committees) {
-				const committee = await this.client.database.getDB()
-					.select()
-					.from(schema.Committees)
-					.where(eq(schema.Committees.id, cm.committeeId));
-
-				if (committee[0]) {
-					const name = cm.isChair ? `${committee[0].title} (Chair)` : committee[0].title;
-					committeeNames.push(name);
-				}
-			}
-
-			// Get project names
-			const projectNames: string[] = [];
-			for (const pm of projects) {
-				const project = await this.client.database.getDB()
-					.select()
-					.from(schema.Projects)
-					.where(eq(schema.Projects.id, pm.projectId));
-
-				if (project[0]) {
-					const name = pm.isLead ? `${project[0].title} (Lead)` : project[0].title;
-					projectNames.push(name);
-				}
-			}
-
-			// Build embed
-			const embed = this.client.createEmbed()
-				.setTitle(`${member.firstName} ${member.lastName}`)
+			// Rich card alongside the sentence.
+			const { member, committees, projects, lastEvent } = result.profile;
+			const embed = this.client
+				.createEmbed()
+				.setTitle(
+					[member.firstName, member.middleName, member.lastName].filter(Boolean).join(' '),
+				)
 				.setTimestamp();
 
-			// Add profile picture if Discord ID exists
 			if (member.discordId) {
 				try {
-					const user = await this.client.users.fetch(member.discordId);
-					embed.setThumbnail(user.displayAvatarURL({ size: 256 }));
-				} catch (e) {
-					// User not found or not in cache, skip thumbnail
+					const u = await this.client.users.fetch(member.discordId);
+					embed.setThumbnail(u.displayAvatarURL({ size: 256 }));
+				} catch {
+					/* not fetchable — skip the thumbnail */
 				}
 			}
 
-			// Basic info
 			embed.addFields({
-				name: '📚  Academic Info:',
-				value: `**Major: ** ${member.major}\n**Graduation Year: ** ${member.graduationYear}`,
+				name: '📚  Academic Info',
+				value: `**Major:** ${member.major}\n**Graduation Year:** ${member.graduationYear}`,
 				inline: false,
 			});
 
-			// Biography
 			if (member.biography) {
 				embed.addFields({
-					name: '📝  Biography:',
-					value: member.biography.length > 1024
-						? member.biography.substring(0, 1021) + '...'
-						: member.biography,
+					name: '📝  Biography',
+					value:
+						member.biography.length > 1024
+							? member.biography.slice(0, 1021) + '...'
+							: member.biography,
 					inline: false,
 				});
 			}
 
-			// Roles & Status
-			const roles = [];
-			if (member.officerStatus && member.officerRole) roles.push(`⭐ ${member.officerRole}`);
-
-			// Committees
-			if (committeeNames.length > 0) {
+			if (committees.length > 0) {
 				embed.addFields({
-					name: '📋 Committees:',
-					value: committeeNames.join('\n'),
+					name: '📋  Committees',
+					value: committees
+						.map((c) => (c.isChair ? `${c.title} (Chair)` : c.title))
+						.join('\n'),
 					inline: true,
 				});
 			}
 
-			// Projects
-			if (projectNames.length > 0) {
+			if (projects.length > 0) {
 				embed.addFields({
-					name: '🔧 Projects:',
-					value: projectNames.join('\n'),
+					name: '🔧  Projects',
+					value: projects.map((p) => (p.isLead ? `${p.title} (Lead)` : p.title)).join('\n'),
 					inline: true,
 				});
 			}
 
-			// Links (only populated ones)
-			const links = [];
+			if (lastEvent) {
+				embed.addFields({
+					name: '📅  Last seen',
+					value: `${lastEvent.title} — ${new Date(lastEvent.startTime).toLocaleDateString(
+						'en-US',
+						{ month: 'long', day: 'numeric', year: 'numeric' },
+					)}`,
+					inline: false,
+				});
+			}
+
+			const links: string[] = [];
 			if (member.linkedinURL) links.push(`[LinkedIn](${member.linkedinURL})`);
 			if (member.githubURL) links.push(`[GitHub](${member.githubURL})`);
 			if (member.websiteURL) links.push(`[Website](${member.websiteURL})`);
-			if (member.resumeURL) links.push(`[Resume](${member.resumeURL})`);
-
+			if (member.resumeURL) links.push(`[Résumé](${member.resumeURL})`);
 			if (links.length > 0) {
-				embed.addFields({
-					name: '🔗  Links:',
-					value: links.join('  •  '),
-					inline: false,
-				});
+				embed.addFields({ name: '🔗  Links', value: links.join('  •  '), inline: false });
 			}
 
-			await interaction.editReply({
-				content: `<@${member.discordId}>`,
-				embeds: [embed] });
+			await interaction.editReply({ content, embeds: [embed] });
 		} catch (error) {
 			this.client.logger.fail(`Error fetching member info: ${error}`);
 			console.error(error);

@@ -42,7 +42,7 @@ talks to. Source: `apps/dbot/src/commands/**`.
 | `/help` | general | GUEST | — | in-memory command list |
 | `/events` | general | GUEST | — | **Google Calendar ICS feed** |
 | `/assistance` | general | GUEST | `type`, `title`, `message` | `#assistance` + assistance roles |
-| `/whois` | general | GUEST | `name` | **DB**: members, committee_members, committees, project_members, projects |
+| `/whois` | general | GUEST | `user?`, `name?` | **DB**: members, committee_members, committees, project_members, projects, event_attendees, events |
 | `/info` | general | GUEST | — (menu) | **DB**: members, committees, committee_members, projects, project_members, events |
 | `/stats` | general | GUEST | — | **DB**: members, committees, committee_members, projects, project_members |
 | `/join` | admin | **ADMINISTRATOR** · guild-only | — | `@discordjs/voice` |
@@ -97,16 +97,37 @@ Posts a `‼️ <title>` embed (with the requester's name/avatar in the footer) 
 Cooldown 0.
 
 ### `/whois`
-| option | required |
-|---|---|
-| `name` | yes — full or partial, case-insensitive |
+| option | required | |
+|---|---|---|
+| `user` | no | a Discord user — matched on `members.discord_id` |
+| `name` | no | full or partial name, case-insensitive (use *instead of* `user`) |
 
-Loads **all** members, filters `active && fullName.includes(name)`. 0 matches → "no
-member found"; >1 → asks you to be more specific (lists up to 10); exactly 1 → an
-embed with academic info (major, grad year), biography, committee memberships
-(`committee_members` → `committees`), project memberships (`project_members` →
-`projects`), and link buttons (`linkedin_url`, `github_url`, `website_url`,
-`resume_url`). Cooldown 5s.
+With **no options**, looks up **you**. Logic is `@watts/core/members`
+`resolveWhois` + the pure `formatWhois`:
+
+- `user` given, no matching `discord_id` → **"`@name` isn't registered on the IEEE
+  website."**
+- `name` given → substring match on "First Last" over *active* members; 0 → "no
+  member matches", >1 → "be more specific" (lists ≤10).
+- match found → a one-paragraph summary as the reply text:
+
+  > **@user** is **First [Middle] Last**, a **{Major}** major expecting to graduate
+  > in **{year}**. {He/She/They} {is/are} also an officer, serving as
+  > **{officerRole}** *(or "a general member")*. {He/She/They} {was/were} last seen
+  > at **{event}** on {date} *(omitted if they've never checked in)*. Find
+  > {him/her/them} online: [LinkedIn](…) · [GitHub](…) · [Website](…) *(only the
+  > URLs that are set)*.
+
+  Pronouns are derived from `members.gender` (`M`→he, `F`→she, `NB`/`O`/`PNTS`→they).
+  A rich embed (academic info, biography, committees, projects, **last seen**,
+  links incl. résumé) accompanies the paragraph.
+
+`event_attendees` (joined to `events`) gives "last seen" — the most recent check-in
+by `timestamp`, tie-broken by `events.start_time`.
+
+**Validation:** `pnpm --filter @watts/bot check:whois`
+(`apps/dbot/scripts/whois-check.mts`) exercises `resolveWhois` / `formatWhois`
+against the seeded fixtures — run `pnpm db:reset` first. Cooldown 5s.
 
 ### `/info`
 No options — drives an interactive `StringSelectMenu` (60s collector, locked to
