@@ -1,13 +1,23 @@
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 import { db } from '@/lib/database/client';
-import { Events, EventAttendees, EventPhotos, Members } from '@watts/db/schema';
-import { eq, asc, desc, and, sql } from 'drizzle-orm';
+import { EventPhotos } from '@watts/db/schema';
+import { eq, desc, and, sql } from 'drizzle-orm';
 import { publicProcedure, capabilityProcedure, createTRPCRouter } from '../trpc';
 import { DateTime } from 'luxon';
 import { finalizeUpload, UploadError } from '@/lib/storage/finalize';
 import { getStorage } from '@/lib/storage';
 import { newPhotoKeys, sanitizeFilename } from '@/lib/storage/keys';
+import {
+	listActiveEvents,
+	getEventById,
+	getEventBySlug,
+	createEvent,
+	updateEvent,
+	deleteEvent,
+	checkInMember,
+} from '@watts/core/events';
+import { mapDomainError } from '../map-domain-error';
 
 const manageEvents = capabilityProcedure('manage_events');
 const scanAttendance = capabilityProcedure('scan_attendance');
@@ -38,6 +48,19 @@ function toEasternTime(time: string): string {
 	return dt.setZone('America/New_York').toFormat('MMMM d, yyyy h:mm a');
 }
 
+// Presentation shape for an events row: human-readable Eastern strings for display
+// plus the raw UTC strings for reliable client-side Date parsing/sorting.
+type EventRow = Awaited<ReturnType<typeof listActiveEvents>>[number];
+function toDisplay(event: EventRow) {
+	return {
+		...event,
+		startTime: toEasternTime(event.startTime),
+		endTime: event.endTime ? toEasternTime(event.endTime) : null,
+		startTimeRaw: event.startTime,
+		endTimeRaw: event.endTime ?? null,
+	};
+}
+
 // Validation schemas
 const eventCreateSchema = z.object({
 	title: z.string().min(1, 'Event title is required').max(255),
@@ -57,130 +80,62 @@ const eventUpdateSchema = eventCreateSchema.partial();
 export const eventRouter = createTRPCRouter({
 	getAll: publicProcedure.query(async () => {
 		try {
-			const events = await db
-				.select()
-				.from(Events)
-				.where(eq(Events.active, true))
-				.orderBy(asc(Events.startTime));
-			return events.map((event) => ({
-				...event,
-				// Human-readable Eastern string for display: "March 9, 2026 7:30 PM"
-				startTime: toEasternTime(event.startTime),
-				endTime: event.endTime ? toEasternTime(event.endTime) : null,
-				// Raw ISO UTC string for reliable JS Date parsing/sorting/filtering
-				startTimeRaw: event.startTime,
-				endTimeRaw: event.endTime ?? null,
-			}));
+			const events = await listActiveEvents(db);
+			return events.map(toDisplay);
 		} catch (error) {
-			throw new TRPCError({
-				code: 'INTERNAL_SERVER_ERROR',
-				message: error instanceof Error ? error.message : 'Failed to fetch events',
-			});
+			mapDomainError(error);
 		}
 	}),
 
 	getById: publicProcedure
 		.input(z.object({ id: z.string().uuid() }))
 		.query(async ({ input }) => {
-			const [event] = await db
-				.select()
-				.from(Events)
-				.where(eq(Events.id, input.id))
-				.limit(1);
-
-			if (!event) {
-				throw new TRPCError({ code: 'NOT_FOUND', message: 'Event not found' });
+			try {
+				return toDisplay(await getEventById(db, input.id));
+			} catch (error) {
+				mapDomainError(error);
 			}
-
-			return {
-				...event,
-				startTime: toEasternTime(event.startTime),
-				endTime: event.endTime ? toEasternTime(event.endTime) : null,
-				startTimeRaw: event.startTime,
-				endTimeRaw: event.endTime ?? null,
-			};
 		}),
 
 	getBySlug: publicProcedure
 		.input(z.object({ slug: z.string() }))
 		.query(async ({ input }) => {
-			const [event] = await db
-				.select()
-				.from(Events)
-				.where(eq(Events.slug, input.slug))
-				.limit(1);
-
-			if (!event) {
-				throw new TRPCError({ code: 'NOT_FOUND', message: 'Event not found' });
+			try {
+				return toDisplay(await getEventBySlug(db, input.slug));
+			} catch (error) {
+				mapDomainError(error);
 			}
-
-			return {
-				...event,
-				startTime: toEasternTime(event.startTime),
-				endTime: event.endTime ? toEasternTime(event.endTime) : null,
-				startTimeRaw: event.startTime,
-				endTimeRaw: event.endTime ?? null,
-			};
 		}),
 
 	create: manageEvents
 		.input(eventCreateSchema)
 		.mutation(async ({ input }) => {
 			try {
-				const newEvent = await db
-					.insert(Events)
-					.values({
-						title: input.title,
-						description: input.description,
-						location: input.location,
-						startTime: new Date(input.startTime).toISOString(),
-						endTime: input.endTime ? new Date(input.endTime).toISOString() : null,
-						committeeId: input.committeeId ?? null,
-						flyerUrl: input.flyerUrl ?? null,
-						rsvpLink: input.rsvpLink ?? null,
-						slug: input.slug ?? null,
-						requiresDues: input.requiresDues ?? false,
-					})
-					.returning();
-
-				return { success: true, event: newEvent[0] };
+				return { success: true, ...(await createEvent(db, input)) };
 			} catch (error) {
-				throw new TRPCError({
-					code: 'INTERNAL_SERVER_ERROR',
-					message: error instanceof Error ? error.message : 'Failed to create event',
-				});
+				mapDomainError(error);
 			}
 		}),
 
 	update: manageEvents
 		.input(z.object({ id: z.string().uuid(), data: eventUpdateSchema }))
 		.mutation(async ({ input }) => {
-			const [updated] = await db
-				.update(Events)
-				.set({ ...input.data, updatedAt: new Date().toISOString() })
-				.where(eq(Events.id, input.id))
-				.returning();
-
-			if (!updated) {
-				throw new TRPCError({ code: 'NOT_FOUND', message: 'Event not found' });
+			try {
+				return { success: true, ...(await updateEvent(db, input.id, input.data)) };
+			} catch (error) {
+				mapDomainError(error);
 			}
-
-			return { success: true, event: updated };
 		}),
 
 	delete: manageEvents
 		.input(z.object({ id: z.string().uuid() }))
 		.mutation(async ({ input }) => {
-			const [deleted] = await db
-				.delete(Events)
-				.where(eq(Events.id, input.id))
-				.returning();
-
-			if (!deleted) {
-				throw new TRPCError({ code: 'NOT_FOUND', message: 'Event not found' });
+			try {
+				await deleteEvent(db, input.id);
+				return { success: true };
+			} catch (error) {
+				mapDomainError(error);
 			}
-
-			return { success: true };
 		}),
 
 	/**
@@ -196,64 +151,11 @@ export const eventRouter = createTRPCRouter({
 			}),
 		)
 		.mutation(async ({ input }) => {
-			// 1. Verify event exists and is active
-			const [event] = await db
-				.select()
-				.from(Events)
-				.where(eq(Events.id, input.eventId))
-				.limit(1);
-
-			if (!event) {
-				throw new TRPCError({ code: 'NOT_FOUND', message: 'Event not found' });
+			try {
+				return { success: true, ...(await checkInMember(db, input)) };
+			} catch (error) {
+				mapDomainError(error);
 			}
-			if (!event.active) {
-				throw new TRPCError({ code: 'FORBIDDEN', message: 'Event is not active' });
-			}
-
-			// 2. Verify member exists and is active
-			const [member] = await db
-				.select()
-				.from(Members)
-				.where(eq(Members.discordId, input.discordId))
-				.limit(1);
-
-			if (!member) {
-				throw new TRPCError({ code: 'NOT_FOUND', message: 'Member not found' });
-			}
-			if (!member.active) {
-				throw new TRPCError({ code: 'FORBIDDEN', message: 'Member is not active' });
-			}
-
-			// 3. Check for duplicate attendance
-			const [existing] = await db
-				.select()
-				.from(EventAttendees)
-				.where(
-					and(
-						eq(EventAttendees.eventId, input.eventId),
-						eq(EventAttendees.memberId, member.id),
-					),
-				)
-				.limit(1);
-
-			if (existing) {
-				throw new TRPCError({ code: 'CONFLICT', message: 'Member already checked in' });
-			}
-
-			// 4. Check dues if required
-			if (event.requiresDues && !member.duesPaid) {
-				throw new TRPCError({
-					code: 'FORBIDDEN',
-					message: 'Dues payment required for this event',
-				});
-			}
-
-			const [newAttendee] = await db
-				.insert(EventAttendees)
-				.values({ eventId: input.eventId, memberId: member.id })
-				.returning();
-
-			return { success: true, attendee: newAttendee };
 		}),
 
 	// ---- Event photos ----
