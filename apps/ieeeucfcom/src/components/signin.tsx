@@ -1,7 +1,7 @@
 'use client';
 import { signIn } from 'next-auth/react';
 
-export default function Signinblock({ devLogin = false }: { devLogin?: boolean }) {
+export default function Signinblock() {
 	return (
 		<div className="relative group self-center">
 			<div className="absolute -inset-1 bg-gradient-to-r from-[var(--ieee-bright-yellow)] to-[var(--ieee-bright-yellow)] blur opacity-100 transition duration-1000"></div>
@@ -30,15 +30,6 @@ export default function Signinblock({ devLogin = false }: { devLogin?: boolean }
 						REGISTER
 					</a>
 				</span>
-
-				{devLogin && (
-					<a
-						href="/api/dev/login"
-						className="w-full px-6 py-3 border border-white/20 text-white/70 rounded-lg font-[heading-font] text-sm text-center hover:bg-white/5 hover:text-white transition duration-300"
-					>
-						Dev login (local only)
-					</a>
-				)}
 			</div>
 		</div>
 	);

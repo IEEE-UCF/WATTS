@@ -8,11 +8,6 @@
 import { z } from 'zod';
 import { loadRootEnv } from '../load-env.mjs';
 
-const bool = z
-	.string()
-	.transform((v) => v === 'true' || v === '1')
-	.pipe(z.boolean());
-
 const serverSchema = z.object({
 	APP_ENV: z.enum(['local', 'development', 'production']).default('local'),
 
@@ -34,7 +29,6 @@ const serverSchema = z.object({
 	DISCORD_CLIENT_ID: z.string().optional(),
 	DISCORD_CLIENT_SECRET: z.string().optional(),
 
-	ALLOW_DEV_LOGIN: bool.default(false),
 	DEV_ADMIN_EMAIL: z.string().default('admin@watts.local'),
 
 	RESUME_UPLOAD_AUDIENCE: z.enum(['admins', 'officers', 'members']).default('admins'),

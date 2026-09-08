@@ -29,8 +29,7 @@ run('pnpm db:seed');
 console.log(`
 ✅ Local environment ready.
 
-   pnpm dev                       → http://127.0.0.1:3000
-   http://127.0.0.1:3000/api/dev/login   → sign in as the seeded admin (no Discord)
+   pnpm dev                       → http://127.0.0.1:3000  (sign in with Discord)
 
    pnpm db:reset                  → wipe + migrate + reseed
 `);
