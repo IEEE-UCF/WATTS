@@ -1,6 +1,5 @@
-import { drizzle } from 'drizzle-orm/node-postgres';
-import { Pool } from 'pg';
-import * as schema from '@watts/db/schema';
+import type { Pool } from 'pg';
+import { createNodePgClient } from '@watts/db/node';
 
 export class Database {
 	private client: any;
@@ -10,13 +9,17 @@ export class Database {
 
 	constructor(client: any, connectionString: string) {
 		this.client = client;
-		this.pool = new Pool({
-			connectionString,
-			max: 20, // Maximum number of clients in the pool
-			idleTimeoutMillis: 30000, // How long a client is allowed to remain idle
-			connectionTimeoutMillis: 2000, // How long to wait when connecting
+		// Drizzle client + Pool from the shared @watts/db factory (node-postgres).
+		const { db, pool } = createNodePgClient({
+			url: connectionString,
+			poolConfig: {
+				max: 20, // Maximum number of clients in the pool
+				idleTimeoutMillis: 30000, // How long a client is allowed to remain idle
+				connectionTimeoutMillis: 2000, // How long to wait when connecting
+			},
 		});
-		this.db = drizzle(this.pool, { schema });
+		this.pool = pool;
+		this.db = db;
 	}
 
 	async loadDatabase(): Promise<boolean> {

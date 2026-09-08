@@ -1,10 +1,14 @@
 import { neon } from '@neondatabase/serverless';
 import { drizzle as drizzleNeon } from 'drizzle-orm/neon-http';
+import type { NeonHttpDatabase } from 'drizzle-orm/neon-http';
 import { drizzle as drizzlePostgres } from 'drizzle-orm/postgres-js';
+import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import postgres from 'postgres';
 
 import * as schema from './schema';
 
+export type Schema = typeof schema;
 export type Driver = 'neon-http' | 'postgres-js';
 
 export interface CreateDbOptions {
@@ -35,4 +39,14 @@ export function createDb(opts: CreateDbOptions) {
 	return drizzleNeon(neon(opts.url), { schema });
 }
 
-export type WattsDb = ReturnType<typeof createDb>;
+/**
+ * Any Drizzle client this repo builds — the two `createDb` drivers plus the
+ * node-postgres client (`@watts/db/node`, used by the bot / jobs). All three have
+ * a structurally-compatible `.select` / `.insert` / `.query` surface, so
+ * `@watts/core` functions accept any of them. Type-only imports, so requiring
+ * `@watts/db` never pulls `pg` into a Neon bundle.
+ */
+export type WattsDb =
+	| NeonHttpDatabase<Schema>
+	| PostgresJsDatabase<Schema>
+	| NodePgDatabase<Schema>;

@@ -2,13 +2,12 @@ import { Client, Collection, REST, Routes, EmbedBuilder } from 'discord.js';
 import { glob } from 'glob';
 import { pathToFileURL } from 'url';
 import path from 'path';
-import { eq } from 'drizzle-orm';
 import config from '../config.ts';
 import logger from '../modules/helpers/Logger.ts';
 import { Database } from '../modules/database/Database.ts';
 import { Calendar } from '../modules/calendar/main.ts';
 import { Utils, PermissionLevel } from '../modules/helpers/Utils.ts';
-import * as schema from '@watts/db/schema';
+import { resolveMemberTier } from '@watts/core/members';
 import { Command } from './Command.ts';
 import { Event } from './Event.ts';
 import { eventsAutomation } from '../modules/calendar/eventsAutomation.ts';
@@ -96,72 +95,13 @@ class Larry extends Client {
 	}
 
 	/**
-	 * Calculate permission level based on database data and config
+	 * Calculate permission level from the shared domain layer:
+	 * @watts/core/members resolveMemberTier → @watts/permissions/tier computeRoleTier.
 	 */
 	private async calculatePermissionLevel(discordId: string): Promise<PermissionLevel> {
 		try {
-			// Check if user is in config owners (ADMINISTRATOR)
 			const isConfigOwner = this.config.owners.some((owner: any) => owner.id === discordId);
-			if (isConfigOwner) {
-				return PermissionLevel.ADMINISTRATOR;
-			}
-
-			// Member row keyed by Discord id
-			const db = this.database.getDB();
-			const [member] = await db
-				.select()
-				.from(schema.Members)
-				.where(eq(schema.Members.discordId, discordId))
-				.limit(1);
-
-			// Not in database = GUEST
-			if (!member) {
-				return PermissionLevel.GUEST;
-			}
-
-			// Administrator has highest access
-			if (member.administrator) {
-				return PermissionLevel.ADMINISTRATOR;
-			}
-
-			// Executive roles (specific officer roles)
-			if (member.officerStatus && member.officerRole) {
-				const executiveRoles = ['Executive Chair', 'Vice Chair', 'Secretary', 'Treasurer'];
-				if (executiveRoles.includes(member.officerRole)) {
-					return PermissionLevel.EXECUTIVE;
-				}
-			}
-
-			// Any officer status
-			if (member.officerStatus) {
-				return PermissionLevel.OFFICER;
-			}
-
-			// Committee + project memberships (explicit selects — @watts/db defines no
-			// many-relations for members, so no ctx.db.query.*.findFirst({ with }) here).
-			const committeeLinks = await db
-				.select({ isChair: schema.CommitteeMembers.isChair })
-				.from(schema.CommitteeMembers)
-				.where(eq(schema.CommitteeMembers.memberId, member.id));
-			if (committeeLinks.some((cm: { isChair: boolean }) => cm.isChair)) {
-				return PermissionLevel.COMMITTEE_CHAIR;
-			}
-
-			const projectLinks = await db
-				.select({ isLead: schema.ProjectMembers.isLead })
-				.from(schema.ProjectMembers)
-				.where(eq(schema.ProjectMembers.memberId, member.id));
-			if (projectLinks.some((pm: { isLead: boolean }) => pm.isLead)) {
-				return PermissionLevel.PROJECT_LEAD;
-			}
-
-			// Committee member (member of at least one committee)
-			if (committeeLinks.length > 0) {
-				return PermissionLevel.COMMITTEE_MEMBER;
-			}
-
-			// Default registered member
-			return PermissionLevel.MEMBER;
+			return await resolveMemberTier(this.database.getDB(), discordId, { isConfigOwner });
 		} catch (error) {
 			console.error('Error calculating permission level:', error);
 			return PermissionLevel.GUEST;

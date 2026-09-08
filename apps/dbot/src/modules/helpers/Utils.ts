@@ -1,27 +1,10 @@
 import { Client, User, GuildMember, Guild, OAuth2Scopes } from 'discord.js';
 import type { PermissionResolvable } from 'discord.js';
 
-export enum PermissionLevel {
-	GUEST = 0, // Not in database (unregistered Discord users)
-	MEMBER = 1, // Registered members
-	COMMITTEE_MEMBER = 2, // Member of at least one committee
-	PROJECT_LEAD = 3, // Leads at least one project
-	COMMITTEE_CHAIR = 4, // Chairs at least one committee
-	OFFICER = 5, // Any officer role
-	EXECUTIVE = 6, // Executive roles only (chair, vice chair, secretary, treasurer)
-	ADMINISTRATOR = 7 // Full admin access (includes config owners)
-}
-
-export const PermissionLevelNames: Record<PermissionLevel, string> = {
-	[PermissionLevel.GUEST]: 'Guest',
-	[PermissionLevel.MEMBER]: 'Member',
-	[PermissionLevel.COMMITTEE_MEMBER]: 'Committee Member',
-	[PermissionLevel.PROJECT_LEAD]: 'Project Lead',
-	[PermissionLevel.COMMITTEE_CHAIR]: 'Committee Chair',
-	[PermissionLevel.OFFICER]: 'Officer',
-	[PermissionLevel.EXECUTIVE]: 'Executive',
-	[PermissionLevel.ADMINISTRATOR]: 'Administrator',
-};
+// The ordinal permission ladder now lives in @watts/permissions/tier (shared).
+// Re-exported here so existing `import { PermissionLevel } from '.../helpers/Utils'`
+// call sites keep working.
+export { PermissionLevel, PermissionLevelNames } from '@watts/permissions/tier';
 
 export class Utils {
 	private client: Client;

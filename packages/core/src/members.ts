@@ -5,6 +5,7 @@ import {
 	Users,
 	Committees,
 	CommitteeMembers,
+	ProjectMembers,
 	MemberPermissions,
 	majorEnums,
 	officerRoleEnum,
@@ -15,6 +16,7 @@ import {
 	isOfficerDelegable,
 	type CapabilitySubject,
 } from '@watts/permissions';
+import { computeRoleTier, type PermissionLevel } from '@watts/permissions/tier';
 import { DomainError } from './errors';
 import { getOfficerGrantableCapabilities } from './settings';
 
@@ -98,6 +100,52 @@ export async function getMemberByUserId(db: WattsDb, userId: string) {
 export async function findMemberByUserId(db: WattsDb, userId: string) {
 	const [member] = await db.select().from(Members).where(eq(Members.userId, userId)).limit(1);
 	return member ?? null;
+}
+
+/**
+ * Full permission-tier resolution for a Discord member: the `members` row by
+ * `discordId` plus committee/project memberships, collapsed to the bot's ordinal
+ * `PermissionLevel` (`@watts/permissions/tier`). `opts.isConfigOwner` short-circuits
+ * to ADMINISTRATOR; an unknown discordId → GUEST.
+ */
+export async function resolveMemberTier(
+	db: WattsDb,
+	discordId: string,
+	opts: { isConfigOwner?: boolean } = {},
+): Promise<PermissionLevel> {
+	const [member] = await db
+		.select({
+			id: Members.id,
+			administrator: Members.administrator,
+			officerStatus: Members.officerStatus,
+			officerRole: Members.officerRole,
+		})
+		.from(Members)
+		.where(eq(Members.discordId, discordId))
+		.limit(1);
+
+	if (!member) return computeRoleTier(null, opts);
+
+	const committeeLinks = await db
+		.select({ isChair: CommitteeMembers.isChair })
+		.from(CommitteeMembers)
+		.where(eq(CommitteeMembers.memberId, member.id));
+	const projectLinks = await db
+		.select({ isLead: ProjectMembers.isLead })
+		.from(ProjectMembers)
+		.where(eq(ProjectMembers.memberId, member.id));
+
+	return computeRoleTier(
+		{
+			administrator: member.administrator,
+			officerStatus: member.officerStatus,
+			officerRole: member.officerRole ?? null,
+			isCommitteeChair: committeeLinks.some((c) => c.isChair),
+			isProjectLead: projectLinks.some((p) => p.isLead),
+			isCommitteeMember: committeeLinks.length > 0,
+		},
+		opts,
+	);
 }
 
 /**

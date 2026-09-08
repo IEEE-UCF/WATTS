@@ -5,7 +5,8 @@
   "description": "Capability vocabulary + pure permission predicates. Zero runtime dependencies; framework-neutral.",
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./tier": "./src/tier.ts"
   },
   "devDependencies": {
     "@watts/eslint-config": "workspace:*",
