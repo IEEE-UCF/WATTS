@@ -31,10 +31,37 @@ passed as an argument.
 
 ## Fixtures — `fixtures/*.json`
 
-Historical domain fixtures (committees, events, projects, sponsorships, …). **They are
-stale and not currently loaded** by `seed.ts` — kept as reference. `members.json` still
-has an `email` column, `events.json` uses `host_type`, etc. De-staling them and wiring a
-`--fixtures` mode back in is part of the `@watts/db` extraction.
+Historical domain fixtures. **Not currently loaded** by `seed.ts` (the JSON loader was
+dropped in the rewrite) and 3 of the 9 files no longer match the schema. Kept as
+reference for a proper rebuild. Validated against migrations `0000–0003`
+(`drizzle-kit check` passes, so `schema.ts` = migrations = DB):
+
+| File | Status | Fix needed |
+| --- | --- | --- |
+| `members.json` | broken | `email` → `personal_email` **and** `ucf_email` (both NOT NULL). `major` → full enum labels (`Computer Science (BS)`, `Electrical Engineering (BSEE)`, `Computer Engineering (BSCpE)`). `officer_role` → `Executive Chair` (drop `executive_chair` / `committee_lead` — the latter isn't a role). |
+| `events.json` | broken | Remove `host_type`, `host_id`, `duration` (not columns). Use nullable `committee_id` FK + optional `end_time`. Keep `title` / `location` / `description` / `start_time` (all NOT NULL). |
+| `sponsorships.json` | broken | `tier` `gold`/`silver` → `Gold`/`Silver` (capitalised — `sponsorship_tier_enum`). |
+| `committees.json` | ok, unloaded | `chair_id` → `members.id` (load members first). |
+| `committee_members.json` | ok, unloaded | — |
+| `projects.json` | ok, unloaded | — |
+| `project_members.json` | ok, unloaded | — |
+| `event_attendees.json` | ok, unloaded | — |
+| `member_permissions.json` | ok, unloaded | `permission` values must be in `src/lib/permissions.ts` CAPABILITIES (`scan_attendance` is fine). |
+
+Internal FK references between the fixtures resolve (`committees.chair_id`,
+`committee_members.*`, etc. all point at IDs present in the set), so ordered loading works
+once the 3 files are corrected.
+
+### To make fixtures work again
+
+1. Correct `members.json` / `events.json` / `sponsorships.json` per the table above.
+2. Re-add a loader to `seed.ts`: a `--fixtures[=table,table]` flag over a fixed order
+   (`members → sponsorships → committees → projects → committee_members → project_members
+   → events → event_attendees → member_permissions`), inserting via the Drizzle `schema`
+   objects (not raw column lists) with `onConflictDoNothing({ target: <table>.id })` so a
+   schema change becomes a **compile error**, not a runtime crash.
+3. Long term (with `@watts/db`): generate fixtures from the schema (a factory / seeded
+   faker) instead of hand-maintained JSON, so they can't drift again.
 
 ## Notes
 
