@@ -2,6 +2,7 @@
 #   postgres        → stands in for the Neon database   (DB_PROVIDER=local)
 #   minio           → stands in for Vercel Blob          (STORAGE_PROVIDER=local)
 #   drizzle-studio  → schema/data browser, always on     (https://local.drizzle.studio)
+#   minio-init      → one-shot bucket setup (profile "setup", run-and-removed)
 #
 # Driven from the repo root:  pnpm infra:up | infra:down | infra:reset
 # Data lives in named volumes; `pnpm infra:reset` (docker compose down -v) wipes them.
@@ -65,10 +66,12 @@ services:
       timeout: 5s
       retries: 6
 
-  # One-shot: create the two buckets and make the public one anonymously readable.
-  # Safe to re-run — `mc mb -p` ignores existing buckets.
+  # One-shot bucket setup. Profiled out of `docker compose up` so it never lingers
+  # as an "Exited (0)" container — `pnpm infra:up` invokes it with
+  # `docker compose run --rm minio-init`. Safe to re-run (`mc mb -p` is idempotent).
   minio-init:
     image: minio/mc
+    profiles: ['setup']
     depends_on:
       minio:
         condition: service_started

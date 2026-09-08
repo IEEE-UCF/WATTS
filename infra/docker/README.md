@@ -8,8 +8,8 @@ Everything is driven from the **repo root** — you never `cd` in here.
 | `postgres` | `127.0.0.1:5432` | app database (`watts`) | `postgres` / `postgres` |
 | `minio` (S3 API) | `127.0.0.1:9000` | media storage | `minioadmin` / `minioadmin` |
 | `minio` (console) | `127.0.0.1:9001` | browse objects in a UI | `minioadmin` / `minioadmin` |
-| `minio-init` | — | one-shot: creates `media-public` (public) + `resumes-private` | — |
 | `drizzle-studio` | `127.0.0.1:4983` | schema + data browser (always on) | — |
+| `minio-init` | — | one-shot bucket setup — profile `setup`, run-and-removed by `pnpm infra:up`, never lingers | — |
 
 ## Drizzle Studio
 
@@ -32,14 +32,17 @@ too if you'd rather run it as a foreground process.
 
 ```bash
 pnpm bootstrap        # first run: .env, install, infra up, migrate, seed admin
-pnpm infra:up         # start postgres + minio
+pnpm infra:up         # start postgres + minio + drizzle-studio, wait, create buckets
 pnpm infra:down       # stop, keep data
 pnpm infra:reset      # stop AND wipe the volumes (docker compose down -v)
 pnpm db:migrate       # apply drizzle migrations
 pnpm db:seed          # (re)create the dev admin user/member/session
 pnpm db:reset         # infra:reset + up + migrate + seed  — a clean slate
-pnpm db:studio        # drizzle studio on 127.0.0.1:4983
+pnpm db:studio        # drizzle studio as a foreground process (the container is already up)
 ```
+
+`docker compose ps` shows only the three long-running services — the bucket setup
+(`minio-init`) runs and is removed each `pnpm infra:up`.
 
 ## Notes
 

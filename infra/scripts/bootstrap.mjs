@@ -1,10 +1,9 @@
 // One-command local setup. Idempotent — safe to re-run.
 //   1. create ./.env from ./.env.example (if missing)
 //   2. pnpm install
-//   3. start the docker stack (postgres + minio)
-//   4. wait for postgres
-//   5. apply migrations
-//   6. seed the dev admin (user + member + session)
+//   3. bring the docker stack up + create buckets (pnpm infra:up)
+//   4. apply migrations
+//   5. seed the dev admin (user + member + session)
 
 import { existsSync, copyFileSync } from 'node:fs';
 import { execSync } from 'node:child_process';
@@ -24,7 +23,6 @@ if (existsSync(envPath)) {
 
 run('pnpm install');
 run('pnpm infra:up');
-run('node infra/scripts/wait-for-postgres.mjs');
 run('pnpm db:migrate');
 run('pnpm db:seed');
 
