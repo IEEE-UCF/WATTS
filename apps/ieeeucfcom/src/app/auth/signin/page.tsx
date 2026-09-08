@@ -25,6 +25,11 @@ export default async function SignInPage() {
 		}
 	}
 
+	// Local dev only: offer the /api/dev/login bypass so contributors without Discord
+	// OAuth credentials can still sign in. Never true in a deployed environment.
+	const devLogin =
+		process.env.NODE_ENV !== 'production' && process.env.ALLOW_DEV_LOGIN === 'true';
+
 	return (
 		<div className="flex flex-col max-w-screen overflow-x-hidden">
 			<div className="relative w-full">
@@ -33,7 +38,7 @@ export default async function SignInPage() {
 						<Navbar />
 					</div>
 					<div className="flex flex-1 items-center justify-center w-full">
-						<Signinblock />
+						<Signinblock devLogin={devLogin} />
 					</div>
 				</div>
 				<Footer />
