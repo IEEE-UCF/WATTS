@@ -18,6 +18,11 @@ import { mkdtemp, writeFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { Client } from 'pg';
+import { loadRootEnv } from '@watts/config/load-env';
+
+// Local runs read the repo-root ./.env; in cron/CI the environment is already set
+// and this is a no-op.
+loadRootEnv();
 
 const run = promisify(execFile);
 

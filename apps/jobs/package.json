@@ -1,0 +1,16 @@
+{
+  "name": "@watts/jobs",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Scheduled / out-of-band jobs for WATTS (cron on the VPS). Not part of any website deploy.",
+  "type": "module",
+  "scripts": {
+    "archive": "node src/archive-to-onedrive.mjs"
+  },
+  "dependencies": {
+    "@watts/config": "workspace:*",
+    "@aws-sdk/client-s3": "^3.1124.0",
+    "@vercel/blob": "^2.8.0",
+    "pg": "8.16.3"
+  }
+}

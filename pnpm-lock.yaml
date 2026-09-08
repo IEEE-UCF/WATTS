@@ -306,6 +306,21 @@ importers:
         specifier: ^5.9.3
         version: 5.9.3
 
+  apps/jobs:
+    dependencies:
+      '@aws-sdk/client-s3':
+        specifier: ^3.1124.0
+        version: 3.1125.0
+      '@vercel/blob':
+        specifier: ^2.8.0
+        version: 2.8.0
+      '@watts/config':
+        specifier: workspace:*
+        version: link:../../packages/config
+      pg:
+        specifier: 8.16.3
+        version: 8.16.3
+
   packages/config:
     dependencies:
       dotenv:
