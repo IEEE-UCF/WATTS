@@ -21,6 +21,24 @@ export class ReadyEvent extends Event {
 			type: this.client.config.status.type,
 		});
 
+		// Startup ping in #general
+		const generalId: string = this.client.config.servers.main.channels.general;
+		if (generalId) {
+			try {
+				const channel = await this.client.channels.fetch(generalId);
+				if (channel?.isTextBased() && 'send' in channel) {
+					await channel.send('bot alive');
+					this.client.logger?.success(`Posted startup message to #general (${generalId}).`);
+				} else {
+					this.client.logger?.warn(`CHANNEL_GENERAL_ID ${generalId} is not a sendable text channel.`);
+				}
+			} catch (err) {
+				this.client.logger?.warn(`Could not post startup message to #general: ${err}`);
+			}
+		} else {
+			this.client.logger?.warn('CHANNEL_GENERAL_ID is unset — skipping the startup message.');
+		}
+
 		await this.client.eventsAutomation.start();
 
 		// Clean permission cache periodically
