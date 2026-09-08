@@ -5,8 +5,19 @@ runs it as the last step). The Postgres / MinIO containers live in `infra/docker
 
 ## What it does
 
-`src/seed.ts` upserts a **working admin** so you can sign in locally with no Discord and
-no manual SQL:
+`pnpm db:seed` = **dev admin + all domain fixtures** (idempotent). Flags:
+
+| Command | Result |
+| --- | --- |
+| `pnpm db:seed` | admin + every fixture file |
+| `pnpm db:seed -- --admin-only` | just the admin |
+| `pnpm db:seed -- --fixtures=members,events` | admin + only those files |
+| `pnpm db:seed -- --wipe` | DROP every table in `public` (then `pnpm db:migrate`) |
+| `pnpm db:seed -- postgres://…/db` | target a specific database |
+
+### Dev admin
+
+Upserts a **working admin** so you can sign in locally with no Discord and no manual SQL:
 
 | Table | Row |
 | --- | --- |
@@ -18,50 +29,28 @@ no manual SQL:
 Then `/api/dev/login` (enabled by `ALLOW_DEV_LOGIN=true` in `./.env`) plants that session
 cookie and drops you on `/dashboard`.
 
-## Usage
-
-```bash
-pnpm db:seed                       # upsert the dev admin (idempotent)
-pnpm db:seed -- --wipe             # DROP every table in public, then re-run pnpm db:migrate
-pnpm db:seed -- postgres://…/db    # target a specific database
-```
-
 `DATABASE_URL` comes from the repo-root `./.env` (via `@watts/config`) unless a URL is
 passed as an argument.
 
 ## Fixtures — `fixtures/*.json`
 
-Historical domain fixtures. **Not currently loaded** by `seed.ts` (the JSON loader was
-dropped in the rewrite) and 3 of the 9 files no longer match the schema. Kept as
-reference for a proper rebuild. Validated against migrations `0000–0003`
-(`drizzle-kit check` passes, so `schema.ts` = migrations = DB):
+Nine files loaded in FK order (`members → sponsorships → projects → committees →
+committee_members → project_members → events → event_attendees → member_permissions`).
+Keys are the **Drizzle property names** (camelCase) and rows are inserted through the
+`schema` table objects with `onConflictDoNothing`, so:
 
-| File | Status | Fix needed |
-| --- | --- | --- |
-| `members.json` | broken | `email` → `personal_email` **and** `ucf_email` (both NOT NULL). `major` → full enum labels (`Computer Science (BS)`, `Electrical Engineering (BSEE)`, `Computer Engineering (BSCpE)`). `officer_role` → `Executive Chair` (drop `executive_chair` / `committee_lead` — the latter isn't a role). |
-| `events.json` | broken | Remove `host_type`, `host_id`, `duration` (not columns). Use nullable `committee_id` FK + optional `end_time`. Keep `title` / `location` / `description` / `start_time` (all NOT NULL). |
-| `sponsorships.json` | broken | `tier` `gold`/`silver` → `Gold`/`Silver` (capitalised — `sponsorship_tier_enum`). |
-| `committees.json` | ok, unloaded | `chair_id` → `members.id` (load members first). |
-| `committee_members.json` | ok, unloaded | — |
-| `projects.json` | ok, unloaded | — |
-| `project_members.json` | ok, unloaded | — |
-| `event_attendees.json` | ok, unloaded | — |
-| `member_permissions.json` | ok, unloaded | `permission` values must be in `src/lib/permissions.ts` CAPABILITIES (`scan_attendance` is fine). |
+- a schema change surfaces as an insert error here, not a silent drift;
+- re-running is safe (fixed `id`s, conflict = skip);
+- rows cross-reference each other by those `id`s.
 
-Internal FK references between the fixtures resolve (`committees.chair_id`,
-`committee_members.*`, etc. all point at IDs present in the set), so ordered loading works
-once the 3 files are corrected.
+Current set (~small, enough to exercise every list page): 3 members (1 admin + 1 officer +
+1 plain), 2 committees with 3 memberships, 2 projects with leads, 2 sponsors, 2 upcoming
+events with 4 check-ins, 1 delegated `scan_attendance` grant. Validated against migrations
+`0000–0003` (`drizzle-kit check` passes → `schema.ts` = migrations = DB) and against a
+live `pnpm db:reset` (all pages render the data, 0 errors).
 
-### To make fixtures work again
-
-1. Correct `members.json` / `events.json` / `sponsorships.json` per the table above.
-2. Re-add a loader to `seed.ts`: a `--fixtures[=table,table]` flag over a fixed order
-   (`members → sponsorships → committees → projects → committee_members → project_members
-   → events → event_attendees → member_permissions`), inserting via the Drizzle `schema`
-   objects (not raw column lists) with `onConflictDoNothing({ target: <table>.id })` so a
-   schema change becomes a **compile error**, not a runtime crash.
-3. Long term (with `@watts/db`): generate fixtures from the schema (a factory / seeded
-   faker) instead of hand-maintained JSON, so they can't drift again.
+Long term (with `@watts/db`): generate fixtures from the schema (a factory / seeded faker)
+instead of hand-maintaining JSON.
 
 ## Notes
 

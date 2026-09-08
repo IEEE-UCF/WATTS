@@ -1,27 +1,65 @@
-// Local dev seed. Default action: (re)create a working admin you can log in as via
-// /api/dev/login — no Discord, no manual SQL.
+// Local dev seed.
 //
-//   pnpm db:seed            # upsert the dev admin (user + account + member + session)
-//   pnpm db:seed --wipe     # drop every table in `public` (then run `pnpm db:migrate`)
-//   pnpm db:seed postgres://…/db   # target a specific database
+//   pnpm db:seed                     # dev admin + all domain fixtures (idempotent)
+//   pnpm db:seed -- --admin-only     # just the dev admin, no fixtures
+//   pnpm db:seed -- --fixtures=members,events   # admin + only those fixture files
+//   pnpm db:seed -- --wipe           # DROP every table in public, then run pnpm db:migrate
+//   pnpm db:seed -- postgres://…/db  # target a specific database
 //
-// The schema is pulled from the website via its `./schema` export. When it moves
-// to @watts/db, switch this import and drop that export from apps/ieeeucfcom.
+// Fixtures are inserted through the Drizzle `schema` table objects (keys are the
+// TS property names, camelCase), so a schema change surfaces as a type/insert
+// error here instead of silently drifting. Rows carry fixed ids and reference
+// each other by them; `onConflictDoNothing` makes re-runs safe.
+//
+// The schema is pulled from the website via its `@watts/web/schema` export. When
+// it moves to @watts/db, switch this import and drop that export.
 
+import { readFile } from 'node:fs/promises';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { loadRootEnv } from '@watts/config/load-env';
 import postgres from 'postgres';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import { eq } from 'drizzle-orm';
+import type { PgTable } from 'drizzle-orm/pg-core';
 import * as schema from '@watts/web/schema';
 
 loadRootEnv();
 
-const { Users, Accounts, Members, Sessions } = schema;
+const {
+	Users,
+	Accounts,
+	Members,
+	Sessions,
+	Sponsorships,
+	Projects,
+	Committees,
+	CommitteeMembers,
+	ProjectMembers,
+	Events,
+	EventAttendees,
+	MemberPermissions,
+} = schema;
 
 const DEV_ADMIN_EMAIL = process.env.DEV_ADMIN_EMAIL ?? 'admin@watts.local';
 const DEV_SESSION_TOKEN = 'dev-admin-session';
+const FIXTURES_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', 'fixtures');
 
-const urlArg = process.argv.find((a) => a.startsWith('postgres://') || a.startsWith('postgresql://'));
+// Load order respects foreign keys.
+const FIXTURE_ORDER: readonly [name: string, table: PgTable][] = [
+	['members', Members],
+	['sponsorships', Sponsorships],
+	['projects', Projects],
+	['committees', Committees],
+	['committee_members', CommitteeMembers],
+	['project_members', ProjectMembers],
+	['events', Events],
+	['event_attendees', EventAttendees],
+	['member_permissions', MemberPermissions],
+];
+
+const argv = process.argv.slice(2);
+const urlArg = argv.find((a) => a.startsWith('postgres://') || a.startsWith('postgresql://'));
 const DATABASE_URL = urlArg ?? process.env.DATABASE_URL;
 if (!DATABASE_URL) {
 	console.error('No database URL. Run `pnpm bootstrap`, set DATABASE_URL in ./.env, or pass one as an argument.');
@@ -42,11 +80,7 @@ async function wipe() {
 }
 
 async function seedAdmin() {
-	const [existingUser] = await db
-		.select()
-		.from(Users)
-		.where(eq(Users.email, DEV_ADMIN_EMAIL))
-		.limit(1);
+	const [existingUser] = await db.select().from(Users).where(eq(Users.email, DEV_ADMIN_EMAIL)).limit(1);
 
 	let userId: string;
 	if (existingUser) {
@@ -61,26 +95,13 @@ async function seedAdmin() {
 		console.log(`• created dev admin user (${DEV_ADMIN_EMAIL})`);
 	}
 
-	const [account] = await db
-		.select()
-		.from(Accounts)
-		.where(eq(Accounts.userId, userId))
-		.limit(1);
+	const [account] = await db.select().from(Accounts).where(eq(Accounts.userId, userId)).limit(1);
 	if (!account) {
-		await db.insert(Accounts).values({
-			userId,
-			type: 'oauth',
-			provider: 'discord',
-			providerAccountId: 'dev-admin',
-		});
+		await db.insert(Accounts).values({ userId, type: 'oauth', provider: 'discord', providerAccountId: 'dev-admin' });
 		console.log('• linked a discord account row');
 	}
 
-	const [member] = await db
-		.select()
-		.from(Members)
-		.where(eq(Members.userId, userId))
-		.limit(1);
+	const [member] = await db.select().from(Members).where(eq(Members.userId, userId)).limit(1);
 	if (!member) {
 		await db.insert(Members).values({
 			userId,
@@ -98,20 +119,13 @@ async function seedAdmin() {
 		});
 		console.log('• created member profile (administrator + officer)');
 	} else if (!member.administrator || !member.officerStatus) {
-		await db
-			.update(Members)
-			.set({ administrator: true, officerStatus: true })
-			.where(eq(Members.id, member.id));
+		await db.update(Members).set({ administrator: true, officerStatus: true }).where(eq(Members.id, member.id));
 		console.log('• promoted existing member to administrator + officer');
 	} else {
 		console.log('• member profile already an administrator + officer');
 	}
 
-	const [session] = await db
-		.select()
-		.from(Sessions)
-		.where(eq(Sessions.sessionToken, DEV_SESSION_TOKEN))
-		.limit(1);
+	const [session] = await db.select().from(Sessions).where(eq(Sessions.sessionToken, DEV_SESSION_TOKEN)).limit(1);
 	if (!session) {
 		await db.insert(Sessions).values({
 			sessionToken: DEV_SESSION_TOKEN,
@@ -122,12 +136,44 @@ async function seedAdmin() {
 	}
 }
 
+async function loadFixtures(only?: string[]) {
+	for (const [name, table] of FIXTURE_ORDER) {
+		if (only && !only.includes(name)) continue;
+
+		let rows: Record<string, unknown>[];
+		try {
+			rows = JSON.parse(await readFile(join(FIXTURES_DIR, `${name}.json`), 'utf8'));
+		} catch {
+			console.log(`• ${name}: no fixture file, skipped`);
+			continue;
+		}
+		if (!Array.isArray(rows) || rows.length === 0) {
+			console.log(`• ${name}: empty, skipped`);
+			continue;
+		}
+
+		await db.insert(table).values(rows).onConflictDoNothing();
+		console.log(`• ${name}: ${rows.length} row(s)`);
+	}
+}
+
 async function main() {
-	if (process.argv.includes('--wipe')) {
+	if (argv.includes('--wipe')) {
 		await wipe();
 		return;
 	}
+
 	await seedAdmin();
+
+	if (!argv.includes('--admin-only')) {
+		const flag = argv.find((a) => a === '--fixtures' || a.startsWith('--fixtures='));
+		const only = flag?.includes('=')
+			? flag.split('=')[1].split(',').map((s) => s.trim()).filter(Boolean)
+			: undefined;
+		console.log(only ? `• loading fixtures: ${only.join(', ')}` : '• loading all fixtures');
+		await loadFixtures(only);
+	}
+
 	console.log('\n✅ seed complete — log in at http://127.0.0.1:3000/api/dev/login');
 }
 
