@@ -12,7 +12,7 @@ import { createHash } from 'crypto';
 import { and, eq, gte, sql } from 'drizzle-orm';
 import type { Session } from 'next-auth';
 import { db } from '@/lib/database/client';
-import { EventPhotos, Events, Members, UploadEvents } from '@/lib/database/schema';
+import { EventPhotos, Events, Members, UploadEvents } from '@watts/db/schema';
 import { canUploadResumeSession } from './audience';
 import {
 	PHOTO_CONTENT_TYPES,

@@ -11,7 +11,7 @@ import { Footer } from '@/components/footer';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { trpc } from '@/lib/trpc/client';
-import type { Project } from '@/lib/database/schema';
+import type { Project } from '@watts/db/schema';
 
 type ProjectWithLead = Project & { lead: string | null };
 

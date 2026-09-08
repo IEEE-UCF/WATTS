@@ -1,7 +1,7 @@
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 import { db } from '@/lib/database/client';
-import { Events, EventAttendees, EventPhotos, Members } from '@/lib/database/schema';
+import { Events, EventAttendees, EventPhotos, Members } from '@watts/db/schema';
 import { eq, asc, desc, and, sql } from 'drizzle-orm';
 import { publicProcedure, capabilityProcedure, createTRPCRouter } from '../trpc';
 import { DateTime } from 'luxon';

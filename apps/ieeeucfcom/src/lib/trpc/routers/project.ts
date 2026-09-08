@@ -1,7 +1,7 @@
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 import { db } from '@/lib/database/client';
-import { Projects, ProjectMembers, Members } from '@/lib/database/schema';
+import { Projects, ProjectMembers, Members } from '@watts/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { publicProcedure, adminProcedure, createTRPCRouter } from '../trpc';
 

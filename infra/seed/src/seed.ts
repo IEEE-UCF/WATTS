@@ -11,8 +11,8 @@
 // error here instead of silently drifting. Rows carry fixed ids and reference
 // each other by them; `onConflictDoNothing` makes re-runs safe.
 //
-// The schema is pulled from the website via its `@watts/web/schema` export. When
-// it moves to @watts/db, switch this import and drop that export.
+// The schema comes from `@watts/db/schema` — the same table objects the website and
+// (later) the bot use, so column drift is a compile error here.
 
 import { readFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
@@ -22,7 +22,7 @@ import postgres from 'postgres';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import { eq } from 'drizzle-orm';
 import type { PgTable } from 'drizzle-orm/pg-core';
-import * as schema from '@watts/web/schema';
+import * as schema from '@watts/db/schema';
 
 loadRootEnv();
 

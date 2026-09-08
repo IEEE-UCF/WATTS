@@ -2,7 +2,7 @@ import { NextAuthOptions } from 'next-auth';
 import DiscordProvider from 'next-auth/providers/discord';
 import { DrizzleAdapter } from '@auth/drizzle-adapter';
 import { db } from '@/lib/database/client';
-import { Accounts, Users, Sessions, Members, MemberPermissions } from '@/lib/database/schema';
+import { Accounts, Users, Sessions, Members, MemberPermissions } from '@watts/db/schema';
 import type { DiscordProfile } from 'next-auth/providers/discord';
 import { and, eq, isNull, or, gt } from 'drizzle-orm';
 

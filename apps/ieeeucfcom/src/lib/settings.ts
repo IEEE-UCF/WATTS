@@ -2,7 +2,7 @@
 // Values are JSON-encoded text. Add typed accessors here as settings are added.
 
 import { db } from '@/lib/database/client';
-import { AppSettings } from '@/lib/database/schema';
+import { AppSettings } from '@watts/db/schema';
 import { eq } from 'drizzle-orm';
 import {
 	OFFICER_DELEGABLE_CAPABILITIES,

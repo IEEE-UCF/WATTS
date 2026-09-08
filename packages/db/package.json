@@ -1,0 +1,28 @@
+{
+  "name": "@watts/db",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Drizzle schema + driver-agnostic client + migrations for WATTS. Framework-neutral: no next / react / @trpc.",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./schema": "./src/schema.ts"
+  },
+  "scripts": {
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:push": "drizzle-kit push",
+    "db:studio": "drizzle-kit studio",
+    "db:check": "drizzle-kit check"
+  },
+  "dependencies": {
+    "@neondatabase/serverless": "1.0.2",
+    "@watts/config": "workspace:*",
+    "drizzle-orm": "0.44.7",
+    "postgres": "3.4.8"
+  },
+  "devDependencies": {
+    "@watts/tsconfig": "workspace:*",
+    "drizzle-kit": "^0.31.8"
+  }
+}

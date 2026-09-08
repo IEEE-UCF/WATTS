@@ -1,24 +1,13 @@
-import { neon } from '@neondatabase/serverless';
-import { drizzle as drizzleNeon } from 'drizzle-orm/neon-http';
-import { drizzle as drizzlePostgres } from 'drizzle-orm/postgres-js';
-import postgres from 'postgres';
-import * as schema from './schema';
+import { createDb } from '@watts/db';
 
+// The repo-root ./.env is loaded by loadRootEnv() at the top of next.config.ts (and by
+// @watts/config for non-Next consumers), so DATABASE_URL is populated by the time this runs.
 if (!process.env.DATABASE_URL) {
 	throw new Error('DATABASE_URL must be set');
 }
 
-const connectionString = process.env.DATABASE_URL;
-const provider = process.env.DB_PROVIDER ?? 'neon'; // 'neon' | 'local'
-
-function createNeonDb() {
-	const sql = neon(connectionString);
-	return drizzleNeon(sql, { schema });
-}
-
-function createLocalDb() {
-	const client = postgres(connectionString);
-	return drizzlePostgres(client, { schema });
-}
-
-export const db = provider === 'local' ? createLocalDb() : createNeonDb();
+// DB_PROVIDER: 'neon' (default — serverless HTTP, Vercel) | 'local' (plain Postgres — Docker / VPS)
+export const db = createDb({
+	url: process.env.DATABASE_URL,
+	driver: process.env.DB_PROVIDER === 'local' ? 'postgres-js' : 'neon-http',
+});

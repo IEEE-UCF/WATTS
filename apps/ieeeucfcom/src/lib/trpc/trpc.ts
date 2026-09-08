@@ -7,7 +7,7 @@ import { getServerSession } from 'next-auth';
 import type { Session } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { db } from '@/lib/database/client';
-import { Members, MemberPermissions } from '@/lib/database/schema';
+import { Members, MemberPermissions } from '@watts/db/schema';
 import { and, eq, gt, isNull, or } from 'drizzle-orm';
 import { hasCapability, type Capability } from '@watts/permissions';
 /**

@@ -5,7 +5,7 @@ import { getServerSession } from 'next-auth';
 import { eq } from 'drizzle-orm';
 import { authOptions } from '@/lib/auth';
 import { db } from '@/lib/database/client';
-import { Members } from '@/lib/database/schema';
+import { Members } from '@watts/db/schema';
 import { getStorage } from '@/lib/storage';
 import { sanitizeFilename } from '@/lib/storage/keys';
 import { hasCapability } from '@watts/permissions';

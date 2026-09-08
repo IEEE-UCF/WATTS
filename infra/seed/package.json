@@ -9,7 +9,7 @@
   },
   "dependencies": {
     "@watts/config": "workspace:*",
-    "@watts/web": "workspace:*",
+    "@watts/db": "workspace:*",
     "drizzle-orm": "0.44.7",
     "postgres": "3.4.8"
   },

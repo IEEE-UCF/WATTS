@@ -57,7 +57,7 @@ services:
     environment:
       DATABASE_URL: postgres://postgres:postgres@postgres:5432/watts
     volumes:
-      - ../../apps/ieeeucfcom/src/lib/database:/studio/schema:ro
+      - ../../packages/db/src:/studio/schema:ro
     ports:
       - '4983:4983'
     healthcheck:

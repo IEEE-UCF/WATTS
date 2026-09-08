@@ -1,6 +1,6 @@
 "use client";
 
-import { majorEnums } from "@/lib/database/schema";
+import { majorEnums } from "@watts/db/schema";
 import { Button } from "@/components/ui/button";
 import { Field, FieldGroup, FieldLabel, FieldSet } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";

@@ -2,7 +2,7 @@ import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 import { eq } from 'drizzle-orm';
 import { db } from '@/lib/database/client';
-import { Members } from '@/lib/database/schema';
+import { Members } from '@watts/db/schema';
 import { createTRPCRouter, protectedProcedure } from '../trpc';
 import { RESUME_UPLOAD_AUDIENCE, canUploadResumeSession } from '@/lib/storage/audience';
 import { finalizeUpload, UploadError } from '@/lib/storage/finalize';

@@ -1,7 +1,7 @@
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 import { db } from '@/lib/database/client';
-import { MeetingTimes } from '@/lib/database/schema';
+import { MeetingTimes } from '@watts/db/schema';
 import { eq, asc } from 'drizzle-orm';
 import { publicProcedure, adminProcedure, createTRPCRouter } from '../trpc';
 

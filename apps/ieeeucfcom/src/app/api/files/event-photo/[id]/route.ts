@@ -7,7 +7,7 @@ import { getServerSession } from 'next-auth';
 import { eq } from 'drizzle-orm';
 import { authOptions } from '@/lib/auth';
 import { db } from '@/lib/database/client';
-import { EventPhotos } from '@/lib/database/schema';
+import { EventPhotos } from '@watts/db/schema';
 import { getStorage } from '@/lib/storage';
 import { hasCapability } from '@watts/permissions';
 

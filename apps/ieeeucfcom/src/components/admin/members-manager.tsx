@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { trpc } from '@/lib/trpc/client';
-import { officerRoleEnum } from '@/lib/database/schema';
+import { officerRoleEnum } from '@watts/db/schema';
 import { CAPABILITIES, CAPABILITY_KEYS, type Capability } from '@watts/permissions';
 
 type RoleFilter = 'all' | 'admin' | 'officer' | 'none';

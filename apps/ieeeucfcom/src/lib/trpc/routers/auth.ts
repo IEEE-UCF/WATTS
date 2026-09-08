@@ -1,5 +1,5 @@
 import { db } from '@/lib/database/client';
-import { Members, Users, MemberPermissions } from '@/lib/database/schema';
+import { Members, Users, MemberPermissions } from '@watts/db/schema';
 import { and, eq } from 'drizzle-orm';
 import { publicProcedure, createTRPCRouter } from '../trpc';
 import { hasStaffCapability } from '@watts/permissions';

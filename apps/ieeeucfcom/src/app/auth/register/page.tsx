@@ -3,7 +3,7 @@
 // import { TRPCClientError } from "@trpc/client";
 // import { AppRouter } from "@/lib/trpc/root";
 
-import { majorEnums } from "@/lib/database/schema";
+import { majorEnums } from "@watts/db/schema";
 
 import { Button } from "@/components/ui/button";
 import {

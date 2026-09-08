@@ -1,7 +1,7 @@
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 import { db } from '@/lib/database/client';
-import { Awards } from '@/lib/database/schema';
+import { Awards } from '@watts/db/schema';
 import { eq, and, desc } from 'drizzle-orm';
 import { publicProcedure, adminProcedure, createTRPCRouter } from '../trpc';
 

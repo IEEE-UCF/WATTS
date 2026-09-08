@@ -6,7 +6,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import { db } from '@/lib/database/client';
-import { Members } from '@/lib/database/schema';
+import { Members } from '@watts/db/schema';
 import { eq } from 'drizzle-orm';
 
 export default async function Dashboard() {

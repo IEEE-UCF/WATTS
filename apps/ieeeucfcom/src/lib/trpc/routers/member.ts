@@ -9,7 +9,7 @@ import {
 	MemberPermissions,
 	majorEnums,
 	officerRoleEnum,
-} from "@/lib/database/schema";
+} from "@watts/db/schema";
 import { and, eq, inArray } from "drizzle-orm";
 import {
 	protectedProcedure,

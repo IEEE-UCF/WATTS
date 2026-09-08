@@ -106,9 +106,6 @@ importers:
       '@mui/material':
         specifier: ^7.3.7
         version: 7.3.11(@emotion/react@11.14.0(@types/react@19.2.18)(react@19.2.8))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@19.2.18)(react@19.2.8))(@types/react@19.2.18)(react@19.2.8))(@types/react@19.2.18)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
-      '@neondatabase/serverless':
-        specifier: 1.0.2
-        version: 1.0.2
       '@radix-ui/react-accordion':
         specifier: ^1.2.12
         version: 1.2.20(@types/react-dom@19.2.6(@types/react@19.2.18))(@types/react@19.2.18)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
@@ -154,6 +151,9 @@ importers:
       '@watts/config':
         specifier: workspace:*
         version: link:../../packages/config
+      '@watts/db':
+        specifier: workspace:*
+        version: link:../../packages/db
       '@watts/permissions':
         specifier: workspace:*
         version: link:../../packages/permissions
@@ -205,9 +205,6 @@ importers:
       pg:
         specifier: 8.16.3
         version: 8.16.3
-      postgres:
-        specifier: 3.4.8
-        version: 3.4.8
       qrcode:
         specifier: ^1.5.4
         version: 1.5.4
@@ -284,9 +281,6 @@ importers:
       dotenv:
         specifier: ^17.2.4
         version: 17.4.2
-      drizzle-kit:
-        specifier: ^0.31.8
-        version: 0.31.10
       eslint:
         specifier: ^9.39.4
         version: 9.39.5(jiti@2.7.0)
@@ -326,9 +320,9 @@ importers:
       '@watts/config':
         specifier: workspace:*
         version: link:../../packages/config
-      '@watts/web':
+      '@watts/db':
         specifier: workspace:*
-        version: link:../../apps/ieeeucfcom
+        version: link:../../packages/db
       drizzle-orm:
         specifier: 0.44.7
         version: 0.44.7(@neondatabase/serverless@1.0.2)(@types/pg@8.23.1)(pg@8.16.3)(postgres@3.4.8)
@@ -348,6 +342,28 @@ importers:
       zod:
         specifier: ^4.3.6
         version: 4.5.4
+
+  packages/db:
+    dependencies:
+      '@neondatabase/serverless':
+        specifier: 1.0.2
+        version: 1.0.2
+      '@watts/config':
+        specifier: workspace:*
+        version: link:../config
+      drizzle-orm:
+        specifier: 0.44.7
+        version: 0.44.7(@neondatabase/serverless@1.0.2)(@types/pg@8.23.1)(pg@8.16.3)(postgres@3.4.8)
+      postgres:
+        specifier: 3.4.8
+        version: 3.4.8
+    devDependencies:
+      '@watts/tsconfig':
+        specifier: workspace:*
+        version: link:../tsconfig
+      drizzle-kit:
+        specifier: ^0.31.8
+        version: 0.31.10
 
   packages/eslint-config:
     dependencies:

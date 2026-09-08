@@ -23,9 +23,9 @@
     "infra:up": "node infra/scripts/up.mjs",
     "infra:down": "docker compose -f infra/docker/docker-compose.yml --profile setup down",
     "infra:reset": "docker compose -f infra/docker/docker-compose.yml --profile setup down -v",
-    "db:generate": "pnpm --filter @watts/web db:generate",
-    "db:migrate": "pnpm --filter @watts/web db:migrate",
-    "db:studio": "pnpm --filter @watts/web db:studio",
+    "db:generate": "pnpm --filter @watts/db db:generate",
+    "db:migrate": "pnpm --filter @watts/db db:migrate",
+    "db:studio": "pnpm --filter @watts/db db:studio",
     "db:seed": "pnpm --filter @watts/seed seed",
     "db:reset": "pnpm infra:reset && pnpm infra:up && pnpm db:migrate && pnpm db:seed"
   },
