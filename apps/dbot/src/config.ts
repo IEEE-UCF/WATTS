@@ -1,8 +1,15 @@
 import { GatewayIntentBits, Partials, ActivityType } from 'discord.js';
 import { loadRootEnv } from '@watts/config/load-env';
 
-// Load the repo-root ./.env (walks up to the pnpm-workspace dir). The bot shares
-// DATABASE_URL and the SHARED section with the rest of the monorepo.
+// Env resolution: a bot-local `apps/dbot/.env` wins (bot token, test-guild id, and
+// optionally a DATABASE_URL override); the repo-root `./.env` fills in everything it
+// doesn't set (the shared SHARED section). Node's loader and dotenv both leave
+// already-set vars alone, so the local file must load first.
+try {
+	process.loadEnvFile?.(); // <cwd>/.env — apps/dbot/.env when run via `pnpm --filter @watts/bot dev`
+} catch {
+	/* no apps/dbot/.env — everything comes from the repo root */
+}
 loadRootEnv();
 
 interface Config {
