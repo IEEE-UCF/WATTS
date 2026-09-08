@@ -1,0 +1,20 @@
+{
+  "name": "@watts/auth",
+  "version": "0.0.0",
+  "private": true,
+  "description": "NextAuth options factory for WATTS — buildAuthOptions(db). Website-only (pulls next-auth).",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@auth/drizzle-adapter": "^1.11.1",
+    "@watts/core": "workspace:*",
+    "@watts/db": "workspace:*",
+    "drizzle-orm": "0.44.7",
+    "next-auth": "^4.24.13"
+  },
+  "devDependencies": {
+    "@watts/tsconfig": "workspace:*"
+  }
+}
