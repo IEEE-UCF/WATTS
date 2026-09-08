@@ -1,14 +1,14 @@
 // Gated resume download. PII — never public, never cached, never indexed.
 // Access: the owner, or any officer / administrator.
 
-import { getServerSession } from 'next-auth';
 import { eq } from 'drizzle-orm';
-import { authOptions } from '@/lib/auth';
 import { db } from '@/lib/database/client';
 import { Members } from '@watts/db/schema';
 import { getStorage } from '@watts/storage';
 import { sanitizeFilename } from '@watts/storage/keys';
+import { resolveMemberRoles } from '@watts/core/members';
 import { hasCapability } from '@watts/permissions';
+import { requireSession } from '@/lib/auth-guards';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -19,10 +19,9 @@ export async function GET(
 ): Promise<Response> {
 	const { memberId } = await params;
 
-	const session = await getServerSession(authOptions);
-	if (!session?.user?.id) {
-		return new Response('Unauthorized', { status: 401 });
-	}
+	const gate = await requireSession();
+	if (gate instanceof Response) return gate;
+	const session = gate;
 
 	const [member] = await db
 		.select({
@@ -40,9 +39,13 @@ export async function GET(
 	}
 
 	const isOwner = member.userId === session.user.id;
-	const isStaff = hasCapability(session.user, 'review_resumes');
-	if (!isOwner && !isStaff) {
-		return new Response('Forbidden', { status: 403 });
+	if (!isOwner) {
+		// Staff access: resolve capabilities from the DB, not the session token, so a
+		// revoked `review_resumes` grant blocks the next request (PII — worth the query).
+		const roles = await resolveMemberRoles(db, session.user.id);
+		if (!hasCapability(roles, 'review_resumes')) {
+			return new Response('Forbidden', { status: 403 });
+		}
 	}
 
 	const storage = await getStorage();

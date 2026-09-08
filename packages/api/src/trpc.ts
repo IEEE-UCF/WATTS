@@ -10,7 +10,9 @@ import { eq } from 'drizzle-orm';
 import type { WattsDb } from '@watts/db';
 import { Members } from '@watts/db/schema';
 import { hasCapability, type Capability } from '@watts/permissions';
-import { resolveMemberRoles } from '@watts/core/members';
+import { resolveMemberRoles, type MemberRoles } from '@watts/core/members';
+
+const isDev = process.env.NODE_ENV === 'development';
 
 /**
  * Structural stand-in for a next-auth Session — keeps this package next-auth-free.
@@ -45,14 +47,27 @@ export interface CreateContextOptions {
 }
 
 export const createTRPCContext = (opts: CreateContextOptions) => {
-	const source = opts.headers?.get('x-trpc-source') ?? 'unknown';
-	console.log('>>> tRPC Request from', source, 'by', opts.session?.user);
+	if (isDev) {
+		const source = opts.headers?.get('x-trpc-source') ?? 'unknown';
+		console.log('>>> tRPC request from', source, 'by', opts.session?.user?.id ?? 'anon');
+	}
+
+	// Per-request memo of the role resolver. Every gate and the `auth.*` router call
+	// this, so a batched request that touches several of them resolves roles once, not
+	// once per procedure.
+	let rolesPromise: Promise<MemberRoles | null> | undefined;
+	const getRoles = (): Promise<MemberRoles | null> => {
+		const userId = opts.session?.user?.id;
+		if (!userId) return Promise.resolve(null);
+		return (rolesPromise ??= resolveMemberRoles(opts.db, userId));
+	};
 
 	return {
 		session: opts.session,
 		db: opts.db,
 		headers: opts.headers,
 		token: opts.headers?.get('Authorization') ?? null,
+		getRoles,
 	};
 };
 
@@ -77,17 +92,14 @@ export const createTRPCRouter = t.router;
  * Timing middleware
  */
 const timingMiddleware = t.middleware(async ({ next, path }) => {
-	const start = Date.now();
+	if (!isDev) return next();
 
-	if (process.env.NODE_ENV === 'development') {
-		const waitMs = Math.floor(Math.random() * 400) + 100;
-		await new Promise((resolve) => setTimeout(resolve, waitMs));
-	}
+	const start = Date.now();
+	const waitMs = Math.floor(Math.random() * 400) + 100;
+	await new Promise((resolve) => setTimeout(resolve, waitMs));
 
 	const result = await next();
-	const end = Date.now();
-	console.log(`[TRPC] ${path} took ${end - start}ms to execute`);
-
+	console.log(`[TRPC] ${path} took ${Date.now() - start}ms to execute`);
 	return result;
 });
 
@@ -111,13 +123,9 @@ export const protectedProcedure = t.procedure.use(timingMiddleware).use(({ ctx, 
 	});
 });
 
-// determines if officer or if admin, helper stuff — role resolution lives in
-// @watts/core/members (one implementation, shared with the NextAuth session callback).
-
-async function userIsAdmin(db: WattsDb, userId: string): Promise<boolean> {
-	const roles = await resolveMemberRoles(db, userId);
-	return roles?.administrator === true;
-}
+// All role/capability gates resolve through ctx.getRoles() → @watts/core/members
+// `resolveMemberRoles` (one implementation, shared with the NextAuth session callback),
+// memoised per request in createTRPCContext.
 
 /**
  * Officer procedure
@@ -126,7 +134,7 @@ async function userIsAdmin(db: WattsDb, userId: string): Promise<boolean> {
  * Admins are granted officer-level access implicitly.
  */
 export const officerProcedure = protectedProcedure.use(async ({ ctx, next }) => {
-	const roles = await resolveMemberRoles(ctx.db, ctx.session.user.id);
+	const roles = await ctx.getRoles();
 
 	if (!roles || (!roles.officerStatus && !roles.administrator)) {
 		throw new TRPCError({
@@ -151,7 +159,7 @@ export const officerProcedure = protectedProcedure.use(async ({ ctx, next }) => 
  */
 export function capabilityProcedure(cap: Capability) {
 	return protectedProcedure.use(async ({ ctx, next }) => {
-		const roles = await resolveMemberRoles(ctx.db, ctx.session.user.id);
+		const roles = await ctx.getRoles();
 		if (!hasCapability(roles, cap)) {
 			throw new TRPCError({
 				code: 'FORBIDDEN',
@@ -169,9 +177,9 @@ export function capabilityProcedure(cap: Capability) {
  * Use this for admin-only features like managing members.
  */
 export const adminProcedure = protectedProcedure.use(async ({ ctx, next }) => {
-	const isAdmin = await userIsAdmin(ctx.db, ctx.session.user.id);
+	const roles = await ctx.getRoles();
 
-	if (!isAdmin) {
+	if (!roles?.administrator) {
 		throw new TRPCError({
 			code: 'FORBIDDEN',
 			message: 'Administrator privileges required',

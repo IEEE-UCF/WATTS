@@ -4,7 +4,7 @@ import { EventPhotos } from '@watts/db/schema';
 import { eq, desc, and, sql } from 'drizzle-orm';
 import { publicProcedure, capabilityProcedure, createTRPCRouter } from '../trpc';
 import { DateTime } from 'luxon';
-import { finalizeUpload, UploadError } from '@watts/storage/finalize';
+import { finalizeUpload } from '@watts/storage/finalize';
 import { getStorage } from '@watts/storage';
 import { newPhotoKeys, sanitizeFilename } from '@watts/storage/keys';
 import {
@@ -16,7 +16,7 @@ import {
 	deleteEvent,
 	checkInMember,
 } from '@watts/core/events';
-import { mapDomainError } from '../map-domain-error';
+import { mapDomainError, mapUploadError } from '../map-domain-error';
 
 const manageEvents = capabilityProcedure('manage_events');
 const scanAttendance = capabilityProcedure('scan_attendance');
@@ -255,16 +255,7 @@ export const eventRouter = createTRPCRouter({
 					tags: input.tags ?? [],
 				});
 			} catch (err) {
-				if (err instanceof UploadError) {
-					throw new TRPCError({
-						code: err.code === 'NOT_FOUND' ? 'NOT_FOUND' : 'BAD_REQUEST',
-						message: err.message,
-					});
-				}
-				throw new TRPCError({
-					code: 'INTERNAL_SERVER_ERROR',
-					message: err instanceof Error ? err.message : 'Failed to finalize photo',
-				});
+				mapUploadError(err);
 			}
 		}),
 

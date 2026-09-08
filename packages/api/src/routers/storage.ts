@@ -4,29 +4,10 @@ import { eq } from 'drizzle-orm';
 import { Members } from '@watts/db/schema';
 import { createTRPCRouter, protectedProcedure } from '../trpc';
 import { RESUME_UPLOAD_AUDIENCE, canUploadResumeSession } from '@watts/storage/audience';
-import { finalizeUpload, UploadError } from '@watts/storage/finalize';
+import { finalizeUpload } from '@watts/storage/finalize';
 import { resumeKey, sanitizeFilename } from '@watts/storage/keys';
 import { getStorage } from '@watts/storage';
-
-function mapUploadError(err: unknown): TRPCError {
-	if (err instanceof UploadError) {
-		const code =
-			err.code === 'UNAUTHORIZED'
-				? 'UNAUTHORIZED'
-				: err.code === 'FORBIDDEN'
-					? 'FORBIDDEN'
-					: err.code === 'NOT_FOUND'
-						? 'NOT_FOUND'
-						: err.code === 'TOO_MANY'
-							? 'TOO_MANY_REQUESTS'
-							: 'BAD_REQUEST';
-		return new TRPCError({ code, message: err.message });
-	}
-	return new TRPCError({
-		code: 'INTERNAL_SERVER_ERROR',
-		message: err instanceof Error ? err.message : 'Upload finalize failed',
-	});
-}
+import { mapUploadError } from '../map-domain-error';
 
 export const storageRouter = createTRPCRouter({
 	/** Audience gate state, so the UI knows whether to render the resume field. */
@@ -53,7 +34,7 @@ export const storageRouter = createTRPCRouter({
 					filename: sanitizeFilename(input.filename),
 				});
 			} catch (err) {
-				throw mapUploadError(err);
+				mapUploadError(err);
 			}
 		}),
 

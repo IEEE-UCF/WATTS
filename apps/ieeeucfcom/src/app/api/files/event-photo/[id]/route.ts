@@ -3,13 +3,11 @@
 //   otherwise                             → officers / admins only, no-store
 // Bytes always live in the private bucket; this route is the only way to read them.
 
-import { getServerSession } from 'next-auth';
 import { eq } from 'drizzle-orm';
-import { authOptions } from '@/lib/auth';
 import { db } from '@/lib/database/client';
 import { EventPhotos } from '@watts/db/schema';
 import { getStorage } from '@watts/storage';
-import { hasCapability } from '@watts/permissions';
+import { requireCapability } from '@/lib/auth-guards';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -38,13 +36,8 @@ export async function GET(
 	const isPublic = photo.visibility === 'public' && photo.approved;
 
 	if (!isPublic) {
-		const session = await getServerSession(authOptions);
-		if (!session?.user?.id) {
-			return new Response('Unauthorized', { status: 401 });
-		}
-		if (!hasCapability(session.user, 'manage_event_photos')) {
-			return new Response('Forbidden', { status: 403 });
-		}
+		const gate = await requireCapability('manage_event_photos');
+		if (gate instanceof Response) return gate;
 	}
 
 	const storage = await getStorage();

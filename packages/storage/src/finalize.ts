@@ -35,6 +35,46 @@ export class UploadError extends Error {
 	}
 }
 
+/**
+ * The one place `UploadError.code` is translated. Consumers pick the projection they
+ * need — a tRPC code string (this package stays `@trpc`-free, so it's a literal) or an
+ * HTTP status for the raw upload route handler. Keeps the mapping from being re-derived
+ * per call site.
+ */
+export function uploadErrorTRPCCode(
+	code: UploadError['code'],
+): 'UNAUTHORIZED' | 'FORBIDDEN' | 'BAD_REQUEST' | 'TOO_MANY_REQUESTS' | 'NOT_FOUND' {
+	switch (code) {
+		case 'UNAUTHORIZED':
+			return 'UNAUTHORIZED';
+		case 'FORBIDDEN':
+			return 'FORBIDDEN';
+		case 'NOT_FOUND':
+			return 'NOT_FOUND';
+		case 'TOO_MANY':
+			return 'TOO_MANY_REQUESTS';
+		case 'BAD_REQUEST':
+		default:
+			return 'BAD_REQUEST';
+	}
+}
+
+export function uploadErrorHTTPStatus(code: UploadError['code']): number {
+	switch (code) {
+		case 'UNAUTHORIZED':
+			return 401;
+		case 'FORBIDDEN':
+			return 403;
+		case 'NOT_FOUND':
+			return 404;
+		case 'TOO_MANY':
+			return 429;
+		case 'BAD_REQUEST':
+		default:
+			return 400;
+	}
+}
+
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export interface UploadIntent {

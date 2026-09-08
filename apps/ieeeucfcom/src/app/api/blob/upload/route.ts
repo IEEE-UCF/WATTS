@@ -14,7 +14,13 @@ import { authOptions } from '@/lib/auth';
 import { db } from '@/lib/database/client';
 import { STORAGE_PROVIDER, getStorage } from '@watts/storage';
 import { vercelEnv } from '@watts/storage/env';
-import { authorizeUpload, finalizeUpload, UploadError, type UploadIntent } from '@watts/storage/finalize';
+import {
+	authorizeUpload,
+	finalizeUpload,
+	UploadError,
+	uploadErrorHTTPStatus,
+	type UploadIntent,
+} from '@watts/storage/finalize';
 
 export const runtime = 'nodejs';
 
@@ -31,21 +37,6 @@ const intentSchema = z.object({
 	caption: z.string().max(2000).nullish(),
 	tags: z.array(z.string().max(40)).max(20).optional(),
 });
-
-function errorStatus(code: UploadError['code']): number {
-	switch (code) {
-		case 'UNAUTHORIZED':
-			return 401;
-		case 'FORBIDDEN':
-			return 403;
-		case 'NOT_FOUND':
-			return 404;
-		case 'TOO_MANY':
-			return 429;
-		default:
-			return 400;
-	}
-}
 
 export async function POST(request: Request): Promise<Response> {
 	const session = await getServerSession(authOptions);
@@ -79,7 +70,7 @@ export async function POST(request: Request): Promise<Response> {
 			return NextResponse.json(json);
 		} catch (err) {
 			if (err instanceof UploadError) {
-				return NextResponse.json({ error: err.message }, { status: errorStatus(err.code) });
+				return NextResponse.json({ error: err.message }, { status: uploadErrorHTTPStatus(err.code) });
 			}
 			return NextResponse.json({ error: (err as Error).message }, { status: 400 });
 		}
@@ -107,7 +98,7 @@ export async function POST(request: Request): Promise<Response> {
 		});
 	} catch (err) {
 		if (err instanceof UploadError) {
-			return NextResponse.json({ error: err.message }, { status: errorStatus(err.code) });
+			return NextResponse.json({ error: err.message }, { status: uploadErrorHTTPStatus(err.code) });
 		}
 		if (err instanceof z.ZodError) {
 			return NextResponse.json({ error: 'Invalid request', issues: err.issues }, { status: 400 });

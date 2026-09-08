@@ -1,64 +1,45 @@
-import { Members, Users, MemberPermissions } from '@watts/db/schema';
-import { and, eq } from 'drizzle-orm';
+// Read-only "what can this user see" helpers for the frontend (nav links, banners).
+//
+// The role/permission facts all come from `ctx.getRoles()` — the per-request-memoised
+// `resolveMemberRoles` (@watts/core/members), the same resolver the enforcing
+// procedures and the NextAuth session callback use. This router does NOT do its own
+// `select … from Members`; that used to drift from the resolver (notably: the old
+// getAuthStatus built `permissions` without the capability-expiry filter).
+
+import { eq } from 'drizzle-orm';
+import { Members, Users } from '@watts/db/schema';
 import { publicProcedure, createTRPCRouter } from '../trpc';
 import { hasStaffCapability } from '@watts/permissions';
 
 export const authRouter = createTRPCRouter({
 	// current session
-	getSession: publicProcedure.query(({ ctx }) => {
-		return ctx.session;
-	}),
+	getSession: publicProcedure.query(({ ctx }) => ctx.session),
 
 	// check if user is authenticated
-	isAuthenticated: publicProcedure.query(({ ctx }): boolean => {
-		return !!ctx.session?.user;
-	}),
+	isAuthenticated: publicProcedure.query(({ ctx }): boolean => !!ctx.session?.user),
 
-	// check if it's a member
+	// has a members row
 	isMember: publicProcedure.query(async ({ ctx }): Promise<boolean> => {
-		if (!ctx.session?.user) return false;
-		const [member] = await ctx.db
-			.select({ id: Members.id })
-			.from(Members)
-			.where(eq(Members.userId, ctx.session.user.id))
-			.limit(1);
-		return !!member;
+		return (await ctx.getRoles()) !== null;
 	}),
 
-	// check if it is an officer
+	// officer_status = true
 	isOfficer: publicProcedure.query(async ({ ctx }): Promise<boolean> => {
-		if (!ctx.session?.user) return false;
-		const [member] = await ctx.db
-			.select({ officerStatus: Members.officerStatus })
-			.from(Members)
-			.where(eq(Members.userId, ctx.session.user.id))
-			.limit(1);
-		return member?.officerStatus || false;
+		return (await ctx.getRoles())?.officerStatus ?? false;
 	}),
 
-	// check if it's an admin
+	// administrator = true
 	isAdmin: publicProcedure.query(async ({ ctx }): Promise<boolean> => {
-		if (!ctx.session?.user) return false;
-		const [member] = await ctx.db
-			.select({ administrator: Members.administrator })
-			.from(Members)
-			.where(eq(Members.userId, ctx.session.user.id))
-			.limit(1);
-		return member?.administrator || false;
+		return (await ctx.getRoles())?.administrator ?? false;
 	}),
 
-	// get that role if officer
+	// officer role name, if any
 	getOfficerRole: publicProcedure.query(async ({ ctx }): Promise<string | null> => {
-		if (!ctx.session?.user) return null;
-		const [member] = await ctx.db
-			.select({ officerRole: Members.officerRole })
-			.from(Members)
-			.where(eq(Members.userId, ctx.session.user.id))
-			.limit(1);
-		return member?.officerRole || null;
+		return (await ctx.getRoles())?.officerRole ?? null;
 	}),
 
-	// check if it has paid dues
+	// dues_paid is a status flag, not a role — not part of MemberRoles, so this keeps
+	// its own narrow read.
 	hasPaidDues: publicProcedure.query(async ({ ctx }): Promise<boolean> => {
 		if (!ctx.session?.user) return false;
 		const [member] = await ctx.db
@@ -66,10 +47,10 @@ export const authRouter = createTRPCRouter({
 			.from(Members)
 			.where(eq(Members.userId, ctx.session.user.id))
 			.limit(1);
-		return member?.duesPaid || false;
+		return member?.duesPaid ?? false;
 	}),
 
-	// get complete auth status (combines all checks)
+	// everything the frontend needs in one call
 	getAuthStatus: publicProcedure.query(async ({ ctx }) => {
 		if (!ctx.session?.user) {
 			return {
@@ -87,7 +68,7 @@ export const authRouter = createTRPCRouter({
 			};
 		}
 
-		const [userWithDiscord] = await ctx.db
+		const [userRow] = await ctx.db
 			.select()
 			.from(Users)
 			.where(eq(Users.id, ctx.session.user.id))
@@ -99,22 +80,15 @@ export const authRouter = createTRPCRouter({
 			.where(eq(Members.userId, ctx.session.user.id))
 			.limit(1);
 
-		let permissions: string[] = [];
-		if (member) {
-			const grants = await ctx.db
-				.select({ permission: MemberPermissions.permission })
-				.from(MemberPermissions)
-				.where(and(eq(MemberPermissions.memberId, member.id), eq(MemberPermissions.active, true)));
-			permissions = [...new Set(grants.map((g) => g.permission))];
-		}
+		const roles = await ctx.getRoles();
+		const permissions = roles?.permissions ?? [];
+		const isOfficer = roles?.officerStatus ?? false;
+		const isAdmin = roles?.administrator ?? false;
 
-		let discordAvatar = userWithDiscord?.image || null;
-		if (!discordAvatar && userWithDiscord?.discordId) {
-			discordAvatar = `https://cdn.discordapp.com/embed/avatars/${parseInt(userWithDiscord.discordId) % 5}.png`;
+		let discordAvatar = userRow?.image || null;
+		if (!discordAvatar && userRow?.discordId) {
+			discordAvatar = `https://cdn.discordapp.com/embed/avatars/${parseInt(userRow.discordId) % 5}.png`;
 		}
-
-		const isOfficer = member?.officerStatus || false;
-		const isAdmin = member?.administrator || false;
 
 		return {
 			isAuthenticated: true,
@@ -122,14 +96,14 @@ export const authRouter = createTRPCRouter({
 			isOfficer,
 			isAdmin,
 			hasPaidDues: member?.duesPaid || false,
-			officerRole: member?.officerRole || null,
+			officerRole: roles?.officerRole ?? member?.officerRole ?? null,
 			permissions,
 			// Can this person reach /staff? admin, officer, or any *staff* capability
 			// (a member-facing grant like `upload_resume` does not count).
 			hasStaffAccess: isAdmin || isOfficer || hasStaffCapability(permissions),
 			user: ctx.session.user,
 			member: member || null,
-			profile: ctx.session?.user.discordId,
+			profile: ctx.session.user.discordId,
 			discordAvatar,
 		};
 	}),
