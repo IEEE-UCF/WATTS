@@ -2,9 +2,10 @@ import { NextAuthOptions } from 'next-auth';
 import DiscordProvider from 'next-auth/providers/discord';
 import { DrizzleAdapter } from '@auth/drizzle-adapter';
 import { db } from '@/lib/database/client';
-import { Accounts, Users, Sessions, Members, MemberPermissions } from '@watts/db/schema';
+import { Accounts, Users, Sessions } from '@watts/db/schema';
 import type { DiscordProfile } from 'next-auth/providers/discord';
-import { and, eq, isNull, or, gt } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
+import { resolveMemberRoles } from '@watts/core/members';
 
 export const authOptions: NextAuthOptions = {
 	adapter: DrizzleAdapter(db, {
@@ -50,28 +51,9 @@ export const authOptions: NextAuthOptions = {
 					.where(eq(Accounts.userId, user.id)) // u.id is the providerAccountId
 					.limit(1);
 
-				// get member info if exists
-				const [member] = await db
-					.select()
-					.from(Members)
-					.where(eq(Members.userId, user.id))
-					.limit(1);
-
-				// granular capability grants (active, not expired)
-				let permissions: string[] = [];
-				if (member) {
-					const rows = await db
-						.select({ permission: MemberPermissions.permission })
-						.from(MemberPermissions)
-						.where(
-							and(
-								eq(MemberPermissions.memberId, member.id),
-								eq(MemberPermissions.active, true),
-								or(isNull(MemberPermissions.expiresAt), gt(MemberPermissions.expiresAt, new Date())),
-							),
-						);
-					permissions = [...new Set(rows.map((r) => r.permission))];
-				}
+				// member row flags + active (non-expired) capability grants — one shared
+				// resolver, also used by the tRPC procedure gates.
+				const roles = await resolveMemberRoles(db, user.id);
 
 				return {
 					...session,
@@ -79,11 +61,11 @@ export const authOptions: NextAuthOptions = {
 						...session.user,
 						id: user.id,
 						discordId: account?.providerAccountId || null,
-						memberId: member?.id || null,
-						officerStatus: member?.officerStatus || false,
-						officerRole: member?.officerRole || null,
-						administrator: member?.administrator || false,
-						permissions,
+						memberId: roles?.memberId || null,
+						officerStatus: roles?.officerStatus || false,
+						officerRole: roles?.officerRole || null,
+						administrator: roles?.administrator || false,
+						permissions: roles?.permissions ?? [],
 					},
 				};
 			} catch (error) {

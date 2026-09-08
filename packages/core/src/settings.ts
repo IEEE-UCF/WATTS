@@ -1,9 +1,10 @@
 // Small key/value app-settings store backed by the `app_settings` table.
 // Values are JSON-encoded text. Add typed accessors here as settings are added.
+// (Was apps/ieeeucfcom/src/lib/settings.ts — now db-taking and framework-neutral.)
 
-import { db } from '@/lib/database/client';
-import { AppSettings } from '@watts/db/schema';
 import { eq } from 'drizzle-orm';
+import type { WattsDb } from '@watts/db';
+import { AppSettings } from '@watts/db/schema';
 import {
 	OFFICER_DELEGABLE_CAPABILITIES,
 	isOfficerDelegable,
@@ -12,7 +13,7 @@ import {
 
 const OFFICER_GRANTABLE_KEY = 'officer_grantable_capabilities';
 
-async function readJson<T>(key: string, fallback: T): Promise<T> {
+async function readJson<T>(db: WattsDb, key: string, fallback: T): Promise<T> {
 	const [row] = await db
 		.select({ value: AppSettings.value })
 		.from(AppSettings)
@@ -26,7 +27,7 @@ async function readJson<T>(key: string, fallback: T): Promise<T> {
 	}
 }
 
-async function writeJson(key: string, value: unknown): Promise<void> {
+async function writeJson(db: WattsDb, key: string, value: unknown): Promise<void> {
 	const encoded = JSON.stringify(value);
 	await db
 		.insert(AppSettings)
@@ -38,15 +39,18 @@ async function writeJson(key: string, value: unknown): Promise<void> {
  * Which capabilities an admin has allowed officers to grant/revoke for plain members.
  * Always a subset of OFFICER_DELEGABLE_CAPABILITIES. Default: none (admin opts in).
  */
-export async function getOfficerGrantableCapabilities(): Promise<OfficerDelegableCapability[]> {
-	const raw = await readJson<string[]>(OFFICER_GRANTABLE_KEY, []);
+export async function getOfficerGrantableCapabilities(
+	db: WattsDb,
+): Promise<OfficerDelegableCapability[]> {
+	const raw = await readJson<string[]>(db, OFFICER_GRANTABLE_KEY, []);
 	return OFFICER_DELEGABLE_CAPABILITIES.filter((c) => raw.includes(c));
 }
 
 export async function setOfficerGrantableCapabilities(
+	db: WattsDb,
 	caps: string[],
 ): Promise<OfficerDelegableCapability[]> {
 	const clean = [...new Set(caps.filter(isOfficerDelegable))];
-	await writeJson(OFFICER_GRANTABLE_KEY, clean);
+	await writeJson(db, OFFICER_GRANTABLE_KEY, clean);
 	return OFFICER_DELEGABLE_CAPABILITIES.filter((c) => clean.includes(c));
 }

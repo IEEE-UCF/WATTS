@@ -20,7 +20,7 @@ import {
 	// publicProcedure
 } from "../trpc";
 import { CAPABILITY_KEYS, isCapability, isOfficerDelegable } from '@watts/permissions';
-import { getOfficerGrantableCapabilities } from "@/lib/settings";
+import { getOfficerGrantableCapabilities } from "@watts/core/settings";
 
 // Validation schemas
 const memberRegistrationSchema = z.object({
@@ -266,7 +266,7 @@ export const memberRouter = createTRPCRouter({
 
 			// Officer (non-admin) delegation checks.
 			if (!ctx.roles.administrator) {
-				const allowed = await getOfficerGrantableCapabilities();
+				const allowed = await getOfficerGrantableCapabilities(db);
 				if (!isOfficerDelegable(input.permission) || !allowed.includes(input.permission)) {
 					throw new TRPCError({
 						code: "FORBIDDEN",

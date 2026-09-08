@@ -1,9 +1,10 @@
 import { z } from 'zod';
 import { createTRPCRouter, adminProcedure, officerProcedure } from '../trpc';
+import { db } from '@/lib/database/client';
 import {
 	getOfficerGrantableCapabilities,
 	setOfficerGrantableCapabilities,
-} from '@/lib/settings';
+} from '@watts/core/settings';
 import { OFFICER_DELEGABLE_CAPABILITIES } from '@watts/permissions';
 
 export const settingsRouter = createTRPCRouter({
@@ -13,13 +14,13 @@ export const settingsRouter = createTRPCRouter({
 	 */
 	officerGrantableCapabilities: officerProcedure.query(async () => ({
 		delegable: [...OFFICER_DELEGABLE_CAPABILITIES],
-		enabled: await getOfficerGrantableCapabilities(),
+		enabled: await getOfficerGrantableCapabilities(db),
 	})),
 
 	/** Admin-only: set the officer-delegable capability allow-list. */
 	setOfficerGrantableCapabilities: adminProcedure
 		.input(z.object({ capabilities: z.array(z.string().max(64)) }))
 		.mutation(async ({ input }) => ({
-			enabled: await setOfficerGrantableCapabilities(input.capabilities),
+			enabled: await setOfficerGrantableCapabilities(db, input.capabilities),
 		})),
 });

@@ -1,0 +1,20 @@
+{
+  "name": "@watts/core",
+  "version": "0.0.0",
+  "private": true,
+  "description": "WATTS shared domain layer — db-taking functions with domain invariants. Framework-neutral: no next / react / @trpc / discord.js / zod.",
+  "type": "module",
+  "exports": {
+    "./errors": "./src/errors.ts",
+    "./members": "./src/members.ts",
+    "./settings": "./src/settings.ts"
+  },
+  "dependencies": {
+    "@watts/db": "workspace:*",
+    "@watts/permissions": "workspace:*",
+    "drizzle-orm": "0.44.7"
+  },
+  "devDependencies": {
+    "@watts/tsconfig": "workspace:*"
+  }
+}

@@ -7,9 +7,10 @@ import { getServerSession } from 'next-auth';
 import type { Session } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { db } from '@/lib/database/client';
-import { Members, MemberPermissions } from '@watts/db/schema';
-import { and, eq, gt, isNull, or } from 'drizzle-orm';
+import { Members } from '@watts/db/schema';
+import { eq } from 'drizzle-orm';
 import { hasCapability, type Capability } from '@watts/permissions';
+import { resolveMemberRoles } from '@watts/core/members';
 /**
  * Isomorphic Session getter for API requests
  */
@@ -95,49 +96,11 @@ export const protectedProcedure = t.procedure.use(timingMiddleware).use(({ ctx, 
 	});
 });
 
-// determines if officer or if admin, helper stuff
-
-interface MemberRoles {
-	memberId: string;
-	officerStatus: boolean;
-	administrator: boolean;
-	permissions: string[];
-}
-
-async function getMemberRoles(userId: string): Promise<MemberRoles | null> {
-	const [member] = await db
-		.select({
-			id: Members.id,
-			officerStatus: Members.officerStatus,
-			administrator: Members.administrator,
-		})
-		.from(Members)
-		.where(eq(Members.userId, userId))
-		.limit(1);
-
-	if (!member) return null;
-
-	const grants = await db
-		.select({ permission: MemberPermissions.permission })
-		.from(MemberPermissions)
-		.where(
-			and(
-				eq(MemberPermissions.memberId, member.id),
-				eq(MemberPermissions.active, true),
-				or(isNull(MemberPermissions.expiresAt), gt(MemberPermissions.expiresAt, new Date())),
-			),
-		);
-
-	return {
-		memberId: member.id,
-		officerStatus: member.officerStatus,
-		administrator: member.administrator,
-		permissions: [...new Set(grants.map((g) => g.permission))],
-	};
-}
+// determines if officer or if admin, helper stuff — role resolution lives in
+// @watts/core/members (one implementation, shared with the NextAuth session callback).
 
 async function userIsAdmin(userId: string): Promise<boolean> {
-	const roles = await getMemberRoles(userId);
+	const roles = await resolveMemberRoles(db, userId);
 	return roles?.administrator === true;
 }
 
@@ -148,7 +111,7 @@ async function userIsAdmin(userId: string): Promise<boolean> {
  * Admins are granted officer-level access implicitly.
  */
 export const officerProcedure = protectedProcedure.use(async ({ ctx, next }) => {
-	const roles = await getMemberRoles(ctx.session.user.id);
+	const roles = await resolveMemberRoles(db, ctx.session.user.id);
 
 	if (!roles || (!roles.officerStatus && !roles.administrator)) {
 		throw new TRPCError({
@@ -173,7 +136,7 @@ export const officerProcedure = protectedProcedure.use(async ({ ctx, next }) => 
  */
 export function capabilityProcedure(cap: Capability) {
 	return protectedProcedure.use(async ({ ctx, next }) => {
-		const roles = await getMemberRoles(ctx.session.user.id);
+		const roles = await resolveMemberRoles(db, ctx.session.user.id);
 		if (!hasCapability(roles, cap)) {
 			throw new TRPCError({
 				code: 'FORBIDDEN',
