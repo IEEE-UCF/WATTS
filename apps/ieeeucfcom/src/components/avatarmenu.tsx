@@ -11,7 +11,7 @@ import {
 	//   NavigationMenuList,
 	NavigationMenuTrigger,
 	//   navigationMenuTriggerStyle,
-} from '@/components/ui/navigation-menu';
+} from '@watts/ui/navigation-menu';
 
 interface AvatarMenuProps {
 	image: string; // Define the type for the image prop

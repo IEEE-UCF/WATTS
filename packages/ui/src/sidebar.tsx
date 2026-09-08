@@ -3,10 +3,10 @@
 import * as React from 'react';
 import { PanelLeft } from 'lucide-react';
 
-import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
-import { Sheet, SheetContent } from '@/components/ui/sheet';
-import { TooltipProvider } from '@/components/ui/tooltip';
+import { cn } from './cn';
+import { Button } from './button';
+import { Sheet, SheetContent } from './sheet';
+import { TooltipProvider } from './tooltip';
 
 const useIsMobile = () => {
 	const [isMobile, setIsMobile] = React.useState(false);

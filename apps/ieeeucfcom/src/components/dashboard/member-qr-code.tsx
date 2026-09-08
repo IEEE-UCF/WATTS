@@ -20,7 +20,7 @@
 import React from "react";
 import MemberQRCode from "@/components/pg/memberqrcode-gen";
 import { trpc } from "@/lib/trpc/client";
-import { Card } from "@/components/ui/card";
+import { Card } from '@watts/ui/card';
 
 export const Member_QR_Code = () => {
 	// ============================================

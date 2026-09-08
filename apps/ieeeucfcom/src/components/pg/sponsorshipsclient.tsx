@@ -3,7 +3,7 @@
 import Image from 'next/image';
 import { useEffect, useState } from 'react';
 import Autoplay from 'embla-carousel-autoplay';
-import { Carousel, CarouselContent, CarouselItem } from '@/components/ui/carousel';
+import { Carousel, CarouselContent, CarouselItem } from '@watts/ui/carousel';
 
 // ---------------------------------------------------------------------------
 // Hardcoded sponsor list — swap logos/names/URLs as needed

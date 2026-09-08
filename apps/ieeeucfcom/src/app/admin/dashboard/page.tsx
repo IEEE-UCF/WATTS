@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { Navbar } from '@/components/navbar';
 import { FormPopup } from '@/components/dashboard/newEventForm';
 import { EventList } from '@/components/dashboard/event-list';
-import { Card, CardHeader } from '@/components/ui/card';
+import { Card, CardHeader } from '@watts/ui/card';
 import { QREventScanner } from '@/components/admin/qr_event_scanner';
 
 const ADMIN_TOOLS = [

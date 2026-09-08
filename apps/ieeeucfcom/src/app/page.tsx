@@ -8,8 +8,8 @@ import { Footer } from '@/components/footer';
 import { Timer } from '@/components/timer';
 
 import Autoplay from 'embla-carousel-autoplay';
-import { Carousel, CarouselContent, CarouselItem } from '@/components/ui/carousel';
-import { Card, CardContent } from '@/components/ui/card';
+import { Carousel, CarouselContent, CarouselItem } from '@watts/ui/carousel';
+import { Card, CardContent } from '@watts/ui/card';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 

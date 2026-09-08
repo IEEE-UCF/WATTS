@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import QRCode from "qrcode";
-import { Card, CardTitle } from "@/components/ui/card";
+import { Card, CardTitle } from '@watts/ui/card';
 import { trpc } from "@/lib/trpc/client";
 import { useSession } from "next-auth/react";
 

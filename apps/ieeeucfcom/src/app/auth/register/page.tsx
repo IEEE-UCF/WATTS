@@ -5,14 +5,14 @@
 
 import { majorEnums } from "@watts/db/schema";
 
-import { Button } from "@/components/ui/button";
+import { Button } from '@watts/ui/button';
 import {
 	Field,
 	FieldGroup,
 	FieldLabel,
 	FieldSet,
-} from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
+} from '@watts/ui/field';
+import { Input } from '@watts/ui/input';
 import {
 	// please deploy
 	Select,
@@ -20,7 +20,7 @@ import {
 	SelectItem,
 	SelectTrigger,
 	SelectValue,
-} from "@/components/ui/select";
+} from '@watts/ui/select';
 import { signIn, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useState, useEffect, useCallback } from "react";

@@ -1,0 +1,52 @@
+{
+  "name": "@watts/ui",
+  "version": "0.0.0",
+  "private": true,
+  "description": "WATTS shared UI primitives — shadcn 'new-york' / stone components + cn(). Website-only (React).",
+  "type": "module",
+  "exports": {
+    "./cn": "./src/cn.ts",
+    "./accordion": "./src/accordion.tsx",
+    "./button": "./src/button.tsx",
+    "./card": "./src/card.tsx",
+    "./carousel": "./src/carousel.tsx",
+    "./chart": "./src/chart.tsx",
+    "./field": "./src/field.tsx",
+    "./hover-card": "./src/hover-card.tsx",
+    "./input": "./src/input.tsx",
+    "./label": "./src/label.tsx",
+    "./navigation-menu": "./src/navigation-menu.tsx",
+    "./scroll-area": "./src/scroll-area.tsx",
+    "./select": "./src/select.tsx",
+    "./separator": "./src/separator.tsx",
+    "./sheet": "./src/sheet.tsx",
+    "./sidebar": "./src/sidebar.tsx",
+    "./tooltip": "./src/tooltip.tsx"
+  },
+  "dependencies": {
+    "@radix-ui/react-accordion": "^1.2.12",
+    "@radix-ui/react-dialog": "^1.1.15",
+    "@radix-ui/react-hover-card": "^1.1.15",
+    "@radix-ui/react-label": "^2.1.8",
+    "@radix-ui/react-navigation-menu": "^1.2.14",
+    "@radix-ui/react-select": "^2.2.6",
+    "@radix-ui/react-separator": "^1.1.8",
+    "@radix-ui/react-slot": "^1.2.4",
+    "@radix-ui/react-tooltip": "^1.2.8",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "embla-carousel-react": "^8.6.0",
+    "lucide-react": "^0.510.0",
+    "radix-ui": "^1.4.3",
+    "recharts": "^2.15.4",
+    "tailwind-merge": "^3.4.0"
+  },
+  "peerDependencies": {
+    "react": "^19",
+    "react-dom": "^19"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.13",
+    "@watts/tsconfig": "workspace:*"
+  }
+}

@@ -5,7 +5,7 @@ import {
 	AccordionContent,
 	AccordionItem,
 	AccordionTrigger,
-} from '@/components/ui/accordion';
+} from '@watts/ui/accordion';
 
 import Image from 'next/image';
 

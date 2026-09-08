@@ -1,10 +1,10 @@
 "use client";
 
 import { majorEnums } from "@watts/db/schema";
-import { Button } from "@/components/ui/button";
-import { Field, FieldGroup, FieldLabel, FieldSet } from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Button } from '@watts/ui/button';
+import { Field, FieldGroup, FieldLabel, FieldSet } from '@watts/ui/field';
+import { Input } from '@watts/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@watts/ui/select';
 import { signOut, useSession } from "next-auth/react";
 import { useState } from "react";
 import { trpc } from "@/lib/trpc/client";

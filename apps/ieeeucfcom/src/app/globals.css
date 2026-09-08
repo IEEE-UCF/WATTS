@@ -2,6 +2,10 @@
 @import 'tw-animate-css';
 @import 'tailwindcss';
 
+/* Workspace UI package ships raw .tsx — Tailwind v4 auto-detects only files under
+   this app, so point it at @watts/ui's source too. */
+@source '../../../../packages/ui/src';
+
 :root {
 	--primary: oklch(0.216 0.006 56.043);
 	--background: oklch(1 0 0);

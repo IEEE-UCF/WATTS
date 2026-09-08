@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { MapPin, CalendarIcon as Calendar1, X } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Button } from '@watts/ui/button';
 import Image from 'next/image';
 import { trpc } from '@/lib/trpc/client';
 

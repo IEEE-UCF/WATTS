@@ -1,7 +1,7 @@
 'use client';
 import React from 'react';
-import { Card, CardContent, CardTitle } from '@/components/ui/card';
-import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
+import { Card, CardContent, CardTitle } from '@watts/ui/card';
+import { ScrollArea, ScrollBar } from '@watts/ui/scroll-area';
 import { trpc } from '@/lib/trpc/client';
 
 export const EventList = () => {

@@ -2,11 +2,11 @@
 
 import Image from 'next/image';
 import { Navbar } from '@/components/navbar';
-import { SidebarProvider } from '@/components/ui/sidebar';
+import { SidebarProvider } from '@watts/ui/sidebar';
 import { useState, useEffect, useRef } from 'react';
 import { ChevronRight, X } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@watts/ui/button';
+import { Card, CardContent } from '@watts/ui/card';
 import { Footer } from '@/components/footer';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';

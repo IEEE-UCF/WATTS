@@ -2,7 +2,7 @@ import { Navbar } from '@/components/navbar';
 import { Footer } from '@/components/footer';
 import Image from 'next/image';
 import Link from 'next/link';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent } from '@watts/ui/card';
 import { Metadata } from 'next';
 
 const pageTitle = 'Connect | IEEE UCF';

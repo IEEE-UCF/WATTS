@@ -1,7 +1,7 @@
 import { Navbar } from "@/components/navbar";
 import { EventList } from "@/components/dashboard/event-list";
 import { Member_QR_Code } from "@/components/dashboard/member-qr-code";
-import { Card, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle } from '@watts/ui/card';
 
 export default function Dashboard() {
 	return (
