@@ -1,44 +1,58 @@
-// rarely should be edited, generated with basic t3 stack config usually
+// tRPC core for WATTS: transformer, error formatter, procedure builders, and the
+// role/capability gates. Framework-neutral — no next / next-auth. The context is
+// injected: the caller (a Next route handler, an RSC caller, a test) resolves the
+// session and hands in a Drizzle client.
 
 import { initTRPC, TRPCError } from '@trpc/server';
 import superjson from 'superjson';
 import { ZodError } from 'zod';
-import { getServerSession } from 'next-auth';
-import type { Session } from 'next-auth';
-import { authOptions } from '@/lib/auth';
-import { db } from '@/lib/database/client';
-import { Members } from '@watts/db/schema';
 import { eq } from 'drizzle-orm';
+import type { WattsDb } from '@watts/db';
+import { Members } from '@watts/db/schema';
 import { hasCapability, type Capability } from '@watts/permissions';
 import { resolveMemberRoles } from '@watts/core/members';
-/**
- * Isomorphic Session getter for API requests
- */
-const isomorphicGetSession = async (headers: Headers): Promise<Session | null> => {
-	const authToken = headers.get('Authorization');
-
-	if (authToken) {
-		return getServerSession(authOptions);
-	}
-
-	return getServerSession(authOptions);
-};
 
 /**
- * 1. CONTEXT
+ * Structural stand-in for a next-auth Session — keeps this package next-auth-free.
+ * The app's augmented `Session` (src/types/next-auth.d.ts) is assignable to this.
  */
-export const createTRPCContext = async (opts: { headers: Headers; session: Session | null }) => {
-	const authToken = opts.headers.get('Authorization') ?? null;
-	const session = await isomorphicGetSession(opts.headers);
-	const source = opts.headers.get('x-trpc-source') ?? 'unknown';
+export interface ApiSessionUser {
+	id: string;
+	name?: string | null;
+	email?: string | null;
+	image?: string | null;
+	discordId?: string | null;
+	memberId?: string | null;
+	officerStatus?: boolean;
+	officerRole?: string | null;
+	administrator?: boolean;
+	permissions?: string[];
+}
+export interface ApiSession {
+	user?: ApiSessionUser | null;
+	expires?: string;
+}
 
-	console.log('>>> tRPC Request from', source, 'by', session?.user);
+/**
+ * 1. CONTEXT — injected. The route handler / RSC caller resolves the session
+ *    (getServerSession) and passes the app's Drizzle client; nothing here reaches
+ *    for a singleton.
+ */
+export interface CreateContextOptions {
+	db: WattsDb;
+	session: ApiSession | null;
+	headers?: Headers;
+}
+
+export const createTRPCContext = (opts: CreateContextOptions) => {
+	const source = opts.headers?.get('x-trpc-source') ?? 'unknown';
+	console.log('>>> tRPC Request from', source, 'by', opts.session?.user);
 
 	return {
-		session,
-		opts,
-		token: authToken,
-		db,
+		session: opts.session,
+		db: opts.db,
+		headers: opts.headers,
+		token: opts.headers?.get('Authorization') ?? null,
 	};
 };
 
@@ -89,9 +103,10 @@ export const protectedProcedure = t.procedure.use(timingMiddleware).use(({ ctx, 
 	if (!ctx.session?.user) {
 		throw new TRPCError({ code: 'UNAUTHORIZED' });
 	}
+	// Re-shape so `session.user` is non-nullable for every downstream procedure.
 	return next({
 		ctx: {
-			session: ctx.session,
+			session: { ...ctx.session, user: ctx.session.user },
 		},
 	});
 });
@@ -99,7 +114,7 @@ export const protectedProcedure = t.procedure.use(timingMiddleware).use(({ ctx, 
 // determines if officer or if admin, helper stuff — role resolution lives in
 // @watts/core/members (one implementation, shared with the NextAuth session callback).
 
-async function userIsAdmin(userId: string): Promise<boolean> {
+async function userIsAdmin(db: WattsDb, userId: string): Promise<boolean> {
 	const roles = await resolveMemberRoles(db, userId);
 	return roles?.administrator === true;
 }
@@ -111,7 +126,7 @@ async function userIsAdmin(userId: string): Promise<boolean> {
  * Admins are granted officer-level access implicitly.
  */
 export const officerProcedure = protectedProcedure.use(async ({ ctx, next }) => {
-	const roles = await resolveMemberRoles(db, ctx.session.user.id);
+	const roles = await resolveMemberRoles(ctx.db, ctx.session.user.id);
 
 	if (!roles || (!roles.officerStatus && !roles.administrator)) {
 		throw new TRPCError({
@@ -132,11 +147,11 @@ export const officerProcedure = protectedProcedure.use(async ({ ctx, next }) => 
  * Capability procedure factory.
  *
  * Passes if the caller is an admin, an officer, OR holds the named granular
- * capability (an active member_permissions row). See src/lib/permissions.ts.
+ * capability (an active member_permissions row). See @watts/permissions.
  */
 export function capabilityProcedure(cap: Capability) {
 	return protectedProcedure.use(async ({ ctx, next }) => {
-		const roles = await resolveMemberRoles(db, ctx.session.user.id);
+		const roles = await resolveMemberRoles(ctx.db, ctx.session.user.id);
 		if (!hasCapability(roles, cap)) {
 			throw new TRPCError({
 				code: 'FORBIDDEN',
@@ -154,7 +169,7 @@ export function capabilityProcedure(cap: Capability) {
  * Use this for admin-only features like managing members.
  */
 export const adminProcedure = protectedProcedure.use(async ({ ctx, next }) => {
-	const isAdmin = await userIsAdmin(ctx.session.user.id);
+	const isAdmin = await userIsAdmin(ctx.db, ctx.session.user.id);
 
 	if (!isAdmin) {
 		throw new TRPCError({
@@ -177,7 +192,7 @@ export const adminProcedure = protectedProcedure.use(async ({ ctx, next }) => {
  * Use this for member-only features.
  */
 export const memberProcedure = protectedProcedure.use(async ({ ctx, next }) => {
-	const member = await db
+	const member = await ctx.db
 		.select()
 		.from(Members)
 		.where(eq(Members.userId, ctx.session.user.id))

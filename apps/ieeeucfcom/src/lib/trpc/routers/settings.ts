@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { createTRPCRouter, adminProcedure, officerProcedure } from '../trpc';
+import { createTRPCRouter, adminProcedure, officerProcedure } from '@watts/api/trpc';
 import { db } from '@/lib/database/client';
 import {
 	getOfficerGrantableCapabilities,

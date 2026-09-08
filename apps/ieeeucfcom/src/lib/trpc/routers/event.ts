@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { db } from '@/lib/database/client';
 import { EventPhotos } from '@watts/db/schema';
 import { eq, desc, and, sql } from 'drizzle-orm';
-import { publicProcedure, capabilityProcedure, createTRPCRouter } from '../trpc';
+import { publicProcedure, capabilityProcedure, createTRPCRouter } from '@watts/api/trpc';
 import { DateTime } from 'luxon';
 import { finalizeUpload, UploadError } from '@watts/storage/finalize';
 import { getStorage } from '@watts/storage';

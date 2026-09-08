@@ -7,7 +7,7 @@ import {
 	memberProcedure,
 	officerProcedure,
 	createTRPCRouter,
-} from "../trpc";
+} from '@watts/api/trpc';
 import {
 	registerMember,
 	updateMemberProfile,

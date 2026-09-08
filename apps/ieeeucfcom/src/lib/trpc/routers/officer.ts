@@ -6,7 +6,7 @@ import {
 	adminProcedure,
 	capabilityProcedure,
 	createTRPCRouter,
-} from "../trpc";
+} from '@watts/api/trpc';
 import { listOfficers, getOfficerById } from "@watts/core/officers";
 import { setMemberOfficer, listMemberResumes } from "@watts/core/members";
 import { mapDomainError } from "../map-domain-error";

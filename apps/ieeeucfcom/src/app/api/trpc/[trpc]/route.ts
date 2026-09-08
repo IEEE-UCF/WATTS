@@ -1,8 +1,9 @@
 import { fetchRequestHandler } from "@trpc/server/adapters/fetch";
-import { appRouter } from "@/lib/trpc/root";
-import { createTRPCContext } from "@/lib/trpc/trpc";
 import { getServerSession } from "next-auth";
+import { appRouter } from "@/lib/trpc/root";
+import { createTRPCContext } from "@watts/api/trpc";
 import { authOptions } from "@/lib/auth";
+import { db } from "@/lib/database/client";
 
 const handler = async (req: Request) => {
 	const session = await getServerSession(authOptions);
@@ -13,8 +14,9 @@ const handler = async (req: Request) => {
 		router: appRouter,
 		createContext: () =>
 			createTRPCContext({
-				headers: req.headers,
+				db,
 				session,
+				headers: req.headers,
 			}),
 		onError:
       process.env.NODE_ENV === "development"

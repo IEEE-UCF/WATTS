@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { db } from '@/lib/database/client';
-import { publicProcedure, adminProcedure, createTRPCRouter } from '../trpc';
+import { publicProcedure, adminProcedure, createTRPCRouter } from '@watts/api/trpc';
 import {
 	listActiveProjects,
 	getProjectById,

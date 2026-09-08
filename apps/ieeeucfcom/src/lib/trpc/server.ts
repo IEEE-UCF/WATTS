@@ -1,20 +1,15 @@
 import 'server-only';
 
-import { createCallerFactory } from './trpc';
-import { appRouter } from './root';
 import { getServerSession } from 'next-auth';
+import { createCallerFactory, createTRPCContext } from '@watts/api/trpc';
 import { authOptions } from '@/lib/auth';
-import { createTRPCContext } from './trpc';
+import { db } from '@/lib/database/client';
+import { appRouter } from './root';
 
 const createCaller = createCallerFactory(appRouter);
 
 export const serverTrpc = async () => {
 	const session = await getServerSession(authOptions);
 
-	return createCaller(
-		await createTRPCContext({
-			headers: new Headers(),
-			session,
-		}),
-	);
+	return createCaller(createTRPCContext({ db, session, headers: new Headers() }));
 };

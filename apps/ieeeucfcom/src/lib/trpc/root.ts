@@ -1,5 +1,5 @@
 import { memberRouter } from '@/lib/trpc/routers/member';
-import { createTRPCRouter, createCallerFactory } from './trpc';
+import { createTRPCRouter, createCallerFactory } from '@watts/api/trpc';
 import { authRouter } from './routers/auth';
 import { eventRouter } from './routers/event';
 import { officerRouter } from './routers/officer';

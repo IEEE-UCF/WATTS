@@ -20,7 +20,7 @@ export interface AudienceUser {
 
 /** Structural stand-in for a next-auth Session — keeps this package next-auth-free. */
 export interface SessionLike {
-	user?: (AudienceUser & { id?: string; [k: string]: unknown }) | null;
+	user?: (AudienceUser & { id?: string }) | null;
 }
 
 export function canUploadResume(user: AudienceUser | null | undefined): boolean {

@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { eq } from 'drizzle-orm';
 import { db } from '@/lib/database/client';
 import { Members } from '@watts/db/schema';
-import { createTRPCRouter, protectedProcedure } from '../trpc';
+import { createTRPCRouter, protectedProcedure } from '@watts/api/trpc';
 import { RESUME_UPLOAD_AUDIENCE, canUploadResumeSession } from '@watts/storage/audience';
 import { finalizeUpload, UploadError } from '@watts/storage/finalize';
 import { resumeKey, sanitizeFilename } from '@watts/storage/keys';
