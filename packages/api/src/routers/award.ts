@@ -1,6 +1,5 @@
 import { z } from 'zod';
-import { db } from '@/lib/database/client';
-import { publicProcedure, adminProcedure, createTRPCRouter } from '@watts/api/trpc';
+import { publicProcedure, adminProcedure, createTRPCRouter } from '../trpc';
 import {
 	listAwards,
 	getAwardById,
@@ -25,9 +24,9 @@ const awardUpdateSchema = awardCreateSchema.partial();
 export const awardRouter = createTRPCRouter({
 	getAll: publicProcedure
 		.input(z.object({ year: z.number().int().optional() }).optional())
-		.query(async ({ input }) => {
+		.query(async ({ ctx, input }) => {
 			try {
-				return await listAwards(db, input);
+				return await listAwards(ctx.db, input);
 			} catch (error) {
 				mapDomainError(error);
 			}
@@ -35,9 +34,9 @@ export const awardRouter = createTRPCRouter({
 
 	getById: publicProcedure
 		.input(z.object({ id: z.string().uuid() }))
-		.query(async ({ input }) => {
+		.query(async ({ ctx, input }) => {
 			try {
-				return await getAwardById(db, input.id);
+				return await getAwardById(ctx.db, input.id);
 			} catch (error) {
 				mapDomainError(error);
 			}
@@ -45,9 +44,9 @@ export const awardRouter = createTRPCRouter({
 
 	create: adminProcedure
 		.input(awardCreateSchema)
-		.mutation(async ({ input }) => {
+		.mutation(async ({ ctx, input }) => {
 			try {
-				return { success: true, ...(await createAward(db, input)) };
+				return { success: true, ...(await createAward(ctx.db, input)) };
 			} catch (error) {
 				mapDomainError(error);
 			}
@@ -55,9 +54,9 @@ export const awardRouter = createTRPCRouter({
 
 	update: adminProcedure
 		.input(z.object({ id: z.string().uuid(), data: awardUpdateSchema }))
-		.mutation(async ({ input }) => {
+		.mutation(async ({ ctx, input }) => {
 			try {
-				return { success: true, ...(await updateAward(db, input.id, input.data)) };
+				return { success: true, ...(await updateAward(ctx.db, input.id, input.data)) };
 			} catch (error) {
 				mapDomainError(error);
 			}
@@ -65,9 +64,9 @@ export const awardRouter = createTRPCRouter({
 
 	delete: adminProcedure
 		.input(z.object({ id: z.string().uuid() }))
-		.mutation(async ({ input }) => {
+		.mutation(async ({ ctx, input }) => {
 			try {
-				await deleteAward(db, input.id);
+				await deleteAward(ctx.db, input.id);
 				return { success: true };
 			} catch (error) {
 				mapDomainError(error);

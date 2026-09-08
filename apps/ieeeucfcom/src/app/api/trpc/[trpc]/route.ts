@@ -1,7 +1,6 @@
 import { fetchRequestHandler } from "@trpc/server/adapters/fetch";
 import { getServerSession } from "next-auth";
-import { appRouter } from "@/lib/trpc/root";
-import { createTRPCContext } from "@watts/api/trpc";
+import { appRouter, createTRPCContext } from "@watts/api";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/database/client";
 

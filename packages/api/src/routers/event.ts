@@ -1,9 +1,8 @@
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
-import { db } from '@/lib/database/client';
 import { EventPhotos } from '@watts/db/schema';
 import { eq, desc, and, sql } from 'drizzle-orm';
-import { publicProcedure, capabilityProcedure, createTRPCRouter } from '@watts/api/trpc';
+import { publicProcedure, capabilityProcedure, createTRPCRouter } from '../trpc';
 import { DateTime } from 'luxon';
 import { finalizeUpload, UploadError } from '@watts/storage/finalize';
 import { getStorage } from '@watts/storage';
@@ -78,9 +77,9 @@ const eventCreateSchema = z.object({
 const eventUpdateSchema = eventCreateSchema.partial();
 
 export const eventRouter = createTRPCRouter({
-	getAll: publicProcedure.query(async () => {
+	getAll: publicProcedure.query(async ({ ctx }) => {
 		try {
-			const events = await listActiveEvents(db);
+			const events = await listActiveEvents(ctx.db);
 			return events.map(toDisplay);
 		} catch (error) {
 			mapDomainError(error);
@@ -89,9 +88,9 @@ export const eventRouter = createTRPCRouter({
 
 	getById: publicProcedure
 		.input(z.object({ id: z.string().uuid() }))
-		.query(async ({ input }) => {
+		.query(async ({ ctx, input }) => {
 			try {
-				return toDisplay(await getEventById(db, input.id));
+				return toDisplay(await getEventById(ctx.db, input.id));
 			} catch (error) {
 				mapDomainError(error);
 			}
@@ -99,9 +98,9 @@ export const eventRouter = createTRPCRouter({
 
 	getBySlug: publicProcedure
 		.input(z.object({ slug: z.string() }))
-		.query(async ({ input }) => {
+		.query(async ({ ctx, input }) => {
 			try {
-				return toDisplay(await getEventBySlug(db, input.slug));
+				return toDisplay(await getEventBySlug(ctx.db, input.slug));
 			} catch (error) {
 				mapDomainError(error);
 			}
@@ -109,9 +108,9 @@ export const eventRouter = createTRPCRouter({
 
 	create: manageEvents
 		.input(eventCreateSchema)
-		.mutation(async ({ input }) => {
+		.mutation(async ({ ctx, input }) => {
 			try {
-				return { success: true, ...(await createEvent(db, input)) };
+				return { success: true, ...(await createEvent(ctx.db, input)) };
 			} catch (error) {
 				mapDomainError(error);
 			}
@@ -119,9 +118,9 @@ export const eventRouter = createTRPCRouter({
 
 	update: manageEvents
 		.input(z.object({ id: z.string().uuid(), data: eventUpdateSchema }))
-		.mutation(async ({ input }) => {
+		.mutation(async ({ ctx, input }) => {
 			try {
-				return { success: true, ...(await updateEvent(db, input.id, input.data)) };
+				return { success: true, ...(await updateEvent(ctx.db, input.id, input.data)) };
 			} catch (error) {
 				mapDomainError(error);
 			}
@@ -129,9 +128,9 @@ export const eventRouter = createTRPCRouter({
 
 	delete: manageEvents
 		.input(z.object({ id: z.string().uuid() }))
-		.mutation(async ({ input }) => {
+		.mutation(async ({ ctx, input }) => {
 			try {
-				await deleteEvent(db, input.id);
+				await deleteEvent(ctx.db, input.id);
 				return { success: true };
 			} catch (error) {
 				mapDomainError(error);
@@ -150,9 +149,9 @@ export const eventRouter = createTRPCRouter({
 				discordId: z.string().min(1),
 			}),
 		)
-		.mutation(async ({ input }) => {
+		.mutation(async ({ ctx, input }) => {
 			try {
-				return { success: true, ...(await checkInMember(db, input)) };
+				return { success: true, ...(await checkInMember(ctx.db, input)) };
 			} catch (error) {
 				mapDomainError(error);
 			}
@@ -163,8 +162,8 @@ export const eventRouter = createTRPCRouter({
 	/** Public event feed: only photos explicitly marked public (and approved). */
 	listPhotos: publicProcedure
 		.input(z.object({ eventId: z.string().uuid() }))
-		.query(async ({ input }) => {
-			return db
+		.query(async ({ ctx, input }) => {
+			return ctx.db
 				.select({
 					id: EventPhotos.id,
 					webUrl: EventPhotos.webUrl,
@@ -190,8 +189,8 @@ export const eventRouter = createTRPCRouter({
 	/** Internal grid: every photo for an event. Officers + admins. */
 	adminListPhotos: managePhotos
 		.input(z.object({ eventId: z.string().uuid() }))
-		.query(async ({ input }) => {
-			return db
+		.query(async ({ ctx, input }) => {
+			return ctx.db
 				.select()
 				.from(EventPhotos)
 				.where(eq(EventPhotos.eventId, input.eventId))
@@ -208,7 +207,7 @@ export const eventRouter = createTRPCRouter({
 				limit: z.number().int().min(1).max(100).default(50),
 			}),
 		)
-		.query(async ({ input }) => {
+		.query(async ({ ctx, input }) => {
 			const clauses = [];
 			if (input.eventId) clauses.push(eq(EventPhotos.eventId, input.eventId));
 			if (input.tag) clauses.push(sql`${input.tag.toLowerCase()} = ANY(${EventPhotos.tags})`);
@@ -217,7 +216,7 @@ export const eventRouter = createTRPCRouter({
 					sql`to_tsvector('english', ${EventPhotos.searchText}) @@ websearch_to_tsquery('english', ${input.q})`,
 				);
 			}
-			return db
+			return ctx.db
 				.select()
 				.from(EventPhotos)
 				.where(clauses.length ? and(...clauses) : undefined)
@@ -242,7 +241,7 @@ export const eventRouter = createTRPCRouter({
 		.mutation(async ({ ctx, input }) => {
 			const keys = newPhotoKeys(input.eventId, input.photoId);
 			try {
-				return await finalizeUpload(db, {
+				return await finalizeUpload(ctx.db, {
 					kind: 'event-photo',
 					key: keys.webKey,
 					userId: ctx.session.user.id,
@@ -280,8 +279,8 @@ export const eventRouter = createTRPCRouter({
 				approved: z.boolean().optional(),
 			}),
 		)
-		.mutation(async ({ input }) => {
-			const [current] = await db
+		.mutation(async ({ ctx, input }) => {
+			const [current] = await ctx.db
 				.select()
 				.from(EventPhotos)
 				.where(eq(EventPhotos.id, input.id))
@@ -294,7 +293,7 @@ export const eventRouter = createTRPCRouter({
 				.join(' ')
 				.trim();
 
-			const [updated] = await db
+			const [updated] = await ctx.db
 				.update(EventPhotos)
 				.set({
 					caption: caption ?? null,
@@ -312,8 +311,8 @@ export const eventRouter = createTRPCRouter({
 
 	deletePhoto: managePhotos
 		.input(z.object({ id: z.string().uuid() }))
-		.mutation(async ({ input }) => {
-			const [photo] = await db
+		.mutation(async ({ ctx, input }) => {
+			const [photo] = await ctx.db
 				.select()
 				.from(EventPhotos)
 				.where(eq(EventPhotos.id, input.id))
@@ -325,7 +324,7 @@ export const eventRouter = createTRPCRouter({
 				if (!key) continue;
 				await storage.delete({ key, bucket: 'private' }).catch(() => undefined);
 			}
-			await db.delete(EventPhotos).where(eq(EventPhotos.id, input.id));
+			await ctx.db.delete(EventPhotos).where(eq(EventPhotos.id, input.id));
 			return { success: true };
 		}),
 });

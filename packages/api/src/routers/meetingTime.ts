@@ -1,6 +1,5 @@
 import { z } from 'zod';
-import { db } from '@/lib/database/client';
-import { publicProcedure, adminProcedure, createTRPCRouter } from '@watts/api/trpc';
+import { publicProcedure, adminProcedure, createTRPCRouter } from '../trpc';
 import {
 	listMeetingTimes,
 	createMeetingTime,
@@ -20,9 +19,9 @@ const meetingTimeCreateSchema = z.object({
 const meetingTimeUpdateSchema = meetingTimeCreateSchema.partial();
 
 export const meetingTimeRouter = createTRPCRouter({
-	getAll: publicProcedure.query(async () => {
+	getAll: publicProcedure.query(async ({ ctx }) => {
 		try {
-			return await listMeetingTimes(db);
+			return await listMeetingTimes(ctx.db);
 		} catch (error) {
 			mapDomainError(error);
 		}
@@ -30,9 +29,9 @@ export const meetingTimeRouter = createTRPCRouter({
 
 	create: adminProcedure
 		.input(meetingTimeCreateSchema)
-		.mutation(async ({ input }) => {
+		.mutation(async ({ ctx, input }) => {
 			try {
-				return { success: true, ...(await createMeetingTime(db, input)) };
+				return { success: true, ...(await createMeetingTime(ctx.db, input)) };
 			} catch (error) {
 				mapDomainError(error);
 			}
@@ -40,9 +39,9 @@ export const meetingTimeRouter = createTRPCRouter({
 
 	update: adminProcedure
 		.input(z.object({ id: z.string().uuid(), data: meetingTimeUpdateSchema }))
-		.mutation(async ({ input }) => {
+		.mutation(async ({ ctx, input }) => {
 			try {
-				return { success: true, ...(await updateMeetingTime(db, input.id, input.data)) };
+				return { success: true, ...(await updateMeetingTime(ctx.db, input.id, input.data)) };
 			} catch (error) {
 				mapDomainError(error);
 			}
@@ -50,9 +49,9 @@ export const meetingTimeRouter = createTRPCRouter({
 
 	delete: adminProcedure
 		.input(z.object({ id: z.string().uuid() }))
-		.mutation(async ({ input }) => {
+		.mutation(async ({ ctx, input }) => {
 			try {
-				await deleteMeetingTime(db, input.id);
+				await deleteMeetingTime(ctx.db, input.id);
 				return { success: true };
 			} catch (error) {
 				mapDomainError(error);

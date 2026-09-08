@@ -1,5 +1,4 @@
 import { z } from "zod";
-import { db } from "@/lib/database/client";
 import { majorEnums, officerRoleEnum } from "@watts/db/schema";
 import {
 	protectedProcedure,
@@ -7,7 +6,7 @@ import {
 	memberProcedure,
 	officerProcedure,
 	createTRPCRouter,
-} from '@watts/api/trpc';
+} from '../trpc';
 import {
 	registerMember,
 	updateMemberProfile,
@@ -58,7 +57,7 @@ export const memberRouter = createTRPCRouter({
 				const discordId = ctx.session.user.discordId || ctx.session.user.id;
 				return {
 					success: true,
-					...(await registerMember(db, { ...input, userId: ctx.session.user.id, discordId })),
+					...(await registerMember(ctx.db, { ...input, userId: ctx.session.user.id, discordId })),
 				};
 			} catch (error) {
 				mapDomainError(error);
@@ -69,14 +68,14 @@ export const memberRouter = createTRPCRouter({
 		.input(memberUpdateSchema)
 		.mutation(async ({ ctx, input }) => {
 			try {
-				return { success: true, ...(await updateMemberProfile(db, ctx.session.user.id, input)) };
+				return { success: true, ...(await updateMemberProfile(ctx.db, ctx.session.user.id, input)) };
 			} catch (error) {
 				mapDomainError(error);
 			}
 		}),
 
-	getAll: adminProcedure.query(async () => {
-		return listMembers(db);
+	getAll: adminProcedure.query(async ({ ctx }) => {
+		return listMembers(ctx.db);
 	}),
 
 	/**
@@ -84,8 +83,8 @@ export const memberRouter = createTRPCRouter({
 	 * status flags, résumé indicator, committees, and linked Discord account.
 	 * Officers may view it (they can only act on delegated capabilities — see setPermission).
 	 */
-	listForAdmin: officerProcedure.query(async () => {
-		return listMembersForAdmin(db);
+	listForAdmin: officerProcedure.query(async ({ ctx }) => {
+		return listMembersForAdmin(ctx.db);
 	}),
 
 	/**
@@ -109,7 +108,7 @@ export const memberRouter = createTRPCRouter({
 				return {
 					success: true,
 					...(await setMemberCapability(
-						db,
+						ctx.db,
 						{ userId: ctx.session.user.id, administrator: ctx.roles.administrator },
 						input,
 					)),
@@ -126,7 +125,7 @@ export const memberRouter = createTRPCRouter({
 			try {
 				return {
 					success: true,
-					...(await setMemberAdmin(db, { ...input, actingUserId: ctx.session.user.id })),
+					...(await setMemberAdmin(ctx.db, { ...input, actingUserId: ctx.session.user.id })),
 				};
 			} catch (error) {
 				mapDomainError(error);
@@ -142,9 +141,9 @@ export const memberRouter = createTRPCRouter({
 				officerRole: z.enum(officerRoleEnum.enumValues).nullish(),
 			}),
 		)
-		.mutation(async ({ input }) => {
+		.mutation(async ({ ctx, input }) => {
 			try {
-				return { success: true, ...(await setMemberOfficer(db, input)) };
+				return { success: true, ...(await setMemberOfficer(ctx.db, input)) };
 			} catch (error) {
 				mapDomainError(error);
 			}
@@ -152,9 +151,9 @@ export const memberRouter = createTRPCRouter({
 
 	getById: officerProcedure
 		.input(z.object({ id: z.string().uuid() }))
-		.query(async ({ input }) => {
+		.query(async ({ ctx, input }) => {
 			try {
-				return await getMemberById(db, input.id);
+				return await getMemberById(ctx.db, input.id);
 			} catch (error) {
 				mapDomainError(error);
 			}
@@ -162,7 +161,7 @@ export const memberRouter = createTRPCRouter({
 
 	getMyProfile: memberProcedure.query(async ({ ctx }) => {
 		try {
-			return await getMemberByUserId(db, ctx.session.user.id);
+			return await getMemberByUserId(ctx.db, ctx.session.user.id);
 		} catch (error) {
 			mapDomainError(error);
 		}

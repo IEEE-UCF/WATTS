@@ -1,10 +1,9 @@
 import 'server-only';
 
 import { getServerSession } from 'next-auth';
-import { createCallerFactory, createTRPCContext } from '@watts/api/trpc';
+import { appRouter, createCallerFactory, createTRPCContext } from '@watts/api';
 import { authOptions } from '@/lib/auth';
 import { db } from '@/lib/database/client';
-import { appRouter } from './root';
 
 const createCaller = createCallerFactory(appRouter);
 

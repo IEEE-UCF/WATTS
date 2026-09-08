@@ -1,7 +1,6 @@
-import { db } from '@/lib/database/client';
 import { Members, Users, MemberPermissions } from '@watts/db/schema';
 import { and, eq } from 'drizzle-orm';
-import { publicProcedure, createTRPCRouter } from '@watts/api/trpc';
+import { publicProcedure, createTRPCRouter } from '../trpc';
 import { hasStaffCapability } from '@watts/permissions';
 
 export const authRouter = createTRPCRouter({
@@ -18,7 +17,7 @@ export const authRouter = createTRPCRouter({
 	// check if it's a member
 	isMember: publicProcedure.query(async ({ ctx }): Promise<boolean> => {
 		if (!ctx.session?.user) return false;
-		const [member] = await db
+		const [member] = await ctx.db
 			.select({ id: Members.id })
 			.from(Members)
 			.where(eq(Members.userId, ctx.session.user.id))
@@ -29,7 +28,7 @@ export const authRouter = createTRPCRouter({
 	// check if it is an officer
 	isOfficer: publicProcedure.query(async ({ ctx }): Promise<boolean> => {
 		if (!ctx.session?.user) return false;
-		const [member] = await db
+		const [member] = await ctx.db
 			.select({ officerStatus: Members.officerStatus })
 			.from(Members)
 			.where(eq(Members.userId, ctx.session.user.id))
@@ -40,7 +39,7 @@ export const authRouter = createTRPCRouter({
 	// check if it's an admin
 	isAdmin: publicProcedure.query(async ({ ctx }): Promise<boolean> => {
 		if (!ctx.session?.user) return false;
-		const [member] = await db
+		const [member] = await ctx.db
 			.select({ administrator: Members.administrator })
 			.from(Members)
 			.where(eq(Members.userId, ctx.session.user.id))
@@ -51,7 +50,7 @@ export const authRouter = createTRPCRouter({
 	// get that role if officer
 	getOfficerRole: publicProcedure.query(async ({ ctx }): Promise<string | null> => {
 		if (!ctx.session?.user) return null;
-		const [member] = await db
+		const [member] = await ctx.db
 			.select({ officerRole: Members.officerRole })
 			.from(Members)
 			.where(eq(Members.userId, ctx.session.user.id))
@@ -62,7 +61,7 @@ export const authRouter = createTRPCRouter({
 	// check if it has paid dues
 	hasPaidDues: publicProcedure.query(async ({ ctx }): Promise<boolean> => {
 		if (!ctx.session?.user) return false;
-		const [member] = await db
+		const [member] = await ctx.db
 			.select({ duesPaid: Members.duesPaid })
 			.from(Members)
 			.where(eq(Members.userId, ctx.session.user.id))
@@ -88,13 +87,13 @@ export const authRouter = createTRPCRouter({
 			};
 		}
 
-		const [userWithDiscord] = await db
+		const [userWithDiscord] = await ctx.db
 			.select()
 			.from(Users)
 			.where(eq(Users.id, ctx.session.user.id))
 			.limit(1);
 
-		const [member] = await db
+		const [member] = await ctx.db
 			.select()
 			.from(Members)
 			.where(eq(Members.userId, ctx.session.user.id))
@@ -102,7 +101,7 @@ export const authRouter = createTRPCRouter({
 
 		let permissions: string[] = [];
 		if (member) {
-			const grants = await db
+			const grants = await ctx.db
 				.select({ permission: MemberPermissions.permission })
 				.from(MemberPermissions)
 				.where(and(eq(MemberPermissions.memberId, member.id), eq(MemberPermissions.active, true)));

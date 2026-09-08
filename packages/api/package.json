@@ -6,18 +6,22 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
-    "./trpc": "./src/trpc.ts"
+    "./trpc": "./src/trpc.ts",
+    "./root": "./src/root.ts"
   },
   "dependencies": {
     "@trpc/server": "^11.9.0",
     "@watts/core": "workspace:*",
     "@watts/db": "workspace:*",
     "@watts/permissions": "workspace:*",
+    "@watts/storage": "workspace:*",
     "drizzle-orm": "0.44.7",
+    "luxon": "^3.7.2",
     "superjson": "^2.2.6",
     "zod": "^4.3.6"
   },
   "devDependencies": {
+    "@types/luxon": "^3.7.1",
     "@watts/tsconfig": "workspace:*"
   }
 }

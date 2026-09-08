@@ -1,9 +1,8 @@
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 import { eq } from 'drizzle-orm';
-import { db } from '@/lib/database/client';
 import { Members } from '@watts/db/schema';
-import { createTRPCRouter, protectedProcedure } from '@watts/api/trpc';
+import { createTRPCRouter, protectedProcedure } from '../trpc';
 import { RESUME_UPLOAD_AUDIENCE, canUploadResumeSession } from '@watts/storage/audience';
 import { finalizeUpload, UploadError } from '@watts/storage/finalize';
 import { resumeKey, sanitizeFilename } from '@watts/storage/keys';
@@ -47,7 +46,7 @@ export const storageRouter = createTRPCRouter({
 				});
 			}
 			try {
-				return await finalizeUpload(db, {
+				return await finalizeUpload(ctx.db, {
 					kind: 'resume',
 					key: resumeKey(ctx.session.user.id),
 					userId: ctx.session.user.id,
@@ -59,7 +58,7 @@ export const storageRouter = createTRPCRouter({
 		}),
 
 	deleteMyResume: protectedProcedure.mutation(async ({ ctx }) => {
-		const [member] = await db
+		const [member] = await ctx.db
 			.select({ id: Members.id, resumeKey: Members.resumeKey })
 			.from(Members)
 			.where(eq(Members.userId, ctx.session.user.id))
@@ -72,7 +71,7 @@ export const storageRouter = createTRPCRouter({
 			const storage = await getStorage();
 			await storage.delete({ key: member.resumeKey, bucket: 'private' }).catch(() => undefined);
 		}
-		await db
+		await ctx.db
 			.update(Members)
 			.set({
 				resumeKey: null,

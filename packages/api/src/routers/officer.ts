@@ -1,12 +1,11 @@
 import { z } from "zod";
-import { db } from "@/lib/database/client";
 import { officerRoleEnum } from "@watts/db/schema";
 import {
 	publicProcedure,
 	adminProcedure,
 	capabilityProcedure,
 	createTRPCRouter,
-} from '@watts/api/trpc';
+} from '../trpc';
 import { listOfficers, getOfficerById } from "@watts/core/officers";
 import { setMemberOfficer, listMemberResumes } from "@watts/core/members";
 import { mapDomainError } from "../map-domain-error";
@@ -15,16 +14,16 @@ const reviewResumes = capabilityProcedure("review_resumes");
 
 export const officerRouter = createTRPCRouter({
 	// Get all current officers
-	getAll: publicProcedure.query(async () => {
-		return listOfficers(db);
+	getAll: publicProcedure.query(async ({ ctx }) => {
+		return listOfficers(ctx.db);
 	}),
 
 	// Get a single officer by member id
 	getById: publicProcedure
 		.input(z.object({ id: z.string().uuid() }))
-		.query(async ({ input }) => {
+		.query(async ({ ctx, input }) => {
 			try {
-				return await getOfficerById(db, input.id);
+				return await getOfficerById(ctx.db, input.id);
 			} catch (error) {
 				mapDomainError(error);
 			}
@@ -33,9 +32,9 @@ export const officerRouter = createTRPCRouter({
 	// Promote a member to officer (admin only)
 	promote: adminProcedure
 		.input(z.object({ id: z.string().uuid(), officerRole: z.enum(officerRoleEnum.enumValues) }))
-		.mutation(async ({ input }) => {
+		.mutation(async ({ ctx, input }) => {
 			try {
-				const { member } = await setMemberOfficer(db, {
+				const { member } = await setMemberOfficer(ctx.db, {
 					id: input.id,
 					officerStatus: true,
 					officerRole: input.officerRole,
@@ -47,16 +46,16 @@ export const officerRouter = createTRPCRouter({
 		}),
 
 	// Resume dashboard: all members, with resume status. Officer/admin only.
-	listResumes: reviewResumes.query(async () => {
-		return listMemberResumes(db);
+	listResumes: reviewResumes.query(async ({ ctx }) => {
+		return listMemberResumes(ctx.db);
 	}),
 
 	// Remove officer status (admin only)
 	demote: adminProcedure
 		.input(z.object({ id: z.string().uuid() }))
-		.mutation(async ({ input }) => {
+		.mutation(async ({ ctx, input }) => {
 			try {
-				return { success: true, ...(await setMemberOfficer(db, { id: input.id, officerStatus: false })) };
+				return { success: true, ...(await setMemberOfficer(ctx.db, { id: input.id, officerStatus: false })) };
 			} catch (error) {
 				mapDomainError(error);
 			}
