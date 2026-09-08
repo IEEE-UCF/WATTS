@@ -4,7 +4,7 @@ export interface EventOptions {
 }
 
 export abstract class Event {
-	public client: any; // Will be Larry type when available
+	public client: any; // Will be Fritz type when available
 	public name: string;
 	public once: boolean;
 

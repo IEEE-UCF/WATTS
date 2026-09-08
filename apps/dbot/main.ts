@@ -1,6 +1,6 @@
-import Larry from './src/structs/Larry.ts';
+import Fritz from './src/structs/Fritz.ts';
 
-const bot = new Larry();
+const bot = new Fritz();
 
 // Global error handlers
 process.on('unhandledRejection', (error: Error) => {

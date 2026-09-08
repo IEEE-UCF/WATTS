@@ -22,7 +22,7 @@ export interface CommandOptions {
 
 export abstract class Command {
 	public readonly isCommand = true;
-	public client: any; // Larry client instance
+	public client: any; // Fritz client instance
 	public name: string;
 	public description: string;
 	public category: string;

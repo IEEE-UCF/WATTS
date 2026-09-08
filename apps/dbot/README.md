@@ -1,10 +1,21 @@
-# IEEE @ UCF Discord Bot (f.k.a. Larry)
+# Fritz — IEEE @ UCF Discord Bot
 
-`@watts/bot` — the discord.js bot, part of the WATTS monorepo. It shares the
-website's database via `@watts/db` (schema is authoritative on the website side)
-and reads the repo-root `./.env` via `@watts/config`.
+`@watts/bot` (the client class is `Fritz`, f.k.a. Larry) — the discord.js bot,
+part of the WATTS monorepo. It shares the website's database via `@watts/db`
+(schema is authoritative on the website side), resolves permissions through
+`@watts/core` + `@watts/permissions/tier`, and reads the repo-root `./.env` via
+`@watts/config`.
 
-<img src="images/larry.gif" alt="Larry" style="width: 200px; height: 200px; object-fit: cover;" />
+<img src="images/larry.gif" alt="Fritz" style="width: 200px; height: 200px; object-fit: cover;" />
+
+## Reference
+
+- **[COMMANDS.md](docs/COMMANDS.md)** — every slash command: what it does, the
+  minimum permission level, options, and what it connects to (DB / calendar /
+  voice).
+- **[SCHEDULED_JOBS.md](docs/SCHEDULED_JOBS.md)** — the recurring / timed work
+  (weekly board, reminders, sweeps, voice idle timer) and where the scheduler
+  is headed.
 
 ## Local development (runs on the host)
 

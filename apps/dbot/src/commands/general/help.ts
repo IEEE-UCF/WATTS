@@ -19,7 +19,7 @@ export class HelpCommand extends Command {
 		const embed = this.client.createEmbed()
 			.setTitle('Welcome to IEEE @ UCF!')
 			.setAuthor({
-				name: this.client.user?.username ?? 'Larry',
+				name: this.client.user?.username ?? 'Fritz',
 				iconURL: this.client.user?.displayAvatarURL({ size: 512 }) ?? undefined,
 			})
 			.setThumbnail(this.client.user?.displayAvatarURL() ?? null)

@@ -58,7 +58,7 @@ export class PingCommand extends Command {
 
 		const embed = this.client.createEmbed()
 			.setThumbnail(this.client.user?.displayAvatarURL() ?? null)
-			.setTitle(`${this.client.user?.username ?? 'Larry'} Ping`)
+			.setTitle(`${this.client.user?.username ?? 'Fritz'} Ping`)
 			.setDescription([
 				rttText,
 				heartbeatText,

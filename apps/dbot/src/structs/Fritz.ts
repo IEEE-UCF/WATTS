@@ -17,7 +17,7 @@ interface CachedPermission {
 	expiresAt: number;
 }
 
-class Larry extends Client {
+class Fritz extends Client {
 	public config: any;
 	public commands: Collection<string, Command>;
 	public events: Collection<string, Event>;
@@ -371,4 +371,4 @@ class Larry extends Client {
 	}
 }
 
-export default Larry;
+export default Fritz;
