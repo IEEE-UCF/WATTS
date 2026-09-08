@@ -9,6 +9,24 @@ Everything is driven from the **repo root** — you never `cd` in here.
 | `minio` (S3 API) | `127.0.0.1:9000` | media storage | `minioadmin` / `minioadmin` |
 | `minio` (console) | `127.0.0.1:9001` | browse objects in a UI | `minioadmin` / `minioadmin` |
 | `minio-init` | — | one-shot: creates `media-public` (public) + `resumes-private` | — |
+| `drizzle-studio` | `127.0.0.1:4983` | schema + data browser (always on) | — |
+
+## Drizzle Studio
+
+Up with the stack (`pnpm infra:up`) — no separate terminal. Open:
+
+**https://local.drizzle.studio/?host=127.0.0.1&port=4983**
+
+The UI is hosted by Drizzle and connects back to the local `:4983` container. First
+visit, if it says "Connecting…" forever: recent Chrome blocks page → localhost calls —
+click the site-info icon in the address bar and enable **Local network access** (Brave:
+drop Shields; Safari: needs an mkcert cert — see Drizzle's docs). This is Drizzle
+Studio's normal local behaviour, not specific to the container.
+
+The schema comes from a read-only bind mount of `apps/ieeeucfcom/src/lib/database/` —
+edit `schema.ts`, then `docker compose -f infra/docker/docker-compose.yml restart
+drizzle-studio` (or `pnpm infra:up` again) to pick it up. `pnpm db:studio` still works
+too if you'd rather run it as a foreground process.
 
 ## Commands (from the repo root)
 

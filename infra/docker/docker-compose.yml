@@ -1,6 +1,7 @@
 # Local offline stack for WATTS — no cloud services needed.
-#   postgres  → stands in for the Neon database   (DB_PROVIDER=local)
-#   minio     → stands in for Vercel Blob          (STORAGE_PROVIDER=local)
+#   postgres        → stands in for the Neon database   (DB_PROVIDER=local)
+#   minio           → stands in for Vercel Blob          (STORAGE_PROVIDER=local)
+#   drizzle-studio  → schema/data browser, always on     (https://local.drizzle.studio)
 #
 # Driven from the repo root:  pnpm infra:up | infra:down | infra:reset
 # Data lives in named volumes; `pnpm infra:reset` (docker compose down -v) wipes them.
@@ -42,6 +43,27 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
+
+  # Drizzle Studio — browse the schema + data at https://local.drizzle.studio
+  # (the hosted UI connects to this container's published :4983). Always on with
+  # the stack; no need to run `pnpm db:studio` in a separate terminal.
+  drizzle-studio:
+    build: ./drizzle-studio
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://postgres:postgres@postgres:5432/watts
+    volumes:
+      - ../../apps/ieeeucfcom/src/lib/database:/studio/schema:ro
+    ports:
+      - '4983:4983'
+    healthcheck:
+      test: ['CMD', 'node', '-e', "require('net').connect(4983,'127.0.0.1').on('connect',()=>process.exit(0)).on('error',()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
 
   # One-shot: create the two buckets and make the public one anonymously readable.
   # Safe to re-run — `mc mb -p` ignores existing buckets.
