@@ -9,7 +9,6 @@
 //   - the storage.confirmResume / storage.deleteMyResume tRPC mutations
 //   - whether <ResumeUpload> renders in the form
 
-import type { Session } from 'next-auth';
 import { RESUME_UPLOAD_AUDIENCE } from './env';
 
 export interface AudienceUser {
@@ -17,6 +16,11 @@ export interface AudienceUser {
 	officerStatus?: boolean;
 	memberId?: string | null;
 	permissions?: string[] | null;
+}
+
+/** Structural stand-in for a next-auth Session — keeps this package next-auth-free. */
+export interface SessionLike {
+	user?: (AudienceUser & { id?: string; [k: string]: unknown }) | null;
 }
 
 export function canUploadResume(user: AudienceUser | null | undefined): boolean {
@@ -37,7 +41,7 @@ export function canUploadResume(user: AudienceUser | null | undefined): boolean 
 	}
 }
 
-export function canUploadResumeSession(session: Session | null | undefined): boolean {
+export function canUploadResumeSession(session: SessionLike | null | undefined): boolean {
 	return canUploadResume(session?.user);
 }
 

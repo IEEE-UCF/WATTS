@@ -2,7 +2,7 @@
 
 import { useRef, useState } from 'react';
 import { trpc } from '@/lib/trpc/client';
-import { uploadResumeFile } from '@/lib/storage/client';
+import { uploadResumeFile } from '@watts/storage/client';
 
 const MAX_MB = 8;
 

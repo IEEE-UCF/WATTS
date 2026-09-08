@@ -11,9 +11,10 @@ import { getServerSession } from 'next-auth';
 import { handleUpload, type HandleUploadBody } from '@vercel/blob/client';
 import { z } from 'zod';
 import { authOptions } from '@/lib/auth';
-import { STORAGE_PROVIDER, getStorage } from '@/lib/storage';
-import { vercelEnv } from '@/lib/storage/env';
-import { authorizeUpload, finalizeUpload, UploadError, type UploadIntent } from '@/lib/storage/finalize';
+import { db } from '@/lib/database/client';
+import { STORAGE_PROVIDER, getStorage } from '@watts/storage';
+import { vercelEnv } from '@watts/storage/env';
+import { authorizeUpload, finalizeUpload, UploadError, type UploadIntent } from '@watts/storage/finalize';
 
 export const runtime = 'nodejs';
 
@@ -59,7 +60,7 @@ export async function POST(request: Request): Promise<Response> {
 				request,
 				onBeforeGenerateToken: async (pathname, clientPayload) => {
 					const parsed = intentSchema.parse(JSON.parse(clientPayload ?? '{}'));
-					const authorized = await authorizeUpload(session, parsed as UploadIntent);
+					const authorized = await authorizeUpload(db, session, parsed as UploadIntent);
 					if (authorized.key !== pathname) {
 						throw new UploadError('BAD_REQUEST', 'pathname does not match authorized key');
 					}
@@ -72,7 +73,7 @@ export async function POST(request: Request): Promise<Response> {
 					};
 				},
 				onUploadCompleted: async ({ tokenPayload }) => {
-					if (tokenPayload) await finalizeUpload(JSON.parse(tokenPayload));
+					if (tokenPayload) await finalizeUpload(db, JSON.parse(tokenPayload));
 				},
 			});
 			return NextResponse.json(json);
@@ -87,7 +88,7 @@ export async function POST(request: Request): Promise<Response> {
 	// ---- local provider: presigned PUT ----
 	try {
 		const parsed = intentSchema.parse(await request.json());
-		const authorized = await authorizeUpload(session, parsed as UploadIntent);
+		const authorized = await authorizeUpload(db, session, parsed as UploadIntent);
 		const storage = await getStorage();
 		const uploadUrl = await storage.presignPut({
 			key: authorized.key,

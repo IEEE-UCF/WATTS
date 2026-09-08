@@ -4,10 +4,10 @@ import { eq } from 'drizzle-orm';
 import { db } from '@/lib/database/client';
 import { Members } from '@watts/db/schema';
 import { createTRPCRouter, protectedProcedure } from '../trpc';
-import { RESUME_UPLOAD_AUDIENCE, canUploadResumeSession } from '@/lib/storage/audience';
-import { finalizeUpload, UploadError } from '@/lib/storage/finalize';
-import { resumeKey, sanitizeFilename } from '@/lib/storage/keys';
-import { getStorage } from '@/lib/storage';
+import { RESUME_UPLOAD_AUDIENCE, canUploadResumeSession } from '@watts/storage/audience';
+import { finalizeUpload, UploadError } from '@watts/storage/finalize';
+import { resumeKey, sanitizeFilename } from '@watts/storage/keys';
+import { getStorage } from '@watts/storage';
 
 function mapUploadError(err: unknown): TRPCError {
 	if (err instanceof UploadError) {
@@ -47,7 +47,7 @@ export const storageRouter = createTRPCRouter({
 				});
 			}
 			try {
-				return await finalizeUpload({
+				return await finalizeUpload(db, {
 					kind: 'resume',
 					key: resumeKey(ctx.session.user.id),
 					userId: ctx.session.user.id,

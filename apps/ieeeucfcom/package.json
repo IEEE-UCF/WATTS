@@ -39,6 +39,7 @@
 		"@watts/core": "workspace:*",
 		"@watts/db": "workspace:*",
 		"@watts/permissions": "workspace:*",
+		"@watts/storage": "workspace:*",
 		"@yudiel/react-qr-scanner": "^2.5.1",
 		"browser-image-compression": "^2.0.2",
 		"class-variance-authority": "^0.7.1",

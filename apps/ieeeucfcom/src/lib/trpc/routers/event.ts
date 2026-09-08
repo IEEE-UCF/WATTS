@@ -5,9 +5,9 @@ import { EventPhotos } from '@watts/db/schema';
 import { eq, desc, and, sql } from 'drizzle-orm';
 import { publicProcedure, capabilityProcedure, createTRPCRouter } from '../trpc';
 import { DateTime } from 'luxon';
-import { finalizeUpload, UploadError } from '@/lib/storage/finalize';
-import { getStorage } from '@/lib/storage';
-import { newPhotoKeys, sanitizeFilename } from '@/lib/storage/keys';
+import { finalizeUpload, UploadError } from '@watts/storage/finalize';
+import { getStorage } from '@watts/storage';
+import { newPhotoKeys, sanitizeFilename } from '@watts/storage/keys';
 import {
 	listActiveEvents,
 	getEventById,
@@ -242,7 +242,7 @@ export const eventRouter = createTRPCRouter({
 		.mutation(async ({ ctx, input }) => {
 			const keys = newPhotoKeys(input.eventId, input.photoId);
 			try {
-				return await finalizeUpload({
+				return await finalizeUpload(db, {
 					kind: 'event-photo',
 					key: keys.webKey,
 					userId: ctx.session.user.id,

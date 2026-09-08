@@ -2,7 +2,7 @@
 
 import { useMemo, useRef, useState } from 'react';
 import { trpc } from '@/lib/trpc/client';
-import { uploadEventPhoto } from '@/lib/storage/client';
+import { uploadEventPhoto } from '@watts/storage/client';
 
 interface UploadRow {
 	name: string;

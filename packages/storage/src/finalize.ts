@@ -10,10 +10,9 @@
 
 import { createHash } from 'crypto';
 import { and, eq, gte, sql } from 'drizzle-orm';
-import type { Session } from 'next-auth';
-import { db } from '@/lib/database/client';
+import type { WattsDb } from '@watts/db';
 import { EventPhotos, Events, Members, UploadEvents } from '@watts/db/schema';
-import { canUploadResumeSession } from './audience';
+import { canUploadResumeSession, type SessionLike } from './audience';
 import {
 	PHOTO_CONTENT_TYPES,
 	PHOTO_MAX_BYTES,
@@ -80,7 +79,7 @@ export interface AuthorizedUpload {
 	};
 }
 
-async function assertCooldown(userId: string, kind: UploadKind) {
+async function assertCooldown(db: WattsDb, userId: string, kind: UploadKind) {
 	const since = new Date(Date.now() - UPLOAD_COOLDOWN_WINDOW_MS);
 	const [{ count }] = await db
 		.select({ count: sql<number>`count(*)::int` })
@@ -98,7 +97,8 @@ async function assertCooldown(userId: string, kind: UploadKind) {
 }
 
 export async function authorizeUpload(
-	session: Session | null,
+	db: WattsDb,
+	session: SessionLike | null,
 	intent: UploadIntent,
 ): Promise<AuthorizedUpload> {
 	if (!session?.user?.id) {
@@ -116,7 +116,7 @@ export async function authorizeUpload(
 		if (intent.byteSize > RESUME_MAX_BYTES) {
 			throw new UploadError('BAD_REQUEST', 'Resume exceeds the 8 MB limit');
 		}
-		await assertCooldown(userId, 'resume');
+		await assertCooldown(db, userId, 'resume');
 
 		const key = resumeKey(userId);
 		return {
@@ -158,7 +158,7 @@ export async function authorizeUpload(
 		throw new UploadError('NOT_FOUND', 'Event not found');
 	}
 
-	await assertCooldown(userId, 'event-photo');
+	await assertCooldown(db, userId, 'event-photo');
 
 	const providedId = intent.photoId && UUID_RE.test(intent.photoId) ? intent.photoId : undefined;
 	const keys = newPhotoKeys(intent.eventId, providedId);
@@ -200,7 +200,7 @@ export interface FinalizeResult {
  * Validate the landed object and write its DB row(s). Safe to call more than once for
  * the same key.
  */
-export async function finalizeUpload(payload: AuthorizedUpload['tokenPayload']): Promise<FinalizeResult> {
+export async function finalizeUpload(db: WattsDb, payload: AuthorizedUpload['tokenPayload']): Promise<FinalizeResult> {
 	const storage = await getStorage();
 	// Both resumes and event photos are stored privately; event photos are exposed to
 	// the public feed only via a per-row visibility flag, never a direct bucket URL.
