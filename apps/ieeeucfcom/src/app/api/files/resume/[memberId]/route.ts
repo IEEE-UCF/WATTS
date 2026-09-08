@@ -8,7 +8,7 @@ import { db } from '@/lib/database/client';
 import { Members } from '@/lib/database/schema';
 import { getStorage } from '@/lib/storage';
 import { sanitizeFilename } from '@/lib/storage/keys';
-import { hasCapability } from '@/lib/permissions';
+import { hasCapability } from '@watts/permissions';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';

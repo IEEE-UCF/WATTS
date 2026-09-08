@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { hasStaffCapability } from '@/lib/permissions';
+import { hasStaffCapability } from '@watts/permissions';
 
 export async function middleware(request: NextRequest) {
 	const { pathname } = request.nextUrl;

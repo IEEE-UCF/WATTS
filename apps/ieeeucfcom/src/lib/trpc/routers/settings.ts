@@ -4,7 +4,7 @@ import {
 	getOfficerGrantableCapabilities,
 	setOfficerGrantableCapabilities,
 } from '@/lib/settings';
-import { OFFICER_DELEGABLE_CAPABILITIES } from '@/lib/permissions';
+import { OFFICER_DELEGABLE_CAPABILITIES } from '@watts/permissions';
 
 export const settingsRouter = createTRPCRouter({
 	/**

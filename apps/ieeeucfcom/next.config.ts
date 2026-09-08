@@ -7,6 +7,8 @@ loadRootEnv();
 import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
+	// Workspace packages that ship raw .ts — Next transpiles them into the app bundle.
+	transpilePackages: ['@watts/permissions'],
 	images: {
 		remotePatterns: [
 			{

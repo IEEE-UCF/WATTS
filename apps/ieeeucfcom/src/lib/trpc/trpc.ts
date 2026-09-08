@@ -9,7 +9,7 @@ import { authOptions } from '@/lib/auth';
 import { db } from '@/lib/database/client';
 import { Members, MemberPermissions } from '@/lib/database/schema';
 import { and, eq, gt, isNull, or } from 'drizzle-orm';
-import { hasCapability, type Capability } from '@/lib/permissions';
+import { hasCapability, type Capability } from '@watts/permissions';
 /**
  * Isomorphic Session getter for API requests
  */

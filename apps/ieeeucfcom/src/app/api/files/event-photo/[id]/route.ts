@@ -9,7 +9,7 @@ import { authOptions } from '@/lib/auth';
 import { db } from '@/lib/database/client';
 import { EventPhotos } from '@/lib/database/schema';
 import { getStorage } from '@/lib/storage';
-import { hasCapability } from '@/lib/permissions';
+import { hasCapability } from '@watts/permissions';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';

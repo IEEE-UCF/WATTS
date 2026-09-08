@@ -154,6 +154,9 @@ importers:
       '@watts/config':
         specifier: workspace:*
         version: link:../../packages/config
+      '@watts/permissions':
+        specifier: workspace:*
+        version: link:../../packages/permissions
       '@yudiel/react-qr-scanner':
         specifier: ^2.5.1
         version: 2.6.0(@types/emscripten@1.41.6)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
@@ -360,6 +363,12 @@ importers:
       typescript-eslint:
         specifier: ^8.54.0
         version: 8.69.0(eslint@9.39.5(jiti@2.7.0))(typescript@5.9.3)
+
+  packages/permissions:
+    devDependencies:
+      '@watts/tsconfig':
+        specifier: workspace:*
+        version: link:../tsconfig
 
   packages/tsconfig: {}
 

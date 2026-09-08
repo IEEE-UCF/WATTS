@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { trpc } from '@/lib/trpc/client';
 import { officerRoleEnum } from '@/lib/database/schema';
-import { CAPABILITIES, CAPABILITY_KEYS, type Capability } from '@/lib/permissions';
+import { CAPABILITIES, CAPABILITY_KEYS, type Capability } from '@watts/permissions';
 
 type RoleFilter = 'all' | 'admin' | 'officer' | 'none';
 type OfficerRole = (typeof officerRoleEnum.enumValues)[number];

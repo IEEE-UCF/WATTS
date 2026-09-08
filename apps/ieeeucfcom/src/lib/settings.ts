@@ -8,7 +8,7 @@ import {
 	OFFICER_DELEGABLE_CAPABILITIES,
 	isOfficerDelegable,
 	type OfficerDelegableCapability,
-} from '@/lib/permissions';
+} from '@watts/permissions';
 
 const OFFICER_GRANTABLE_KEY = 'officer_grantable_capabilities';
 

@@ -19,7 +19,7 @@ import {
 	createTRPCRouter,
 	// publicProcedure
 } from "../trpc";
-import { CAPABILITY_KEYS, isCapability, isOfficerDelegable } from "@/lib/permissions";
+import { CAPABILITY_KEYS, isCapability, isOfficerDelegable } from '@watts/permissions';
 import { getOfficerGrantableCapabilities } from "@/lib/settings";
 
 // Validation schemas

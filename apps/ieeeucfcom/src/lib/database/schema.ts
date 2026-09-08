@@ -172,7 +172,7 @@ export const officerRoleEnum = pgEnum('officer_role_enum', [
 ]);
 
 // Granular capability grants live in member_permissions.permission as a plain string.
-// The vocabulary is defined in code — see src/lib/permissions.ts (CAPABILITIES).
+// The vocabulary is defined in code — see @watts/permissions (CAPABILITIES).
 
 // Gender: Male (M), Female (F), Non-Binary (NB), Other (O), Prefer Not to Say (PNTS)
 export const genderEnum = pgEnum('gender_enum', [
@@ -503,7 +503,7 @@ export const MemberPermissions = pgTable(
 		grantedById: uuid('granted_by_id').references(() => Members.id, { onDelete: 'set null' }), // who granted the permission
 		contextType: varchar('context_type', { length: 32 }).notNull().default('global'), // 'global' | 'committee' | 'project'
 		contextId: uuid('context_id'), // links to a specific committee/project if applicable
-		permission: varchar('permission', { length: 64 }).notNull(), // capability key — see src/lib/permissions.ts
+		permission: varchar('permission', { length: 64 }).notNull(), // capability key — see @watts/permissions
 		active: boolean('active').notNull().default(true),
 		createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 		expiresAt: timestamp('expires_at', { withTimezone: true }), // optional expiration for temporary access

@@ -4,7 +4,7 @@ import { and, eq } from 'drizzle-orm';
 import { authOptions } from '@/lib/auth';
 import { db } from '@/lib/database/client';
 import { Members, MemberPermissions } from '@/lib/database/schema';
-import { STAFF_CAPABILITY_KEYS } from '@/lib/permissions';
+import { STAFF_CAPABILITY_KEYS } from '@watts/permissions';
 import { Navbar } from '@/components/navbar';
 import { StaffHub } from '@/components/staff/staff-hub';
 

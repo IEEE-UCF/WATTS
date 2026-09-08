@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { trpc } from '@/lib/trpc/client';
-import { hasCapability, CAPABILITIES, type Capability } from '@/lib/permissions';
+import { hasCapability, CAPABILITIES, type Capability } from '@watts/permissions';
 import { FormPopup } from '@/components/dashboard/newEventForm';
 import { QREventScanner } from '@/components/admin/qr_event_scanner';
 

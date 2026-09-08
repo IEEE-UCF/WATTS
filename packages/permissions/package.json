@@ -1,0 +1,13 @@
+{
+  "name": "@watts/permissions",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Capability vocabulary + pure permission predicates. Zero runtime dependencies; framework-neutral.",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "devDependencies": {
+    "@watts/tsconfig": "workspace:*"
+  }
+}

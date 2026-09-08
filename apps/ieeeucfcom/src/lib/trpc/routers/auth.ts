@@ -2,7 +2,7 @@ import { db } from '@/lib/database/client';
 import { Members, Users, MemberPermissions } from '@/lib/database/schema';
 import { and, eq } from 'drizzle-orm';
 import { publicProcedure, createTRPCRouter } from '../trpc';
-import { hasStaffCapability } from '@/lib/permissions';
+import { hasStaffCapability } from '@watts/permissions';
 
 export const authRouter = createTRPCRouter({
 	// current session
