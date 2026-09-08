@@ -105,25 +105,32 @@ Cooldown 0.
 With **no options**, looks up **you**. Logic is `@watts/core/members`
 `resolveWhois` + the pure `formatWhois`:
 
-- `user` given, no matching `discord_id` → **"`@name` isn't registered on the IEEE
-  website."**
-- `name` given → substring match on "First Last" over *active* members; 0 → "no
-  member matches", >1 → "be more specific" (lists ≤10).
-- match found → a one-paragraph summary as the reply text:
+- `user` with no matching `discord_id` → *"`@name` isn't registered on the IEEE website."*
+- `name` → substring match on "First Last" over *active* members; 0 → "no member
+  matches", >1 → "be more specific" (lists ≤10).
+- a match → a one-paragraph reply plus an embed (academic info, biography,
+  committees, projects, last seen, links incl. résumé).
 
-  > **@user** is **First [Middle] Last**, a **{Major}** major expecting to graduate
-  > in **{year}**. {He/She/They} {is/are} also an officer, serving as
-  > **{officerRole}** *(or "a general member")*. {He/She/They} {was/were} last seen
-  > at **{event}** on {date} *(omitted if they've never checked in)*. Find
-  > {him/her/them} online: [LinkedIn](…) · [GitHub](…) · [Website](…) *(only the
-  > URLs that are set)*.
+Clauses drop out when the data isn't there: pronouns come from `members.gender`
+(`M`→he, `F`→she, else they); "serving as {role}" becomes "a general member"; the
+"last seen" sentence is omitted if they've never checked in; the links clause and
+the embed **Links** field appear only when `linkedin_url` / `github_url` /
+`website_url` are set. "Last seen" is the most recent `event_attendees` row
+(joined to `events`), tie-broken by `events.start_time`.
 
-  Pronouns are derived from `members.gender` (`M`→he, `F`→she, `NB`/`O`/`PNTS`→they).
-  A rich embed (academic info, biography, committees, projects, **last seen**,
-  links incl. résumé) accompanies the paragraph.
+**Example** — `/whois user:@JohnDoe` against the seeded fixtures:
 
-`event_attendees` (joined to `events`) gives "last seen" — the most recent check-in
-by `timestamp`, tie-broken by `events.start_time`.
+> `@JohnDoe` is **John Doe**, a **Computer Science (BS)** major expecting to graduate
+> in **2025**. He is also an officer, serving as **Executive Chair**. He was last
+> seen at **IEEE GBM 1** on October 1, 2026.
+
+| embed field | value |
+|---|---|
+| Academic Info | Major: Computer Science (BS) · Graduation Year: 2025 |
+| Biography | A natural leader. |
+| Committees | Software Committee (Chair) |
+| Projects | IEEE Website (Lead) |
+| Last seen | IEEE GBM 1 — October 1, 2026 |
 
 **Validation:** `pnpm --filter @watts/bot check:whois`
 (`apps/dbot/scripts/whois-check.mts`) exercises `resolveWhois` / `formatWhois`
