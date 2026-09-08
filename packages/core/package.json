@@ -20,6 +20,11 @@
     "drizzle-orm": "0.44.7"
   },
   "devDependencies": {
-    "@watts/tsconfig": "workspace:*"
+    "@watts/eslint-config": "workspace:*",
+    "@watts/tsconfig": "workspace:*",
+    "eslint": "^9.39.4"
+  },
+  "scripts": {
+    "lint": "eslint ."
   }
 }

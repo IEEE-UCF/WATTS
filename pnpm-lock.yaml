@@ -426,9 +426,15 @@ importers:
         specifier: 0.44.7
         version: 0.44.7(@neondatabase/serverless@1.0.2)(@types/pg@8.23.1)(pg@8.16.3)(postgres@3.4.8)
     devDependencies:
+      '@watts/eslint-config':
+        specifier: workspace:*
+        version: link:../eslint-config
       '@watts/tsconfig':
         specifier: workspace:*
         version: link:../tsconfig
+      eslint:
+        specifier: ^9.39.4
+        version: 9.39.5(jiti@2.7.0)
 
   packages/db:
     dependencies:
@@ -445,12 +451,18 @@ importers:
         specifier: 3.4.8
         version: 3.4.8
     devDependencies:
+      '@watts/eslint-config':
+        specifier: workspace:*
+        version: link:../eslint-config
       '@watts/tsconfig':
         specifier: workspace:*
         version: link:../tsconfig
       drizzle-kit:
         specifier: ^0.31.8
         version: 0.31.10
+      eslint:
+        specifier: ^9.39.4
+        version: 9.39.5(jiti@2.7.0)
 
   packages/eslint-config:
     dependencies:
@@ -469,9 +481,15 @@ importers:
 
   packages/permissions:
     devDependencies:
+      '@watts/eslint-config':
+        specifier: workspace:*
+        version: link:../eslint-config
       '@watts/tsconfig':
         specifier: workspace:*
         version: link:../tsconfig
+      eslint:
+        specifier: ^9.39.4
+        version: 9.39.5(jiti@2.7.0)
 
   packages/storage:
     dependencies:

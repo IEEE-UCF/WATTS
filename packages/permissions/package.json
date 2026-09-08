@@ -8,6 +8,11 @@
     ".": "./src/index.ts"
   },
   "devDependencies": {
-    "@watts/tsconfig": "workspace:*"
+    "@watts/eslint-config": "workspace:*",
+    "@watts/tsconfig": "workspace:*",
+    "eslint": "^9.39.4"
+  },
+  "scripts": {
+    "lint": "eslint ."
   }
 }
