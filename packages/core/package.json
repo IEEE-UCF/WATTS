@@ -5,10 +5,13 @@
   "description": "WATTS shared domain layer — db-taking functions with domain invariants. Framework-neutral: no next / react / @trpc / discord.js / zod.",
   "type": "module",
   "exports": {
+    "./awards": "./src/awards.ts",
     "./errors": "./src/errors.ts",
     "./events": "./src/events.ts",
+    "./meetings": "./src/meetings.ts",
     "./members": "./src/members.ts",
     "./officers": "./src/officers.ts",
+    "./projects": "./src/projects.ts",
     "./settings": "./src/settings.ts"
   },
   "dependencies": {

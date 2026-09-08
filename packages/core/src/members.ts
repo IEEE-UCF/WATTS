@@ -89,9 +89,15 @@ export async function getMemberById(db: WattsDb, id: string) {
 }
 
 export async function getMemberByUserId(db: WattsDb, userId: string) {
-	const [member] = await db.select().from(Members).where(eq(Members.userId, userId)).limit(1);
+	const member = await findMemberByUserId(db, userId);
 	if (!member) throw new DomainError('NOT_FOUND', 'No member profile found');
 	return member;
+}
+
+/** Like getMemberByUserId but returns null instead of throwing. */
+export async function findMemberByUserId(db: WattsDb, userId: string) {
+	const [member] = await db.select().from(Members).where(eq(Members.userId, userId)).limit(1);
+	return member ?? null;
 }
 
 /**

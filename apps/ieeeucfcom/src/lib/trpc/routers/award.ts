@@ -1,9 +1,14 @@
-import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 import { db } from '@/lib/database/client';
-import { Awards } from '@watts/db/schema';
-import { eq, and, desc } from 'drizzle-orm';
 import { publicProcedure, adminProcedure, createTRPCRouter } from '../trpc';
+import {
+	listAwards,
+	getAwardById,
+	createAward,
+	updateAward,
+	deleteAward,
+} from '@watts/core/awards';
+import { mapDomainError } from '../map-domain-error';
 
 const awardCreateSchema = z.object({
 	category: z.string().min(1).max(255),
@@ -22,87 +27,50 @@ export const awardRouter = createTRPCRouter({
 		.input(z.object({ year: z.number().int().optional() }).optional())
 		.query(async ({ input }) => {
 			try {
-				const conditions = [eq(Awards.active, true)];
-				if (input?.year !== undefined) {
-					conditions.push(eq(Awards.year, input.year));
-				}
-
-				return await db
-					.select()
-					.from(Awards)
-					.where(and(...conditions))
-					.orderBy(desc(Awards.year));
+				return await listAwards(db, input);
 			} catch (error) {
-				throw new TRPCError({
-					code: 'INTERNAL_SERVER_ERROR',
-					message: error instanceof Error ? error.message : 'Failed to fetch awards',
-				});
+				mapDomainError(error);
 			}
 		}),
 
 	getById: publicProcedure
 		.input(z.object({ id: z.string().uuid() }))
 		.query(async ({ input }) => {
-			const [award] = await db
-				.select()
-				.from(Awards)
-				.where(eq(Awards.id, input.id))
-				.limit(1);
-
-			if (!award) {
-				throw new TRPCError({ code: 'NOT_FOUND', message: 'Award not found' });
+			try {
+				return await getAwardById(db, input.id);
+			} catch (error) {
+				mapDomainError(error);
 			}
-
-			return award;
 		}),
 
 	create: adminProcedure
 		.input(awardCreateSchema)
 		.mutation(async ({ input }) => {
-			const [award] = await db
-				.insert(Awards)
-				.values({
-					category: input.category,
-					eventName: input.eventName,
-					place: input.place,
-					year: input.year,
-					projectId: input.projectId ?? null,
-					memberId: input.memberId ?? null,
-					description: input.description ?? null,
-				})
-				.returning();
-
-			return { success: true, award };
+			try {
+				return { success: true, ...(await createAward(db, input)) };
+			} catch (error) {
+				mapDomainError(error);
+			}
 		}),
 
 	update: adminProcedure
 		.input(z.object({ id: z.string().uuid(), data: awardUpdateSchema }))
 		.mutation(async ({ input }) => {
-			const [updated] = await db
-				.update(Awards)
-				.set(input.data)
-				.where(eq(Awards.id, input.id))
-				.returning();
-
-			if (!updated) {
-				throw new TRPCError({ code: 'NOT_FOUND', message: 'Award not found' });
+			try {
+				return { success: true, ...(await updateAward(db, input.id, input.data)) };
+			} catch (error) {
+				mapDomainError(error);
 			}
-
-			return { success: true, award: updated };
 		}),
 
 	delete: adminProcedure
 		.input(z.object({ id: z.string().uuid() }))
 		.mutation(async ({ input }) => {
-			const [deleted] = await db
-				.delete(Awards)
-				.where(eq(Awards.id, input.id))
-				.returning();
-
-			if (!deleted) {
-				throw new TRPCError({ code: 'NOT_FOUND', message: 'Award not found' });
+			try {
+				await deleteAward(db, input.id);
+				return { success: true };
+			} catch (error) {
+				mapDomainError(error);
 			}
-
-			return { success: true };
 		}),
 });

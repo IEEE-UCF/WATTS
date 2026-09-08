@@ -1,9 +1,13 @@
-import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 import { db } from '@/lib/database/client';
-import { MeetingTimes } from '@watts/db/schema';
-import { eq, asc } from 'drizzle-orm';
 import { publicProcedure, adminProcedure, createTRPCRouter } from '../trpc';
+import {
+	listMeetingTimes,
+	createMeetingTime,
+	updateMeetingTime,
+	deleteMeetingTime,
+} from '@watts/core/meetings';
+import { mapDomainError } from '../map-domain-error';
 
 const meetingTimeCreateSchema = z.object({
 	title: z.string().min(1).max(255),
@@ -18,64 +22,40 @@ const meetingTimeUpdateSchema = meetingTimeCreateSchema.partial();
 export const meetingTimeRouter = createTRPCRouter({
 	getAll: publicProcedure.query(async () => {
 		try {
-			return await db
-				.select()
-				.from(MeetingTimes)
-				.where(eq(MeetingTimes.active, true))
-				.orderBy(asc(MeetingTimes.dayOfWeek), asc(MeetingTimes.startTime));
+			return await listMeetingTimes(db);
 		} catch (error) {
-			throw new TRPCError({
-				code: 'INTERNAL_SERVER_ERROR',
-				message: error instanceof Error ? error.message : 'Failed to fetch meeting times',
-			});
+			mapDomainError(error);
 		}
 	}),
 
 	create: adminProcedure
 		.input(meetingTimeCreateSchema)
 		.mutation(async ({ input }) => {
-			const [meetingTime] = await db
-				.insert(MeetingTimes)
-				.values({
-					title: input.title,
-					dayOfWeek: input.dayOfWeek,
-					startTime: input.startTime,
-					endTime: input.endTime ?? null,
-					location: input.location ?? null,
-				})
-				.returning();
-
-			return { success: true, meetingTime };
+			try {
+				return { success: true, ...(await createMeetingTime(db, input)) };
+			} catch (error) {
+				mapDomainError(error);
+			}
 		}),
 
 	update: adminProcedure
 		.input(z.object({ id: z.string().uuid(), data: meetingTimeUpdateSchema }))
 		.mutation(async ({ input }) => {
-			const [updated] = await db
-				.update(MeetingTimes)
-				.set(input.data)
-				.where(eq(MeetingTimes.id, input.id))
-				.returning();
-
-			if (!updated) {
-				throw new TRPCError({ code: 'NOT_FOUND', message: 'Meeting time not found' });
+			try {
+				return { success: true, ...(await updateMeetingTime(db, input.id, input.data)) };
+			} catch (error) {
+				mapDomainError(error);
 			}
-
-			return { success: true, meetingTime: updated };
 		}),
 
 	delete: adminProcedure
 		.input(z.object({ id: z.string().uuid() }))
 		.mutation(async ({ input }) => {
-			const [deleted] = await db
-				.delete(MeetingTimes)
-				.where(eq(MeetingTimes.id, input.id))
-				.returning();
-
-			if (!deleted) {
-				throw new TRPCError({ code: 'NOT_FOUND', message: 'Meeting time not found' });
+			try {
+				await deleteMeetingTime(db, input.id);
+				return { success: true };
+			} catch (error) {
+				mapDomainError(error);
 			}
-
-			return { success: true };
 		}),
 });
