@@ -56,5 +56,5 @@ instead of hand-maintaining JSON.
 
 - Schema is imported from the website via its `@watts/web/schema` export. When the schema
   moves to `@watts/db`, switch the import in `src/seed.ts` and drop the export.
-- Browse the result: `pnpm db:studio`, or the always-on studio at
-  `https://local.drizzle.studio/?host=127.0.0.1&port=4983`.
+- Browse the result: `pnpm db:studio`, or the always-on studio — open
+  `http://127.0.0.1:3055` (redirects to the hosted Drizzle UI on `:3054`).

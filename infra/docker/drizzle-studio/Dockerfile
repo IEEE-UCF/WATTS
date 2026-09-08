@@ -15,11 +15,13 @@ RUN pnpm add --allow-build=esbuild \
 	drizzle-orm@0.44.7 \
 	pg@8.16.3
 
-COPY drizzle-studio.config.ts ./
+COPY drizzle-studio.config.ts redirect.mjs ./
 
-EXPOSE 4983
+# 3054 = drizzle-kit studio · 3055 = the friendly redirect to local.drizzle.studio
+EXPOSE 3054 3055
 
-# --host 0.0.0.0 so the published port is reachable from the host browser.
-CMD ["pnpm", "exec", "drizzle-kit", "studio", \
-	"--config", "/studio/drizzle-studio.config.ts", \
-	"--host", "0.0.0.0", "--port", "4983"]
+# Run the redirect helper alongside Studio in one container. `exec` hands PID 1 to
+# drizzle-kit so compose stop/restart signals reach it; the redirect helper is a
+# best-effort background convenience. --host 0.0.0.0 so both published ports are
+# reachable from the host browser.
+CMD ["sh", "-c", "node /studio/redirect.mjs & exec pnpm exec drizzle-kit studio --config /studio/drizzle-studio.config.ts --host 0.0.0.0 --port 3054"]

@@ -19,4 +19,6 @@ run(`${compose} up -d`);
 run('node infra/scripts/wait-for-postgres.mjs');
 run(`${compose} run --rm minio-init`);
 
-console.log('\n• local infra ready — postgres :5432 · minio :9000/:9001 · drizzle-studio :4983\n');
+console.log(
+	'\n• local infra ready — postgres :3051 · minio :3052/:3053 · drizzle-studio :3054 (open http://127.0.0.1:3055)\n',
+);

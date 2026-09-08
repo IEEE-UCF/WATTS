@@ -29,7 +29,8 @@ run('pnpm db:seed');
 console.log(`
 ✅ Local environment ready.
 
-   pnpm dev                       → http://127.0.0.1:3000  (sign in with Discord)
+   pnpm dev                       → https://localhost:3050  (sign in with Discord)
+   http://127.0.0.1:3055          → Drizzle Studio (schema + data browser)
 
    pnpm db:reset                  → wipe + migrate + reseed
 `);

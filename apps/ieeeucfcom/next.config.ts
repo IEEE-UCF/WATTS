@@ -30,17 +30,17 @@ const nextConfig: NextConfig = {
 				port: '',
 				pathname: '/**',
 			},
-			// Local MinIO public bucket (development)
+			// Local MinIO public bucket (development) — host port from the 3050–3060 block
 			{
 				protocol: 'http',
 				hostname: 'localhost',
-				port: '9000',
+				port: '3052',
 				pathname: '/**',
 			},
 			{
 				protocol: 'http',
 				hostname: '127.0.0.1',
-				port: '9000',
+				port: '3052',
 				pathname: '/**',
 			},
 		],

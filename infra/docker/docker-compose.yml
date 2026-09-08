@@ -1,8 +1,13 @@
 # Local offline stack for WATTS — no cloud services needed.
 #   postgres        → stands in for the Neon database   (DB_PROVIDER=local)
 #   minio           → stands in for Vercel Blob          (STORAGE_PROVIDER=local)
-#   drizzle-studio  → schema/data browser, always on     (https://local.drizzle.studio)
+#   drizzle-studio  → schema/data browser, always on     (open http://127.0.0.1:3055)
 #   minio-init      → one-shot bucket setup (profile "setup", run-and-removed)
+#
+# Host ports live in one block, 3050–3060 (see infra/docker/README.md):
+#   3050 web · 3051 postgres · 3052 minio S3 · 3053 minio console
+#   3054 drizzle studio · 3055 drizzle studio redirect
+# Container-internal ports stay at image defaults; only the published (left) side moves.
 #
 # Driven from the repo root:  pnpm infra:up | infra:down | infra:reset
 # Data lives in named volumes; `pnpm infra:reset` (docker compose down -v) wipes them.
@@ -18,7 +23,7 @@ services:
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: watts
     ports:
-      - '5432:5432'
+      - '3051:5432'
     volumes:
       - watts-postgres:/var/lib/postgresql/data
     healthcheck:
@@ -30,13 +35,13 @@ services:
   minio:
     image: minio/minio
     restart: unless-stopped
-    command: server /data --console-address ":9001"
+    command: server /data --console-address ":3053"
     environment:
       MINIO_ROOT_USER: minioadmin
       MINIO_ROOT_PASSWORD: minioadmin
     ports:
-      - '9000:9000' # S3 API
-      - '9001:9001' # web console → http://127.0.0.1:9001
+      - '3052:9000' # S3 API   → http://127.0.0.1:3052
+      - '3053:3053' # web console → http://127.0.0.1:3053
     volumes:
       - watts-minio:/data
     healthcheck:
@@ -45,9 +50,10 @@ services:
       timeout: 5s
       retries: 10
 
-  # Drizzle Studio — browse the schema + data at https://local.drizzle.studio
-  # (the hosted UI connects to this container's published :4983). Always on with
-  # the stack; no need to run `pnpm db:studio` in a separate terminal.
+  # Drizzle Studio — schema + data browser. The UI is hosted by Drizzle and
+  # connects back to this container's published :3054; :3055 serves a one-hop
+  # redirect so you can just open http://127.0.0.1:3055. Always on with the stack;
+  # no need to run `pnpm db:studio` in a separate terminal.
   drizzle-studio:
     build: ./drizzle-studio
     restart: unless-stopped
@@ -59,9 +65,10 @@ services:
     volumes:
       - ../../packages/db/src:/studio/schema:ro
     ports:
-      - '4983:4983'
+      - '3054:3054' # drizzle-kit studio (the hosted UI connects here)
+      - '3055:3055' # friendly redirect → https://local.drizzle.studio/?host=127.0.0.1&port=3054
     healthcheck:
-      test: ['CMD', 'node', '-e', "require('net').connect(4983,'127.0.0.1').on('connect',()=>process.exit(0)).on('error',()=>process.exit(1))"]
+      test: ['CMD', 'node', '-e', "require('net').connect(3054,'127.0.0.1').on('connect',()=>process.exit(0)).on('error',()=>process.exit(1))"]
       interval: 10s
       timeout: 5s
       retries: 6

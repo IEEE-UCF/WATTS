@@ -186,7 +186,7 @@ async function main() {
 		await loadFixtures(only);
 	}
 
-	console.log('\n✅ seed complete — log in at http://127.0.0.1:3000/api/dev/login');
+	console.log('\n✅ seed complete — start the app (`pnpm dev`) and sign in with Discord at https://localhost:3050');
 }
 
 main()
