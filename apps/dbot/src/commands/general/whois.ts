@@ -1,7 +1,7 @@
 import { SlashCommandBuilder, ChatInputCommandInteraction, type SlashCommandOptionsOnlyBuilder, EmbedBuilder } from 'discord.js';
 import { Command } from '../../structs/Command.ts';
 import { PermissionLevel } from '../../modules/helpers/Utils.ts';
-import * as schema from '../../modules/database/Schema.ts';
+import * as schema from '@watts/db/schema';
 import { eq } from 'drizzle-orm';
 
 export class WhoisCommand extends Command {
@@ -35,7 +35,7 @@ export class WhoisCommand extends Command {
 			const searchName = interaction.options.getString('name', true).toLowerCase();
 
 			// Search for member by name
-			const allMembers = await this.client.database.getDB().select().from(schema.members);
+			const allMembers = await this.client.database.getDB().select().from(schema.Members);
 
 			const matchingMembers = allMembers.filter((m: any) => {
 				const fullName = `${m.firstName} ${m.lastName}`.toLowerCase();
@@ -67,12 +67,12 @@ export class WhoisCommand extends Command {
 			const [committees, projects] = await Promise.all([
 				this.client.database.getDB()
 					.select()
-					.from(schema.committeeMembers)
-					.where(eq(schema.committeeMembers.memberId, member.id)),
+					.from(schema.CommitteeMembers)
+					.where(eq(schema.CommitteeMembers.memberId, member.id)),
 				this.client.database.getDB()
 					.select()
-					.from(schema.projectMembers)
-					.where(eq(schema.projectMembers.memberId, member.id)),
+					.from(schema.ProjectMembers)
+					.where(eq(schema.ProjectMembers.memberId, member.id)),
 			]);
 
 			// Get committee names
@@ -80,8 +80,8 @@ export class WhoisCommand extends Command {
 			for (const cm of committees) {
 				const committee = await this.client.database.getDB()
 					.select()
-					.from(schema.committees)
-					.where(eq(schema.committees.id, cm.committeeId));
+					.from(schema.Committees)
+					.where(eq(schema.Committees.id, cm.committeeId));
 
 				if (committee[0]) {
 					const name = cm.isChair ? `${committee[0].title} (Chair)` : committee[0].title;
@@ -94,8 +94,8 @@ export class WhoisCommand extends Command {
 			for (const pm of projects) {
 				const project = await this.client.database.getDB()
 					.select()
-					.from(schema.projects)
-					.where(eq(schema.projects.id, pm.projectId));
+					.from(schema.Projects)
+					.where(eq(schema.Projects.id, pm.projectId));
 
 				if (project[0]) {
 					const name = pm.isLead ? `${project[0].title} (Lead)` : project[0].title;
@@ -160,10 +160,10 @@ export class WhoisCommand extends Command {
 
 			// Links (only populated ones)
 			const links = [];
-			if (member.linkedinUrl) links.push(`[LinkedIn](${member.linkedinUrl})`);
-			if (member.githubUrl) links.push(`[GitHub](${member.githubUrl})`);
-			if (member.websiteUrl) links.push(`[Website](${member.websiteUrl})`);
-			if (member.resumeUrl) links.push(`[Resume](${member.resumeUrl})`);
+			if (member.linkedinURL) links.push(`[LinkedIn](${member.linkedinURL})`);
+			if (member.githubURL) links.push(`[GitHub](${member.githubURL})`);
+			if (member.websiteURL) links.push(`[Website](${member.websiteURL})`);
+			if (member.resumeURL) links.push(`[Resume](${member.resumeURL})`);
 
 			if (links.length > 0) {
 				embed.addFields({

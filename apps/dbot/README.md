@@ -1,27 +1,29 @@
 # IEEE @ UCF Discord Bot (f.k.a. Larry)
 
-A Discord bot built with TypeScript, Bun, and Discord.js for the IEEE @ UCF community.
+`@watts/bot` — the discord.js bot, part of the WATTS monorepo. It shares the
+website's database via `@watts/db` (schema is authoritative on the website side)
+and reads the repo-root `./.env` via `@watts/config`.
 
-<img src="assets/images/larry.gif" alt="Larry" style="width: 200px; height: 200px; object-fit: cover;" />
+<img src="images/larry.gif" alt="Larry" style="width: 200px; height: 200px; object-fit: cover;" />
 
-## Documentation
+## Local development (runs on the host)
 
-- **[Project overview & architecture](docs/PROJECT_OVERVIEW.md)** — onboarding guide: stack, folder layout, commands, events, database, branch notes, and diagrams.
+From the **repo root**:
 
-## Quick Start
+1. `pnpm bootstrap` — installs, brings up Postgres/MinIO, migrates, seeds. (One time.)
+2. Fill the **DISCORD BOT** section of `./.env` (see `./.env.example`):
+   - `DISCORD_TOKEN` — your **own** Discord application's bot token. One token = one
+     live gateway connection, so every developer needs a separate app + token.
+   - `MAIN_SERVER_ID` — a **private test guild** you own (commands register there
+     instantly).
+   - `OWNER_ID` — your Discord user id → treated as `ADMINISTRATOR` by the bot.
+   - `DEV_ADMIN_DISCORD_ID` — your Discord user id → written onto the seeded dev
+     admin so `/whois`, `/info` and the permission ladder resolve *you*. Re-run
+     `pnpm db:seed` after setting it.
+3. `pnpm dev:bot` (or `pnpm --filter @watts/bot dev`) — `tsx watch`, reloads on save.
 
-### Prerequisites
-
-- [Bun](https://bun.sh/) runtime
-- PostgreSQL database
-- Discord bot token
-
-### Local Development
-
-1. Clone the repo: `git clone https://github.com/IEEE-UCF/IEEE-UCF-Discord-Bot.git && cd IEEE-UCF-Discord-Bot`
-2. Install dependencies: `bun install`
-3. Copy config: `cp src/config.example.ts src/config.ts` (then edit as needed)
-4. Start dev server: `bun run dev`
+Postgres must be up (`pnpm infra:up`); the bot needs no MinIO. `/events` still
+runs off the public Google-Calendar ICS feed (`CALENDAR_ICAL_URL`), not the DB.
 
 ## License
 

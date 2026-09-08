@@ -1,11 +1,9 @@
 import { GatewayIntentBits, Partials, ActivityType } from 'discord.js';
+import { loadRootEnv } from '@watts/config/load-env';
 
-// Natively load .env file if available in Node.js
-try {
-	process.loadEnvFile?.();
-} catch {
-	// Fallback if .env does not exist
-}
+// Load the repo-root ./.env (walks up to the pnpm-workspace dir). The bot shares
+// DATABASE_URL and the SHARED section with the rest of the monorepo.
+loadRootEnv();
 
 interface Config {
 	token: string;

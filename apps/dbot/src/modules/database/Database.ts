@@ -1,6 +1,6 @@
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
-import * as schema from './Schema.js';
+import * as schema from '@watts/db/schema';
 
 export class Database {
 	private client: any;

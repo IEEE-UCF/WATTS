@@ -8,7 +8,7 @@ import {
 } from 'discord.js';
 import { Command } from '../../structs/Command.ts';
 import { PermissionLevel } from '../../modules/helpers/Utils.ts';
-import * as schema from '../../modules/database/Schema.ts';
+import * as schema from '@watts/db/schema';
 import { eq } from 'drizzle-orm';
 
 export class InfoCommand extends Command {
@@ -111,8 +111,8 @@ export class InfoCommand extends Command {
 		// Get the Executive Chair
 		const chair = await this.client.database.getDB()
 			.select()
-			.from(schema.members)
-			.where(eq(schema.members.officerRole, 'Executive Chair')); // pulls member with role 'Executive Chair' into var chair
+			.from(schema.Members)
+			.where(eq(schema.Members.officerRole, 'Executive Chair')); // pulls member with role 'Executive Chair' into var chair
 
 		if (chair.length > 0) {
 			return `${chair[0].firstName} ${chair[0].lastName}`; // chair's first and last name
@@ -123,8 +123,8 @@ export class InfoCommand extends Command {
 	async showCommitteeSelection(interaction: ChatInputCommandInteraction, parentCollector: any): Promise<void> {
 		const committees = await this.client.database.getDB()
 			.select()
-			.from(schema.committees)
-			.where(eq(schema.committees.active, true));
+			.from(schema.Committees)
+			.where(eq(schema.Committees.active, true));
 
 		if (committees.length === 0) {
 			await interaction.editReply({
@@ -177,8 +177,8 @@ export class InfoCommand extends Command {
 	async showProjectSelection(interaction: ChatInputCommandInteraction, parentCollector: any): Promise<void> {
 		const projects = await this.client.database.getDB()
 			.select()
-			.from(schema.projects)
-			.where(eq(schema.projects.active, true));
+			.from(schema.Projects)
+			.where(eq(schema.Projects.active, true));
 
 		if (projects.length === 0) {
 			await interaction.editReply({
@@ -230,8 +230,8 @@ export class InfoCommand extends Command {
 	async showCommitteeInfo(interaction: ChatInputCommandInteraction, committeeId: string): Promise<void> {
 		const committee = await this.client.database.getDB()
 			.select()
-			.from(schema.committees)
-			.where(eq(schema.committees.id, committeeId));
+			.from(schema.Committees)
+			.where(eq(schema.Committees.id, committeeId));
 
 		if (committee.length === 0) {
 			await interaction.editReply({
@@ -246,23 +246,23 @@ export class InfoCommand extends Command {
 		// Get chair info
 		const chair = await this.client.database.getDB()
 			.select()
-			.from(schema.members)
-			.where(eq(schema.members.id, c.chairId));
+			.from(schema.Members)
+			.where(eq(schema.Members.id, c.chairId));
 
 		const chairName = chair.length > 0 ? `${chair[0].firstName} ${chair[0].lastName}` : 'N/A';
 
 		// Get members
 		const committeeMembers = await this.client.database.getDB()
 			.select()
-			.from(schema.committeeMembers)
-			.where(eq(schema.committeeMembers.committeeId, c.id));
+			.from(schema.CommitteeMembers)
+			.where(eq(schema.CommitteeMembers.committeeId, c.id));
 
 		const memberNames = await Promise.all(
 			committeeMembers.map(async (cm: any) => {
 				const member = await this.client.database.getDB()
 					.select()
-					.from(schema.members)
-					.where(eq(schema.members.id, cm.memberId));
+					.from(schema.Members)
+					.where(eq(schema.Members.id, cm.memberId));
 
 				if (member.length > 0) {
 					return `${member[0].firstName} ${member[0].lastName}${cm.isChair ? ' (Chair)' : ''}`;
@@ -276,8 +276,8 @@ export class InfoCommand extends Command {
 		// Get upcoming events
 		const upcomingEvents = await this.client.database.getDB()
 			.select()
-			.from(schema.events)
-			.where(eq(schema.events.committeeId, c.id));
+			.from(schema.Events)
+			.where(eq(schema.Events.committeeId, c.id));
 
 		const now = new Date();
 		const futureEvents = upcomingEvents.filter((e: any) => new Date(e.startTime) > now);
@@ -341,8 +341,8 @@ export class InfoCommand extends Command {
 	async showProjectInfo(interaction: ChatInputCommandInteraction, projectId: string): Promise<void> {
 		const project = await this.client.database.getDB()
 			.select()
-			.from(schema.projects)
-			.where(eq(schema.projects.id, projectId));
+			.from(schema.Projects)
+			.where(eq(schema.Projects.id, projectId));
 
 		if (project.length === 0) {
 			await interaction.editReply({
@@ -357,15 +357,15 @@ export class InfoCommand extends Command {
 		// Get project members
 		const projectMembers = await this.client.database.getDB()
 			.select()
-			.from(schema.projectMembers)
-			.where(eq(schema.projectMembers.projectId, p.id));
+			.from(schema.ProjectMembers)
+			.where(eq(schema.ProjectMembers.projectId, p.id));
 
 		const memberInfo = await Promise.all(
 			projectMembers.map(async (pm: any) => {
 				const member = await this.client.database.getDB()
 					.select()
-					.from(schema.members)
-					.where(eq(schema.members.id, pm.memberId));
+					.from(schema.Members)
+					.where(eq(schema.Members.id, pm.memberId));
 
 				if (member.length > 0) {
 					return {
@@ -453,8 +453,8 @@ export class InfoCommand extends Command {
 	async showOfficers(interaction: ChatInputCommandInteraction): Promise<void> {
 		const officers = await this.client.database.getDB()
 			.select()
-			.from(schema.members)
-			.where(eq(schema.members.officerStatus, true));
+			.from(schema.Members)
+			.where(eq(schema.Members.officerStatus, true));
 
 		if (officers.length === 0) {
 			await interaction.editReply({

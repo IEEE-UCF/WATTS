@@ -8,7 +8,7 @@ import logger from '../modules/helpers/Logger.ts';
 import { Database } from '../modules/database/Database.ts';
 import { Calendar } from '../modules/calendar/main.ts';
 import { Utils, PermissionLevel } from '../modules/helpers/Utils.ts';
-import * as schema from '../modules/database/Schema.ts';
+import * as schema from '@watts/db/schema';
 import { Command } from './Command.ts';
 import { Event } from './Event.ts';
 import { eventsAutomation } from '../modules/calendar/eventsAutomation.ts';
@@ -106,18 +106,13 @@ class Larry extends Client {
 				return PermissionLevel.ADMINISTRATOR;
 			}
 
-			// Get member data with relations
-			const member = await this.database.getDB().query.members.findFirst({
-				where: eq(schema.members.discordId, discordId),
-				with: {
-					committeeMembers: {
-						with: {
-							committee: true,
-						},
-					},
-					projectMembers: true,
-				},
-			});
+			// Member row keyed by Discord id
+			const db = this.database.getDB();
+			const [member] = await db
+				.select()
+				.from(schema.Members)
+				.where(eq(schema.Members.discordId, discordId))
+				.limit(1);
 
 			// Not in database = GUEST
 			if (!member) {
@@ -142,21 +137,26 @@ class Larry extends Client {
 				return PermissionLevel.OFFICER;
 			}
 
-			// Committee chair (chairs at least one committee)
-			const isCommitteeChair = member.committeeMembers?.some((cm: any) => cm.isChair) ?? false;
-			if (isCommitteeChair) {
+			// Committee + project memberships (explicit selects — @watts/db defines no
+			// many-relations for members, so no ctx.db.query.*.findFirst({ with }) here).
+			const committeeLinks = await db
+				.select({ isChair: schema.CommitteeMembers.isChair })
+				.from(schema.CommitteeMembers)
+				.where(eq(schema.CommitteeMembers.memberId, member.id));
+			if (committeeLinks.some((cm: { isChair: boolean }) => cm.isChair)) {
 				return PermissionLevel.COMMITTEE_CHAIR;
 			}
 
-			// Project lead (leads at least one project)
-			const isProjectLead = member.projectMembers?.some((pm: any) => pm.isLead) ?? false;
-			if (isProjectLead) {
+			const projectLinks = await db
+				.select({ isLead: schema.ProjectMembers.isLead })
+				.from(schema.ProjectMembers)
+				.where(eq(schema.ProjectMembers.memberId, member.id));
+			if (projectLinks.some((pm: { isLead: boolean }) => pm.isLead)) {
 				return PermissionLevel.PROJECT_LEAD;
 			}
 
 			// Committee member (member of at least one committee)
-			const isCommitteeMember = (member.committeeMembers?.length ?? 0) > 0;
-			if (isCommitteeMember) {
+			if (committeeLinks.length > 0) {
 				return PermissionLevel.COMMITTEE_MEMBER;
 			}
 

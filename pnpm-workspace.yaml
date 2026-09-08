@@ -15,19 +15,9 @@ allowBuilds:
 # Repo-wide dependency pins.
 #   esbuild — carries over from the bot (dev-server advisory).
 #
-#   drizzle-orm + the DB driver stack (pg / @neondatabase/serverless / postgres):
-#   these are pinned to the exact versions the production website resolved before
-#   the monorepo merge. drizzle-orm peer-keys on every DB driver, so when apps/dbot
-#   (drizzle-orm ^0.45, pg ^8.17) and apps/ieeeucfcom (drizzle-orm ^0.44.7, pg
-#   8.16.3 exact) share one lockfile, pnpm builds TWO peer-resolved copies of
-#   drizzle-orm and the site's db types stop matching (@auth/drizzle-adapter in
-#   src/lib/auth.ts). Pinning collapses it to one instance and keeps the live site
-#   byte-identical.
-#   TODO: align both apps onto a single current drizzle-orm + pg in a dedicated PR,
-#         with a website smoke test, then drop these pins.
+#   The drizzle-orm / pg / @neondatabase/serverless / postgres pins were dropped in
+#   Part III: apps/dbot now declares the same exact versions as the website
+#   (drizzle-orm 0.44.7, pg 8.16.3) and consumes @watts/db, so pnpm resolves a
+#   single instance on its own. `pnpm why -r drizzle-orm` must stay at 1 version.
 overrides:
   esbuild: ^0.25.0
-  drizzle-orm: 0.44.7
-  pg: 8.16.3
-  '@neondatabase/serverless': 1.0.2
-  postgres: 3.4.8

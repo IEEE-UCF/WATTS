@@ -6,10 +6,6 @@ settings:
 
 overrides:
   esbuild: ^0.25.0
-  drizzle-orm: 0.44.7
-  pg: 8.16.3
-  '@neondatabase/serverless': 1.0.2
-  postgres: 3.4.8
 
 importers:
 
@@ -27,6 +23,12 @@ importers:
       '@eslint/js':
         specifier: ^9.38.0
         version: 9.39.5
+      '@watts/config':
+        specifier: workspace:*
+        version: link:../../packages/config
+      '@watts/db':
+        specifier: workspace:*
+        version: link:../../packages/db
       axios:
         specifier: ^1.13.5
         version: 1.20.0
@@ -36,9 +38,6 @@ importers:
       discord.js:
         specifier: ^14.24.2
         version: 14.27.0
-      drizzle-kit:
-        specifier: ^0.31.6
-        version: 0.31.10
       drizzle-orm:
         specifier: 0.44.7
         version: 0.44.7(@neondatabase/serverless@1.0.2)(@types/pg@8.23.1)(pg@8.16.3)(postgres@3.4.8)
@@ -185,7 +184,7 @@ importers:
         specifier: ^2.1.1
         version: 2.1.1
       drizzle-orm:
-        specifier: 0.44.7
+        specifier: ^0.44.7
         version: 0.44.7(@neondatabase/serverless@1.0.2)(@types/pg@8.23.1)(pg@8.16.3)(postgres@3.4.8)
       embla-carousel-autoplay:
         specifier: ^8.6.0
@@ -614,7 +613,7 @@ packages:
   '@auth/pg-adapter@1.11.3':
     resolution: {integrity: sha512-6yPx8rWH3h3hv5jmVQvuQSPBpaC+jsfuxn7vl8W8Od6kOymGpw7Ku+plWCY7dFb2ya6KaBNw15GG6nciX9ewBA==}
     peerDependencies:
-      pg: 8.16.3
+      pg: ^8
 
   '@aws-sdk/checksums@3.1000.29':
     resolution: {integrity: sha512-Dtu0gr4dnATZAPwEYbpCsG+MpLM7OAliy2gTepEFQwl1vZ6DL3QMH2FveMa3HLvPsOdhJsPRB3KtxVhph9T75A==}
@@ -2950,7 +2949,7 @@ packages:
       '@electric-sql/pglite': '>=0.2.0'
       '@libsql/client': '>=0.10.0'
       '@libsql/client-wasm': '>=0.10.0'
-      '@neondatabase/serverless': 1.0.2
+      '@neondatabase/serverless': '>=0.10.0'
       '@op-engineering/op-sqlite': '>=2'
       '@opentelemetry/api': ^1.4.1
       '@planetscale/database': '>=1.13'
@@ -2969,8 +2968,8 @@ packages:
       knex: '*'
       kysely: '*'
       mysql2: '>=2'
-      pg: 8.16.3
-      postgres: 3.4.8
+      pg: '>=8'
+      postgres: '>=3'
       prisma: '*'
       sql.js: '>=1'
       sqlite3: '>=5'
@@ -3812,7 +3811,7 @@ packages:
   pg-pool@3.14.0:
     resolution: {integrity: sha512-gKtPkFdQPU3DksooVLi9LsjZxrsBUZIpa+7aVx+LV5pNh0KzP4Zleud2po+ConrxbuXGBJ6Hfer6hdgpIBpBaw==}
     peerDependencies:
-      pg: 8.16.3
+      pg: '>=8.0'
 
   pg-protocol@1.16.0:
     resolution: {integrity: sha512-sILXutLVjCLjcDuOmvhX5e2Z4cS5qG/6Bu3VkpFwdf/633ElGLpEh9bgmuI5I4sqKqkifQiGyiCcx1HdtrK7tg==}

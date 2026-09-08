@@ -42,6 +42,9 @@ const {
 } = schema;
 
 const DEV_ADMIN_EMAIL = process.env.DEV_ADMIN_EMAIL ?? 'admin@watts.local';
+// Set DEV_ADMIN_DISCORD_ID to your real Discord user id so the bot (Larry, /whois,
+// the permission ladder) resolves you in a test guild. Falls back to a placeholder.
+const DEV_ADMIN_DISCORD_ID = process.env.DEV_ADMIN_DISCORD_ID || 'dev-admin';
 const DEV_SESSION_TOKEN = 'dev-admin-session';
 const FIXTURES_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', 'fixtures');
 
@@ -85,11 +88,14 @@ async function seedAdmin() {
 	let userId: string;
 	if (existingUser) {
 		userId = existingUser.id;
+		if (existingUser.discordId !== DEV_ADMIN_DISCORD_ID) {
+			await db.update(Users).set({ discordId: DEV_ADMIN_DISCORD_ID }).where(eq(Users.id, userId));
+		}
 		console.log(`• dev admin user already present (${DEV_ADMIN_EMAIL})`);
 	} else {
 		const [created] = await db
 			.insert(Users)
-			.values({ name: 'Dev Admin', email: DEV_ADMIN_EMAIL, discordId: 'dev-admin' })
+			.values({ name: 'Dev Admin', email: DEV_ADMIN_EMAIL, discordId: DEV_ADMIN_DISCORD_ID })
 			.returning();
 		userId = created.id;
 		console.log(`• created dev admin user (${DEV_ADMIN_EMAIL})`);
@@ -97,7 +103,9 @@ async function seedAdmin() {
 
 	const [account] = await db.select().from(Accounts).where(eq(Accounts.userId, userId)).limit(1);
 	if (!account) {
-		await db.insert(Accounts).values({ userId, type: 'oauth', provider: 'discord', providerAccountId: 'dev-admin' });
+		await db
+			.insert(Accounts)
+			.values({ userId, type: 'oauth', provider: 'discord', providerAccountId: DEV_ADMIN_DISCORD_ID });
 		console.log('• linked a discord account row');
 	}
 
@@ -105,6 +113,7 @@ async function seedAdmin() {
 	if (!member) {
 		await db.insert(Members).values({
 			userId,
+			discordId: DEV_ADMIN_DISCORD_ID,
 			firstName: 'Dev',
 			lastName: 'Admin',
 			administrator: true,
@@ -118,9 +127,12 @@ async function seedAdmin() {
 			graduationYear: 2027,
 		});
 		console.log('• created member profile (administrator + officer)');
-	} else if (!member.administrator || !member.officerStatus) {
-		await db.update(Members).set({ administrator: true, officerStatus: true }).where(eq(Members.id, member.id));
-		console.log('• promoted existing member to administrator + officer');
+	} else if (!member.administrator || !member.officerStatus || member.discordId !== DEV_ADMIN_DISCORD_ID) {
+		await db
+			.update(Members)
+			.set({ administrator: true, officerStatus: true, discordId: DEV_ADMIN_DISCORD_ID })
+			.where(eq(Members.id, member.id));
+		console.log('• synced existing member (administrator + officer + discordId)');
 	} else {
 		console.log('• member profile already an administrator + officer');
 	}

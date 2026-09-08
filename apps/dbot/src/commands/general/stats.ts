@@ -1,7 +1,7 @@
 import { SlashCommandBuilder, ChatInputCommandInteraction } from 'discord.js';
 import { Command } from '../../structs/Command.ts';
 import { PermissionLevel } from '../../modules/helpers/Utils.ts';
-import * as schema from '../../modules/database/Schema.ts';
+import * as schema from '@watts/db/schema';
 import { eq } from 'drizzle-orm';
 
 export class StatsCommand extends Command {
@@ -47,8 +47,8 @@ export class StatsCommand extends Command {
 			// Get all active members
 			const allMembers = await this.client.database.getDB()
 				.select()
-				.from(schema.members)
-				.where(eq(schema.members.active, true));
+				.from(schema.Members)
+				.where(eq(schema.Members.active, true));
 
 			const totalMembers = allMembers.length;
 
@@ -62,16 +62,16 @@ export class StatsCommand extends Command {
 			// Get all active committees
 			const committees = await this.client.database.getDB()
 				.select()
-				.from(schema.committees)
-				.where(eq(schema.committees.active, true));
+				.from(schema.Committees)
+				.where(eq(schema.Committees.active, true));
 
 			// Get committee member counts
 			const committeeStats = await Promise.all(
 				committees.map(async (committee: any) => {
 					const members = await this.client.database.getDB()
 						.select()
-						.from(schema.committeeMembers)
-						.where(eq(schema.committeeMembers.committeeId, committee.id));
+						.from(schema.CommitteeMembers)
+						.where(eq(schema.CommitteeMembers.committeeId, committee.id));
 
 					return {
 						title: committee.title,
@@ -86,16 +86,16 @@ export class StatsCommand extends Command {
 			// Get all active projects
 			const projects = await this.client.database.getDB()
 				.select()
-				.from(schema.projects)
-				.where(eq(schema.projects.active, true));
+				.from(schema.Projects)
+				.where(eq(schema.Projects.active, true));
 
 			// Get project member counts
 			const projectStats = await Promise.all(
 				projects.map(async (project: any) => {
 					const members = await this.client.database.getDB()
 						.select()
-						.from(schema.projectMembers)
-						.where(eq(schema.projectMembers.projectId, project.id));
+						.from(schema.ProjectMembers)
+						.where(eq(schema.ProjectMembers.projectId, project.id));
 
 					return {
 						title: project.title,

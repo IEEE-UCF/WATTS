@@ -1,7 +1,7 @@
 import { SlashCommandBuilder, ChatInputCommandInteraction, type SlashCommandOptionsOnlyBuilder, EmbedBuilder } from 'discord.js';
 import { Command } from '../../structs/Command.ts';
 import { PermissionLevel } from '../../modules/helpers/Utils.ts';
-import * as schema from '../../modules/database/Schema.ts';
+import * as schema from '@watts/db/schema';
 
 export class MembersCommand extends Command {
 	constructor(client: any) {
@@ -34,7 +34,7 @@ export class MembersCommand extends Command {
 			const officersOnly = interaction.options.getBoolean('officers') ?? false;
 
 			// Query database for members
-			const allMembers = await this.client.database.getDB().select().from(schema.members);
+			const allMembers = await this.client.database.getDB().select().from(schema.Members);
 
 			const members = allMembers.filter((m: any) => {
 				if (!m.active) return false;
