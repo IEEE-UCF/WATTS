@@ -10,8 +10,8 @@ export class LeaveCommand extends Command {
 			name: 'leave',
 			description: 'Leaves your current voice channel.',
 			usage: 'leave',
-			category: 'general',
-			permissionLevel: PermissionLevel.GUEST,
+			category: 'admin',
+			permissionLevel: PermissionLevel.ADMINISTRATOR,
 			guildOnly: true,
 			cooldown: 3,
 		});

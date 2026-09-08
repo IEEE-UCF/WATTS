@@ -42,11 +42,11 @@ talks to. Source: `apps/dbot/src/commands/**`.
 | `/help` | general | GUEST | — | in-memory command list |
 | `/events` | general | GUEST | — | **Google Calendar ICS feed** |
 | `/assistance` | general | GUEST | `type`, `title`, `message` | `#assistance` + assistance roles |
-| `/join` | general | GUEST · guild-only | — | `@discordjs/voice` |
-| `/leave` | general | GUEST · guild-only | — | `@discordjs/voice` |
 | `/whois` | general | GUEST | `name` | **DB**: members, committee_members, committees, project_members, projects |
 | `/info` | general | GUEST | — (menu) | **DB**: members, committees, committee_members, projects, project_members, events |
 | `/stats` | general | GUEST | — | **DB**: members, committees, committee_members, projects, project_members |
+| `/join` | admin | **ADMINISTRATOR** · guild-only | — | `@discordjs/voice` |
+| `/leave` | admin | **ADMINISTRATOR** · guild-only | — | `@discordjs/voice` |
 | `/announcement` | admin | **ADMINISTRATOR** | `channel`, `title`, `message`, `role?` | any channel |
 | `/members` | admin | **ADMINISTRATOR** | `officers?` | **DB**: members |
 | `/reload` | admin | **ADMINISTRATOR** | — | — |
@@ -96,13 +96,6 @@ Posts a `‼️ <title>` embed (with the requester's name/avatar in the footer) 
 `CHANNEL_ASSISTANCE_ID`, prefixed with the role mention. Replies ephemerally.
 Cooldown 0.
 
-### `/join` · `/leave`  *(guild-only)*
-`/join` connects the bot to **your current** voice channel (`@discordjs/voice`
-`joinVoiceChannel`); refuses if already connected or you're not in a channel.
-`/leave` destroys the connection — you must be in the **same** channel as the bot.
-See also the [voice idle auto-disconnect](SCHEDULED_JOBS.md#voice-idle-auto-disconnect).
-Cooldown 3s.
-
 ### `/whois`
 | option | required |
 |---|---|
@@ -140,6 +133,14 @@ Cooldown 10s.
 ---
 
 ## Admin — all require `ADMINISTRATOR`
+
+### `/join` · `/leave`  *(guild-only)*
+`/join` connects the bot to **your current** voice channel (`@discordjs/voice`
+`joinVoiceChannel`); refuses if already connected or you're not in a channel.
+`/leave` destroys the connection — you must be in the **same** channel as the bot.
+See also the [voice idle auto-disconnect](SCHEDULED_JOBS.md#voice-idle-auto-disconnect).
+Admin-only for now — the bot doesn't record VC, so there's nothing here for
+regular members yet. Cooldown 3s.
 
 ### `/announcement`
 | option | required |

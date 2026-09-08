@@ -9,8 +9,8 @@ export class JoinCommand extends Command {
 			name: 'join',
 			description: 'Joins your current voice channel.',
 			usage: 'join',
-			category: 'general',
-			permissionLevel: PermissionLevel.GUEST,
+			category: 'admin',
+			permissionLevel: PermissionLevel.ADMINISTRATOR,
 			guildOnly: true,
 			cooldown: 3,
 		});
