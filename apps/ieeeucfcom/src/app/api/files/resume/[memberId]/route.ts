@@ -56,12 +56,15 @@ export async function GET(
 		return new Response('Not found', { status: 404 });
 	}
 
+	// ASCII fallback with quotes/backslashes stripped so it can't break out of the
+	// quoted-string, plus an RFC 5987 filename* for the real (possibly non-ASCII) name.
 	const filename = sanitizeFilename(member.resumeFileName ?? 'resume.pdf');
+	const asciiName = filename.replace(/["\\]/g, '').replace(/[^\x20-\x7e]/g, '_') || 'resume.pdf';
 	return new Response(stream.stream, {
 		status: 200,
 		headers: {
 			'Content-Type': 'application/pdf',
-			'Content-Disposition': `inline; filename="${filename}"`,
+			'Content-Disposition': `inline; filename="${asciiName}"; filename*=UTF-8''${encodeURIComponent(filename)}`,
 			'X-Content-Type-Options': 'nosniff',
 			'X-Robots-Tag': 'noindex, nofollow',
 			'Cache-Control': 'private, no-store, max-age=0',

@@ -32,6 +32,15 @@ const serverSchema = z.object({
 	DEV_ADMIN_EMAIL: z.string().default('admin@watts.local'),
 
 	RESUME_UPLOAD_AUDIENCE: z.enum(['admins', 'officers', 'members']).default('admins'),
+}).superRefine((env, ctx) => {
+	// Auth secrets are optional for `local` (Discord OAuth may be unconfigured on a
+	// fresh checkout) but must be set for any deployed environment.
+	if (env.APP_ENV === 'local') return;
+	for (const key of ['NEXTAUTH_URL', 'NEXTAUTH_SECRET', 'DISCORD_CLIENT_ID', 'DISCORD_CLIENT_SECRET'] as const) {
+		if (!env[key]) {
+			ctx.addIssue({ code: 'custom', path: [key], message: `${key} is required when APP_ENV != local` });
+		}
+	}
 });
 
 const publicSchema = z.object({

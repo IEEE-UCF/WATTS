@@ -112,7 +112,10 @@ export const publicProcedure = t.procedure.use(timingMiddleware);
  * Protected procedure with proper typing
  */
 export const protectedProcedure = t.procedure.use(timingMiddleware).use(({ ctx, next }) => {
-	if (!ctx.session?.user) {
+	// Require `user.id`, not just `user` — the NextAuth `session` callback's error
+	// path can return a session with a bare `user` (name/email, no id / role fields),
+	// and everything downstream is typed to assume `id: string`.
+	if (!ctx.session?.user?.id) {
 		throw new TRPCError({ code: 'UNAUTHORIZED' });
 	}
 	// Re-shape so `session.user` is non-nullable for every downstream procedure.
