@@ -363,6 +363,9 @@ export const Events = pgTable("events", {
 	allDay: boolean("all_day").default(false).notNull(),
 	googleCalendarEventId: varchar("google_calendar_event_id", { length: 256 }),
 	discordScheduledEventId: varchar("discord_scheduled_event_id", { length: 64 }),
+	// The flyerUrl last pushed as the Discord event's cover image — lets the bot
+	// detect a flyer added/replaced after the scheduled event was created.
+	discordFlyerSyncedUrl: varchar("discord_flyer_synced_url", { length: 500 }),
 	// pending | synced | error | skipped  (skipped = no Google credentials configured)
 	syncStatus: varchar("sync_status", { length: 16 }).default('pending').notNull(),
 	lastSyncedAt: timestamp("last_synced_at", { withTimezone: true, mode: 'string' }),

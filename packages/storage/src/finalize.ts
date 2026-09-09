@@ -346,7 +346,10 @@ export async function finalizeUpload(db: WattsDb, payload: AuthorizedUpload['tok
 	}
 
 	if (payload.kind === 'event-flyer') {
-		const flyerUrl = storage.publicUrl(payload.key);
+		// The storage key is deterministic (one flyer per event, overwritten in
+		// place), so a re-upload keeps the same URL. Append a version token so the
+		// browser/CDN and the Discord-event-sync bot both see it as changed.
+		const flyerUrl = `${storage.publicUrl(payload.key)}?v=${Date.now()}`;
 		const updated = await db
 			.update(Events)
 			.set({ flyerUrl, updatedAt: new Date().toISOString() })

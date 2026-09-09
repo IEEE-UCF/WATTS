@@ -1,0 +1,1 @@
+ALTER TABLE "events" ADD COLUMN "discord_flyer_synced_url" varchar(500);

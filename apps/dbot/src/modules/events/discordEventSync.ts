@@ -97,7 +97,7 @@ export class DiscordEventSync {
 		);
 	}
 
-	private options(want: DesiredEvent): GuildScheduledEventCreateOptions {
+	private options(want: DesiredEvent, image?: Buffer): GuildScheduledEventCreateOptions {
 		return {
 			name: want.name,
 			description: want.description || undefined,
@@ -106,7 +106,24 @@ export class DiscordEventSync {
 			privacyLevel: GuildScheduledEventPrivacyLevel.GuildOnly,
 			entityType: GuildScheduledEventEntityType.External,
 			entityMetadata: { location: want.location },
+			...(image ? { image } : {}),
 		};
+	}
+
+	/** Fetch flyer bytes for the Discord event cover image. Null on any failure. */
+	private async fetchFlyer(url: string | null): Promise<Buffer | null> {
+		if (!url) return null;
+		try {
+			const res = await fetch(url);
+			if (!res.ok) {
+				this.client.logger.warn(`Discord event sync: flyer fetch ${res.status} for ${url}`);
+				return null;
+			}
+			return Buffer.from(await res.arrayBuffer());
+		} catch (err) {
+			this.client.logger.warn(`Discord event sync: flyer fetch failed for ${url}: ${err}`);
+			return null;
+		}
 	}
 
 	async reconcile() {
@@ -149,18 +166,35 @@ export class DiscordEventSync {
 						if (row.discordScheduledEventId) {
 							await db
 								.update(Events)
-								.set({ discordScheduledEventId: null, updatedAt: new Date().toISOString() })
+								.set({
+									discordScheduledEventId: null,
+									discordFlyerSyncedUrl: null,
+									updatedAt: new Date().toISOString(),
+								})
 								.where(eq(Events.id, row.id));
 						}
 						continue;
 					}
 
 					const want = this.desired(row);
+					// A flyer added or replaced after the event was made (the URL carries
+					// a ?v= token that changes on every upload).
+					const flyerNeedsPush = Boolean(row.flyerUrl) && row.flyerUrl !== row.discordFlyerSyncedUrl;
 
 					if (linked) {
-						if (this.drifted(linked, want)) {
-							await guild.scheduledEvents.edit(linked.id, this.options(want));
-							this.client.logger.log(`Discord event updated: ${want.name}`);
+						if (this.drifted(linked, want) || flyerNeedsPush) {
+							const image = flyerNeedsPush ? await this.fetchFlyer(row.flyerUrl) : undefined;
+							await guild.scheduledEvents.edit(linked.id, this.options(want, image ?? undefined));
+							await db
+								.update(Events)
+								.set({
+									discordFlyerSyncedUrl: image ? row.flyerUrl : row.discordFlyerSyncedUrl,
+									updatedAt: new Date().toISOString(),
+								})
+								.where(eq(Events.id, row.id));
+							this.client.logger.log(
+								`Discord event updated: ${want.name}${image ? ' (+flyer)' : ''}`,
+							);
 						}
 						continue;
 					}
@@ -170,12 +204,17 @@ export class DiscordEventSync {
 					// future pass; it is only cleared when the row no longer wants one).
 					if (want.endMs <= now) continue;
 
-					const created = await guild.scheduledEvents.create(this.options(want));
+					const image = await this.fetchFlyer(row.flyerUrl);
+					const created = await guild.scheduledEvents.create(this.options(want, image ?? undefined));
 					await db
 						.update(Events)
-						.set({ discordScheduledEventId: created.id, updatedAt: new Date().toISOString() })
+						.set({
+							discordScheduledEventId: created.id,
+							discordFlyerSyncedUrl: image ? row.flyerUrl : null,
+							updatedAt: new Date().toISOString(),
+						})
 						.where(eq(Events.id, row.id));
-					this.client.logger.success(`Discord event created: ${want.name}`);
+					this.client.logger.success(`Discord event created: ${want.name}${image ? ' (+flyer)' : ''}`);
 				} catch (err) {
 					this.client.logger.fail(`Discord event sync failed for “${row.title}”: ${err}`);
 				}
