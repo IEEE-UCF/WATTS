@@ -68,18 +68,18 @@ interface Config {
 }
 
 const config: Config = {
-	token: process.env.DISCORD_TOKEN || '',
+	token: process.env.DISCORD_TOKEN ?? '',
 
-	clientId: process.env.DISCORD_CLIENT_ID_BOT || '',
+	clientId: process.env.DISCORD_CLIENT_ID_BOT ?? '',
 
 	servers: {
 		main: {
-			id: process.env.MAIN_SERVER_ID || '',
+			id: process.env.MAIN_SERVER_ID ?? '',
 			channels: {
-				calendar: process.env.CHANNEL_CALENDAR_ID || '',
-				reminders: process.env.CHANNEL_REMINDERS_ID || '',
-				assistance: process.env.CHANNEL_ASSISTANCE_ID || '',
-				general: process.env.CHANNEL_GENERAL_ID || '',
+				calendar: process.env.CHANNEL_CALENDAR_ID ?? '',
+				reminders: process.env.CHANNEL_REMINDERS_ID ?? '',
+				assistance: process.env.CHANNEL_ASSISTANCE_ID ?? '',
+				general: process.env.CHANNEL_GENERAL_ID ?? '',
 			},
 			eventsAutomation: {
 				enabled: process.env.EVENTS_AUTOMATION_ENABLED === 'true',
@@ -89,39 +89,39 @@ const config: Config = {
 				enabled: process.env.EVENT_REMINDERS_ENABLED !== 'false',
 				reminderMinutes: Number(process.env.EVENT_REMINDERS_MINUTES) || 60,
 			},
-			reminderRole: process.env.ROLE_REMINDER_ID || '',
-			assistanceRoleAdmin: process.env.ROLE_ASSISTANCE_ADMIN_ID || '',
-			assistanceRoleSoftware: process.env.ROLE_ASSISTANCE_SOFTWARE_ID || '',
+			reminderRole: process.env.ROLE_REMINDER_ID ?? '',
+			assistanceRoleAdmin: process.env.ROLE_ASSISTANCE_ADMIN_ID ?? '',
+			assistanceRoleSoftware: process.env.ROLE_ASSISTANCE_SOFTWARE_ID ?? '',
 		},
 		dev: {
-			id: process.env.DEV_SERVER_ID || '',
+			id: process.env.DEV_SERVER_ID ?? '',
 			channels: {
-				calendar: process.env.DEV_CHANNEL_CALENDAR_ID || '',
-				logs: process.env.DEV_CHANNEL_LOGS_ID || '',
+				calendar: process.env.DEV_CHANNEL_CALENDAR_ID ?? '',
+				logs: process.env.DEV_CHANNEL_LOGS_ID ?? '',
 			},
 		},
 	},
 
 	embed: {
-		color: process.env.EMBED_COLOR || '#ffd100',
-		footer: process.env.EMBED_FOOTER || 'IEEE @ UCF Discord Bot',
+		color: process.env.EMBED_COLOR ?? '#ffd100',
+		footer: process.env.EMBED_FOOTER ?? 'IEEE @ UCF Discord Bot',
 	},
 
-	postgres: process.env.DATABASE_URL || '',
+	postgres: process.env.DATABASE_URL ?? '',
 
 	calendarURLs: [
-		process.env.CALENDAR_ICAL_URL || 'https://calendar.google.com/calendar/ical/ieee.ucf%40gmail.com/public/basic.ics',
+		process.env.CALENDAR_ICAL_URL ?? 'https://calendar.google.com/calendar/ical/ieee.ucf%40gmail.com/public/basic.ics',
 	],
 
 	owners: [
 		{
-			id: process.env.OWNER_ID || '',
-			name: process.env.OWNER_NAME || '',
+			id: process.env.OWNER_ID ?? '',
+			name: process.env.OWNER_NAME ?? '',
 		},
 	],
 
 	status: {
-		name: process.env.STATUS_NAME || 'you',
+		name: process.env.STATUS_NAME ?? 'you',
 		type: ActivityType.Watching,
 	},
 

@@ -475,12 +475,10 @@ export class InfoCommand extends Command {
 		const officersByRole: Record<string, string[]> = {};
 
 		for (const officer of officers) {
-			const role = officer.officerRole || 'General Officer';
+			const role = officer.officerRole ?? 'General Officer';
 			const name = `${officer.firstName} ${officer.lastName}`;
 
-			if (!officersByRole[role]) {
-				officersByRole[role] = [];
-			}
+			officersByRole[role] ??= [];
 			officersByRole[role].push(name);
 		}
 

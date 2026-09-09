@@ -30,19 +30,19 @@ export default class VoiceStateUpdateEvent extends Event {
 
 			const timeout = setTimeout(() => {
 
-				const connection = getVoiceConnection(guild.id);
-				const botChannel = guild.members.me?.voice.channel;
+				const laterConnection = getVoiceConnection(guild.id);
+				const laterBotChannel = guild.members.me?.voice.channel;
 
-				if (!connection || !botChannel) {
+				if (!laterConnection || !laterBotChannel) {
 					guildDisconnectTimers.delete(guild.id);
 					return;
 				}
 
-				const remaining = botChannel.members.filter(m => !m.user.bot);
+				const remaining = laterBotChannel.members.filter(m => !m.user.bot);
 
 				if (remaining.size === 0) {
-					connection.destroy();
-					console.log(`Left ${botChannel.name} due to inactivity.`); // disconnect if nobody's in call for one minute
+					laterConnection.destroy();
+					console.log(`Left ${laterBotChannel.name} due to inactivity.`); // disconnect if nobody's in call for one minute
 				}
 
 				guildDisconnectTimers.delete(guild.id);

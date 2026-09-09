@@ -1,7 +1,7 @@
 import { SlashCommandBuilder, ChatInputCommandInteraction, GuildMember } from 'discord.js';
 import { Command } from '../../structs/Command.ts';
 import { PermissionLevel } from '../../modules/helpers/Utils.ts';
-import { joinVoiceChannel, entersState, getVoiceConnection, VoiceConnectionStatus } from '@discordjs/voice';
+import { joinVoiceChannel, getVoiceConnection } from '@discordjs/voice';
 
 export class JoinCommand extends Command {
 	constructor(client: any) {
@@ -45,7 +45,7 @@ export class JoinCommand extends Command {
 		}
 
 		try {
-			const connection = joinVoiceChannel({
+			joinVoiceChannel({
 				channelId: channel.id,
 				guildId: guild.id,
 				adapterCreator: guild.voiceAdapterCreator,

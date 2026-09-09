@@ -1,4 +1,4 @@
-import { SlashCommandBuilder, ChatInputCommandInteraction, EmbedBuilder } from 'discord.js';
+import { SlashCommandBuilder, ChatInputCommandInteraction } from 'discord.js';
 import { Command } from '../../structs/Command.ts';
 import { PermissionLevel } from '../../modules/helpers/Utils.ts';
 
@@ -34,7 +34,7 @@ export class ResumeCommand extends Command {
 				.setTitle('**LaTeX Resume Format **')
 				.setDescription(`Check out the github below, created by Yousef!
                     https://github.com/Quil180/resume`)
-				.setThumbnail(creator?.displayAvatarURL({ size: 256 }) || '')
+				.setThumbnail(creator?.displayAvatarURL({ size: 256 }) ?? '')
 				.setTimestamp();
 
 			await interaction.editReply({

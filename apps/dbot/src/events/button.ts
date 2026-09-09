@@ -50,8 +50,8 @@ export class button extends Event {
 					data: [],
 				},
 				// Override reply to use editReply since we already deferred
-				reply: async (options: any) => {
-					return await interaction.editReply(options);
+				reply: (options: any) => {
+					return interaction.editReply(options);
 				},
 			};
 

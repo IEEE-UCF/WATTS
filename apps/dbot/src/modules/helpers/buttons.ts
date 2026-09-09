@@ -24,6 +24,6 @@ export function createCommandButton(
  */
 export function getCommandFromButton(customId: string): string | null {
 	if (!customId.startsWith('cmd_')) return null;
-	const parts = customId.split('_');
-	return parts[1] || null;
+	const name = customId.split('_')[1];
+	return name && name.length > 0 ? name : null;
 }

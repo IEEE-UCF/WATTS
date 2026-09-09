@@ -1,4 +1,4 @@
-import { SlashCommandBuilder, ChatInputCommandInteraction, type SlashCommandOptionsOnlyBuilder, EmbedBuilder } from 'discord.js';
+import { SlashCommandBuilder, ChatInputCommandInteraction, type SlashCommandOptionsOnlyBuilder } from 'discord.js';
 import { Command } from '../../structs/Command.ts';
 import { PermissionLevel } from '../../modules/helpers/Utils.ts';
 import * as schema from '@watts/db/schema';
@@ -73,7 +73,7 @@ export class MembersCommand extends Command {
 
 			embed.addFields({
 				name: 'Members',
-				value: memberList || 'None',
+				value: memberList.length > 0 ? memberList : 'None',
 			});
 
 			embed.addFields({

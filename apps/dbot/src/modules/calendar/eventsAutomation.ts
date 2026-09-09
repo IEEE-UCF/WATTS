@@ -179,7 +179,7 @@ export class eventsAutomation {
 				const timeDiff = eventStart.getTime() - now.getTime();
 
 				// Create unique ID for this event occurrence
-				const eventId = `${event.uid || event.summary}_${eventStart.getTime()}`;
+				const eventId = `${event.uid ?? event.summary}_${eventStart.getTime()}`;
 
 				// Check if event has passed - delete reminder if exists
 				if (timeDiff < 0 && this.activeReminders.has(eventId)) {
@@ -188,8 +188,6 @@ export class eventsAutomation {
 				}
 
 				// Check if event is within reminder window, +/- 10 minutes
-				const reminderWindow = 10 * 60 * 1000; // 10 minute window
-
 				const isInReminderWindow = timeDiff <= reminderTime && timeDiff > reminderTime - (5 * 60 * 1000);
 				if (isInReminderWindow && !this.activeReminders.has(eventId)) {
 					await this.sendReminder(event, eventId);
@@ -219,7 +217,7 @@ export class eventsAutomation {
 				.setDescription(`**${event.summary ?? 'Untitled Event'}** is starting soon!`)
 				.addFields(
 					{ name: '📅  Start Time', value: time(event.start as Date, TimestampStyles.LongDateTime), inline: true },
-					{ name: '📍 Location', value: event.location || 'Check Announcement', inline: true },
+					{ name: '📍 Location', value: event.location ?? 'Check Announcement', inline: true },
 				)
 				.setColor('#FF6B6B'); // Red/orange for urgency - not IEEE hex code? lmao
 
