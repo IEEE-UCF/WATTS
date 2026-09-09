@@ -141,6 +141,31 @@ export const eventRouter = createTRPCRouter({
 			}
 		}),
 
+	/**
+	 * The soonest upcoming active event in a given category (label slug), or null.
+	 * Used by the homepage GBM countdown — pass `{ labelSlug: 'gbm' }`.
+	 */
+	next: publicProcedure
+		.input(z.object({ labelSlug: z.string().max(32) }))
+		.query(async ({ ctx, input }) => {
+			try {
+				const [events, labels] = await Promise.all([
+					listActiveEvents(ctx.db),
+					listLabels(ctx.db),
+				]);
+				const label = labels.find((l) => l.slug === input.labelSlug);
+				if (!label) return null;
+				const now = Date.now();
+				// listActiveEvents is already ordered by startTime asc.
+				const upcoming = events.find(
+					(e) => e.labelId === label.id && new Date(e.startTime).getTime() >= now,
+				);
+				return upcoming ? toDisplay(upcoming, label) : null;
+			} catch (error) {
+				mapDomainError(error);
+			}
+		}),
+
 	create: manageEvents
 		.input(eventCreateSchema)
 		.mutation(async ({ ctx, input }) => {
