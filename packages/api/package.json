@@ -28,6 +28,6 @@
     "@types/luxon": "^3.7.1",
     "@watts/eslint-config": "workspace:*",
     "@watts/tsconfig": "workspace:*",
-    "eslint": "^9.39.4"
+    "eslint": "^10.10.0"
   }
 }

@@ -87,7 +87,7 @@
 		"@watts/tsconfig": "workspace:*",
 		"autoprefixer": "^10.4.24",
 		"dotenv": "^17.2.4",
-		"eslint": "^9.39.4",
+		"eslint": "^10.10.0",
 		"eslint-plugin-react-hooks": "^7.0.1",
 		"local-ssl-proxy": "^2.0.5",
 		"tailwindcss": "^4.1.18",
