@@ -1,4 +1,3 @@
 {
-  "$schema": "https://openapi.vercel.sh/vercel.json",
-  "ignoreCommand": "git diff --quiet HEAD^ HEAD -- . ../../packages ../../pnpm-lock.yaml ../../package.json ../../pnpm-workspace.yaml"
+  "$schema": "https://openapi.vercel.sh/vercel.json"
 }
