@@ -1,0 +1,4 @@
+{
+	"extends": "@watts/tsconfig/base.json",
+	"include": ["src/**/*.ts", "fixtures/**/*.ts"]
+}

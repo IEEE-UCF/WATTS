@@ -9,6 +9,10 @@
     "./trpc": "./src/trpc.ts",
     "./root": "./src/root.ts"
   },
+  "scripts": {
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit"
+  },
   "dependencies": {
     "@trpc/server": "^11.9.0",
     "@watts/core": "workspace:*",
@@ -22,6 +26,8 @@
   },
   "devDependencies": {
     "@types/luxon": "^3.7.1",
-    "@watts/tsconfig": "workspace:*"
+    "@watts/eslint-config": "workspace:*",
+    "@watts/tsconfig": "workspace:*",
+    "eslint": "^9.39.4"
   }
 }

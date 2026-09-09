@@ -2,12 +2,14 @@
 	"name": "@watts/web",
 	"version": "0.1.0",
 	"private": true,
+	"description": "IEEE@UCF website — Next.js 15 App Router, tRPC client, NextAuth (Discord).",
 	"scripts": {
 		"dev": "next dev --port 3050 --experimental-https",
 		"dev:http": "next dev --port 3050",
 		"build": "next build",
 		"start": "next start",
-		"lint": "next lint"
+		"lint": "next lint",
+		"typecheck": "tsc --noEmit"
 	},
 	"dependencies": {
 		"@auth/drizzle-adapter": "^1.11.1",

@@ -15,7 +15,8 @@
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio --port 3054",
     "db:check": "drizzle-kit check",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@neondatabase/serverless": "1.0.2",

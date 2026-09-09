@@ -8,8 +8,17 @@
     ".": "./src/index.ts",
     "./load-env": "./load-env.mjs"
   },
+  "scripts": {
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit"
+  },
   "dependencies": {
     "dotenv": "^17.2.4",
     "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@watts/eslint-config": "workspace:*",
+    "@watts/tsconfig": "workspace:*",
+    "eslint": "^9.39.4"
   }
 }

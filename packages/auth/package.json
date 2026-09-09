@@ -7,6 +7,10 @@
   "exports": {
     ".": "./src/index.ts"
   },
+  "scripts": {
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit"
+  },
   "dependencies": {
     "@auth/drizzle-adapter": "^1.11.1",
     "@watts/core": "workspace:*",
@@ -15,6 +19,8 @@
     "next-auth": "^4.24.13"
   },
   "devDependencies": {
-    "@watts/tsconfig": "workspace:*"
+    "@watts/eslint-config": "workspace:*",
+    "@watts/tsconfig": "workspace:*",
+    "eslint": "^9.39.4"
   }
 }

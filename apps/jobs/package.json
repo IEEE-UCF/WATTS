@@ -5,12 +5,19 @@
   "description": "Scheduled / out-of-band jobs for WATTS (cron on the VPS). Not part of any website deploy.",
   "type": "module",
   "scripts": {
-    "archive": "node src/archive-to-onedrive.mjs"
+    "archive": "node src/archive-to-onedrive.mjs",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@watts/config": "workspace:*",
     "@aws-sdk/client-s3": "^3.1124.0",
     "@vercel/blob": "^2.8.0",
     "pg": "8.16.3"
+  },
+  "devDependencies": {
+    "@watts/eslint-config": "workspace:*",
+    "@watts/tsconfig": "workspace:*",
+    "eslint": "^9.39.4"
   }
 }

@@ -13,8 +13,7 @@ import { config as dotenvConfig } from 'dotenv';
 /** @returns {string | null} absolute path to the repo root, or null if not found */
 export function findRepoRoot(start = process.cwd()) {
 	let dir = resolve(start);
-	// eslint-disable-next-line no-constant-condition
-	while (true) {
+	for (;;) {
 		if (existsSync(join(dir, 'pnpm-workspace.yaml'))) return dir;
 		const parent = dirname(dir);
 		if (parent === dir) return null;

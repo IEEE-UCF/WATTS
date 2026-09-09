@@ -16,11 +16,12 @@
   "scripts": {
     "web": "pnpm --filter @watts/web",
     "bot": "pnpm --filter @watts/bot",
-    "lint": "pnpm -r --parallel lint",
-    "build": "pnpm -r build",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "build": "turbo run build",
     "bootstrap": "node infra/scripts/bootstrap.mjs",
-    "dev": "pnpm --filter @watts/web dev",
-    "dev:bot": "pnpm --filter @watts/bot dev",
+    "dev": "turbo run dev --filter=@watts/web",
+    "dev:bot": "turbo run dev --filter=@watts/bot",
     "infra:up": "node infra/scripts/up.mjs",
     "infra:down": "docker compose -f infra/docker/docker-compose.yml --profile setup down",
     "infra:reset": "docker compose -f infra/docker/docker-compose.yml --profile setup down -v",
@@ -31,6 +32,7 @@
     "db:reset": "pnpm infra:reset && pnpm infra:up && pnpm db:migrate && pnpm db:seed"
   },
   "devDependencies": {
+    "turbo": "^2.10.12",
     "typescript": "^5.9.3"
   }
 }

@@ -1,0 +1,5 @@
+{
+	"extends": "@watts/tsconfig/base.json",
+	"compilerOptions": { "checkJs": false },
+	"include": ["src/**/*"]
+}

@@ -25,6 +25,7 @@
     "eslint": "^9.39.4"
   },
   "scripts": {
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit"
   }
 }
