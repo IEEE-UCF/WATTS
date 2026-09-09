@@ -16,6 +16,13 @@ name: Deploy
 on:
   push:
     branches: [main]
+    # Only when something migration-relevant changed — a doc / CI / app-only
+    # push to main should not queue a migrate job for approval.
+    paths:
+      - "packages/db/drizzle/**"
+      - "packages/db/src/schema.ts"
+      - "packages/db/drizzle.config.ts"
+      - ".github/workflows/deploy.yml"
 
 concurrency:
   group: deploy-migrate
