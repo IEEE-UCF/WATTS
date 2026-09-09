@@ -36,8 +36,18 @@ test.beforeAll(async () => {
 	original = await snapshot();
 });
 test.afterAll(async () => {
-	await restore(original);
-	await closeDb();
+	try {
+		await restore(original);
+	} catch (err) {
+		console.error(
+			'\n!!! ROLE RESTORE FAILED — your member row may be wrong.\n' +
+				'    Recover with: pnpm --filter @watts/web e2e:role-restore\n',
+			err,
+		);
+		throw err;
+	} finally {
+		await closeDb();
+	}
 });
 
 async function expectLanding(page: import('@playwright/test').Page, path: string, want: Want) {

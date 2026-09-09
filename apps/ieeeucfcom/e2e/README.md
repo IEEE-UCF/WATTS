@@ -15,6 +15,12 @@ testing notes for the deeper layers (shelved).
 | `authed.spec.ts` | `authenticated` | The gated pages render (no redirect) and get screenshotted. Runs **only** with a real captured session — see below. |
 | `role-matrix.spec.ts` | `authenticated` | Per-role access: toggles the captured user's real `members` row (`e2e/lib/role.ts`) through member / officer / admin (+ a lone staff-capability grant) and asserts each gated route **renders or redirects to `/dashboard`** as expected. Also pins the "role revoked while idle on `/staff`" gap. Serial; snapshots + restores your row. |
 
+> **role-matrix mutates your real member row.** It snapshots (`administrator`,
+> `officer_status`, `officer_role`, permissions) to `e2e/.auth/role-backup.json`
+> first and restores in `afterAll`. If a run is killed mid-flight:
+> `pnpm --filter @watts/web e2e:role-restore`. The authenticated run also forces
+> `workers: 1` so nothing else hits the DB while roles are being toggled.
+
 ## Run the anonymous suite
 
 Local build (Postgres must be up + migrated + seeded):

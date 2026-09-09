@@ -19,7 +19,9 @@ export default defineConfig({
 	fullyParallel: true,
 	forbidOnly: Boolean(process.env.CI),
 	retries: process.env.CI ? 1 : 0,
-	workers: process.env.CI ? 2 : undefined,
+	// One worker when the authenticated run is active: role-matrix.spec.ts mutates
+	// the shared member row, so nothing else may run against the DB concurrently.
+	workers: process.env.CI ? 2 : runAuthed ? 1 : undefined,
 	// A `next dev` target (E2E_BASE_URL=https://localhost:3050) compiles routes on
 	// first hit — give those a generous ceiling. A prod `next start` is far faster.
 	timeout: external ? 60_000 : 30_000,
