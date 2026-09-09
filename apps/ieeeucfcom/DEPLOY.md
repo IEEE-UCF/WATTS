@@ -69,31 +69,25 @@ Without an exact match, login fails with *"invalid oauth redirect uri"*.
 
 ## 5. Database migrations
 
-Vercel does **not** run migrations. Drizzle migrations live in `packages/db` and are
-applied with `pnpm --filter @watts/db db:migrate` (needs `DATABASE_URL`).
+Vercel does **not** run migrations. They're automated in
+**`.github/workflows/deploy.yml`** — on every push to `main`, a `migrate` job runs
+`pnpm --filter @watts/db db:migrate`, but it is **held for manual approval** via the
+`production` GitHub Environment before it touches the database (Actions run →
+"Review deployments").
 
-**Recommended:** add a gated job to `.github/workflows/ci.yml` that runs on
-`push` to `main` **before** the Vercel production deploy settles:
+One-time setup:
 
-```yaml
-  migrate:
-    if: github.ref == 'refs/heads/main'
-    needs: verify
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-        with: { version: 11.1.2 }
-      - uses: actions/setup-node@v4
-        with: { node-version-file: .nvmrc, cache: pnpm }
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm --filter @watts/db db:migrate
-        env:
-          DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
-```
+1. **Settings → Environments → New environment `production`** → add yourself under
+   **Required reviewers**; limit **Deployment branches** to `main`.
+2. On that environment, add the secret **`PROD_DATABASE_URL_UNPOOLED`** =
+   `DATABASE_URL_UNPOOLED` from this project's Production env vars (the Neon
+   integration set it — use the *unpooled* one; pgbouncer can break multi-statement
+   migrations).
 
-**Manual alternative:** from a checkout with the production `DATABASE_URL` exported,
-run `pnpm --filter @watts/db db:migrate` immediately before promoting the deploy.
+Vercel's build for the same push runs immediately and does **not** wait for the
+approval, so keep migrations expand/contract-safe. For a breaking change, run
+`pnpm --filter @watts/db db:migrate` against prod manually **before** merging the
+code that needs it, then approve the (now no-op) job.
 
 ## 6. First deploy
 
