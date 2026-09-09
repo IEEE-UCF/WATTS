@@ -47,9 +47,10 @@ Keys are the **Drizzle property names** (camelCase) and rows are inserted throug
 - rows cross-reference each other by those `id`s.
 
 Current set (~small, enough to exercise every list page): 3 members (1 admin + 1 officer +
-1 plain), 2 committees with 3 memberships, 2 projects with leads, 2 sponsors, 2 upcoming
-events with 4 check-ins, 1 delegated `scan_attendance` grant. Validated against migrations
-`0000–0003` (`drizzle-kit check` passes → `schema.ts` = migrations = DB) and against a
+1 plain), 2 committees with 3 memberships, 2 projects with leads, 2 sponsors, the 6 event
+categories (`event_labels`), 1 delegated `scan_attendance` grant. No `events` are seeded —
+create them on `/admin/events` or import from Google Calendar. Validated against migrations
+`0000–0005` (`drizzle-kit check` passes → `schema.ts` = migrations = DB) and against a
 live `pnpm db:reset` (all pages render the data, 0 errors).
 
 Long term (with `@watts/db`): generate fixtures from the schema (a factory / seeded faker)

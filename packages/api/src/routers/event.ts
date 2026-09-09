@@ -15,6 +15,7 @@ import {
 	createEvent,
 	updateEvent,
 	deleteEvent,
+	hardDeleteEvent,
 	syncEventToGoogle,
 	importEventsFromGoogle,
 	checkInMember,
@@ -194,6 +195,18 @@ export const eventRouter = createTRPCRouter({
 		.mutation(async ({ ctx, input }) => {
 			try {
 				await deleteEvent(ctx.db, input.id);
+				return { success: true };
+			} catch (error) {
+				mapDomainError(error);
+			}
+		}),
+
+	/** Permanently remove an event + its attendees + its Google Calendar mirror. */
+	hardDelete: manageEvents
+		.input(z.object({ id: z.string().uuid() }))
+		.mutation(async ({ ctx, input }) => {
+			try {
+				await hardDeleteEvent(ctx.db, input.id);
 				return { success: true };
 			} catch (error) {
 				mapDomainError(error);

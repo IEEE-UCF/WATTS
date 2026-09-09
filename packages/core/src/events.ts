@@ -134,6 +134,28 @@ export async function deleteEvent(db: WattsDb, id: string) {
 }
 
 /**
+ * Permanently remove an event (and its attendee rows, via FK cascade) and its
+ * Google Calendar mirror. For real cleanup — soft delete via `deleteEvent` is the
+ * normal path. Best-effort on the Google side: a failure there is logged, not
+ * fatal.
+ */
+export async function hardDeleteEvent(db: WattsDb, id: string) {
+	const [event] = await db.select().from(Events).where(eq(Events.id, id)).limit(1);
+	if (!event) throw new DomainError('NOT_FOUND', 'Event not found');
+
+	if (event.googleCalendarEventId) {
+		try {
+			const { createCalendarClient } = await import('@watts/calendar');
+			await createCalendarClient().deleteEvent(event.googleCalendarEventId);
+		} catch (err) {
+			console.error('[hardDeleteEvent] Google Calendar cleanup failed for', id, err);
+		}
+	}
+
+	await db.delete(Events).where(eq(Events.id, id));
+}
+
+/**
  * Push one event to Google Calendar (create or update) and record the outcome on
  * the row. Never throws for a sync failure — it sets `syncStatus = 'error'` and
  * returns the row so staff can hit "Re-sync". Reused by the `event.resync`

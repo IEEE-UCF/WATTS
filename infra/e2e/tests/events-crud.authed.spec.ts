@@ -73,16 +73,23 @@ test('staff can create, edit and delete an event from /admin/events', async ({ p
 	});
 	await expect(editedRow).toBeVisible();
 
-	// ── delete (soft) ──
+	// ── delete (soft / archive) ──
 	page.once('dialog', (d) => d.accept());
 	await editedRow.getByRole('button', { name: 'delete' }).click();
 
-	// Soft-deleted rows stay in the admin grid but dim + lose the delete action,
-	// and drop out of the public feed query.
-	await expect(editedRow).toHaveClass(/opacity-40/);
+	// Archived rows leave the default grid and the public feed…
+	await expect(editedRow).toBeHidden();
 	const feed = await page.request.get(
 		'/api/trpc/event.getAll?batch=1&input=%7B%220%22%3A%7B%22json%22%3Anull%7D%7D',
 	);
 	expect(feed.ok()).toBeTruthy();
 	expect(await feed.text()).not.toContain(TITLE_EDITED);
+
+	// …but are still reachable via "Show archived", where they can be purged.
+	await page.getByLabel(/Show archived/).check();
+	await expect(editedRow).toBeVisible();
+	await expect(editedRow).toContainText('archived');
+	page.once('dialog', (d) => d.accept());
+	await editedRow.getByRole('button', { name: 'delete permanently' }).click();
+	await expect(editedRow).toBeHidden();
 });

@@ -443,6 +443,7 @@ export function EventManager() {
 
 	const [showForm, setShowForm] = useState(false);
 	const [editing, setEditing] = useState<AdminEvent | null>(null);
+	const [showArchived, setShowArchived] = useState(false);
 	const [flyerBusy, setFlyerBusy] = useState<string | null>(null);
 	const flyerRef = useRef<HTMLInputElement>(null);
 	const flyerTarget = useRef<string | null>(null);
@@ -453,6 +454,7 @@ export function EventManager() {
 	};
 
 	const del = trpc.event.delete.useMutation({ onSuccess: invalidate });
+	const hardDel = trpc.event.hardDelete.useMutation({ onSuccess: invalidate });
 	const resync = trpc.event.resync.useMutation({ onSuccess: invalidate });
 	const confirmFlyer = trpc.event.confirmFlyer.useMutation();
 	const importGoogle = trpc.event.importFromGoogle.useMutation();
@@ -491,6 +493,8 @@ export function EventManager() {
 		() => (events ?? []).slice().sort((a, b) => (a.startTimeRaw < b.startTimeRaw ? 1 : -1)),
 		[events],
 	);
+	const archivedCount = useMemo(() => sorted.filter((e) => !e.active).length, [sorted]);
+	const visible = showArchived ? sorted : sorted.filter((e) => e.active);
 
 	function openCreate() {
 		setEditing(null);
@@ -543,6 +547,16 @@ export function EventManager() {
 				>
 					{importGoogle.isPending ? 'Importing…' : 'Import from Google Calendar'}
 				</button>
+				{archivedCount > 0 && (
+					<label className="ml-auto flex items-center gap-2 text-xs text-gray-400">
+						<input
+							type="checkbox"
+							checked={showArchived}
+							onChange={(e) => setShowArchived(e.target.checked)}
+						/>
+						Show archived ({archivedCount})
+					</label>
+				)}
 			</div>
 
 			{showForm && (
@@ -580,13 +594,20 @@ export function EventManager() {
 							</tr>
 						</thead>
 						<tbody>
-							{sorted.map((ev) => (
+							{visible.map((ev) => (
 								<tr
 									key={ev.id}
-									className={`border-t border-gray-800 ${ev.active ? '' : 'opacity-40'}`}
+									className={`border-t border-gray-800 ${ev.active ? '' : 'opacity-50'}`}
 								>
 									<td className="px-3 py-2">
-										<div className="font-medium">{ev.title}</div>
+										<div className="font-medium">
+											{ev.title}
+											{!ev.active && (
+												<span className="ml-2 rounded bg-gray-800 px-1.5 py-0.5 text-[10px] uppercase text-gray-400">
+													archived
+												</span>
+											)}
+										</div>
 										<div className="text-xs text-gray-500">{ev.location}</div>
 									</td>
 									<td className="px-3 py-2 text-xs text-gray-300">{ev.startTime}</td>
@@ -650,13 +671,13 @@ export function EventManager() {
 													re-sync
 												</button>
 											)}
-											{ev.active && (
+											{ev.active ? (
 												<button
 													type="button"
 													onClick={() => {
 														if (
 															confirm(
-																`Delete “${ev.title}”? This also removes it from Google Calendar.`,
+																`Archive “${ev.title}”? It's removed from the site and Google Calendar, but kept here (with attendee history) until you delete it permanently.`,
 															)
 														) {
 															del.mutate({ id: ev.id });
@@ -666,15 +687,32 @@ export function EventManager() {
 												>
 													delete
 												</button>
+											) : (
+												<button
+													type="button"
+													disabled={hardDel.isPending}
+													onClick={() => {
+														if (
+															confirm(
+																`Permanently delete “${ev.title}”? This cannot be undone and removes its attendee records.`,
+															)
+														) {
+															hardDel.mutate({ id: ev.id });
+														}
+													}}
+													className="text-red-500 hover:underline disabled:opacity-50"
+												>
+													delete permanently
+												</button>
 											)}
 										</div>
 									</td>
 								</tr>
 							))}
-							{sorted.length === 0 && (
+							{visible.length === 0 && (
 								<tr>
 									<td colSpan={7} className="px-3 py-6 text-center text-sm text-gray-500">
-										No events yet.
+										{sorted.length === 0 ? 'No events yet.' : 'No active events.'}
 									</td>
 								</tr>
 							)}
