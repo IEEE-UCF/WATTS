@@ -45,11 +45,16 @@ test('staff can create, edit and delete an event from /admin/events', async ({ p
 	await page.fill('#startTime', '2099-01-15T18:00');
 	await page.fill('#endTime', '2099-01-15T19:30');
 
-	// Pick the first real category if the label seed ran; otherwise leave "none".
+	// The category select must be present and populated from the label seed.
 	const labelOptions = page.locator('#labelId option');
-	if ((await labelOptions.count()) > 1) {
-		await page.locator('#labelId').selectOption({ index: 1 });
-	}
+	expect(await labelOptions.count()).toBeGreaterThan(1);
+	await page.locator('#labelId').selectOption({ index: 1 });
+
+	await page.screenshot({
+		path: 'screenshots/admin-events-create-form.png',
+		fullPage: true,
+		animations: 'disabled',
+	});
 
 	await page.getByRole('button', { name: 'Create event' }).click();
 

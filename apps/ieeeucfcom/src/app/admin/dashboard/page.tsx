@@ -1,13 +1,13 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { Navbar } from '@/components/navbar';
-import { FormPopup } from '@/components/dashboard/newEventForm';
 import { EventList } from '@/components/dashboard/event-list';
 import { Card, CardHeader } from '@watts/ui/card';
 import { QREventScanner } from '@/components/admin/qr_event_scanner';
 import { getSessionRoles } from '@/lib/auth-guards';
 
 const ADMIN_TOOLS = [
+	{ href: '/admin/events', title: 'Events', desc: 'Create & edit events, categories, flyers, Google Calendar sync' },
 	{ href: '/admin/members', title: 'Members', desc: 'Grant admin / officer status & roles' },
 	{ href: '/admin/photos', title: 'Event Photos', desc: 'Upload & manage photos per event' },
 	{ href: '/admin/resumes', title: 'Résumés', desc: 'Browse member résumés' },
@@ -64,9 +64,17 @@ export default async function Dashboard() {
 						<div className="space-y-6">
 							<div>
 								<h2 className="mb-3 text-lg font-semibold text-gray-100 lg:text-xl">
-									Create New Event
+									Events
 								</h2>
-								<FormPopup />
+								<Link
+									href="/admin/events"
+									className="inline-block rounded-md bg-[var(--ieee-dark-yellow)] px-4 py-2 text-sm font-semibold text-black"
+								>
+									Open event manager →
+								</Link>
+								<p className="mt-2 text-sm text-gray-400">
+									Create &amp; edit events, pick a category, upload a flyer. Syncs to Google Calendar.
+								</p>
 							</div>
 							<div className="border-t border-gray-800 pt-5">
 								<h2 className="mb-3 text-lg font-semibold text-gray-100 lg:text-xl">

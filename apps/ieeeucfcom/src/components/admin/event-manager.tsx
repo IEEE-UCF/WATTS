@@ -508,6 +508,8 @@ export function EventManager() {
 
 			{showForm && (
 				<EventForm
+					// Remount on create↔edit switch so the form never keeps stale values.
+					key={editing?.id ?? 'new'}
 					labels={labels ?? []}
 					editing={editing}
 					onDone={() => setShowForm(false)}
