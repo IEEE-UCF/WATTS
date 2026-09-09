@@ -35,13 +35,13 @@ export default defineConfig({
 		{
 			name: 'chromium',
 			use: { ...devices['Desktop Chrome'] },
-			testIgnore: /authed\.spec\.ts/,
+			testIgnore: /(authed|role-matrix)\.spec\.ts/,
 		},
 		...(runAuthed
 			? [
 					{
 						name: 'authenticated',
-						testMatch: /authed\.spec\.ts/,
+						testMatch: /(authed|role-matrix)\.spec\.ts/,
 						use: { ...devices['Desktop Chrome'], storageState: authFile },
 					},
 				]

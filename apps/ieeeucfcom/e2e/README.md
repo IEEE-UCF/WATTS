@@ -13,6 +13,7 @@ testing notes for the deeper layers (shelved).
 | `auth-gates.spec.ts` | `chromium` | Anonymous → `/dashboard`, `/settings`, `/admin/*`, `/staff` all redirect to `/auth/signin`. |
 | `integrations.spec.ts` | `chromium` | `/api/auth/providers` lists Discord · a public tRPC query returns without a 5xx (DB) · `/api/auth/session` responds · a gated file route 401/403s for anon (storage adapter loads). |
 | `authed.spec.ts` | `authenticated` | The gated pages render (no redirect) and get screenshotted. Runs **only** with a real captured session — see below. |
+| `role-matrix.spec.ts` | `authenticated` | Per-role access: toggles the captured user's real `members` row (`e2e/lib/role.ts`) through member / officer / admin (+ a lone staff-capability grant) and asserts each gated route **renders or redirects to `/dashboard`** as expected. Also pins the "role revoked while idle on `/staff`" gap. Serial; snapshots + restores your row. |
 
 ## Run the anonymous suite
 
