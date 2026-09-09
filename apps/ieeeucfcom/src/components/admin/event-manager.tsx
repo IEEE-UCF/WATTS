@@ -481,6 +481,13 @@ export function EventManager() {
 
 	const del = trpc.event.delete.useMutation();
 	const hardDel = trpc.event.hardDelete.useMutation();
+	const restore = trpc.event.restore.useMutation({
+		onSuccess: () => {
+			invalidate();
+			setBanner({ kind: 'ok', text: 'Event restored and re-published to Google Calendar.' });
+		},
+		onError: (e) => setBanner({ kind: 'err', text: e.message }),
+	});
 	const setHidden = trpc.event.update.useMutation({ onSuccess: invalidate });
 	const resync = trpc.event.resync.useMutation({ onSuccess: invalidate });
 	const confirmFlyer = trpc.event.confirmFlyer.useMutation();
@@ -796,16 +803,26 @@ export function EventManager() {
 													delete
 												</button>
 											) : (
-												<button
-													type="button"
-													onClick={() => {
-														setPurgeText('');
-														setPendingDelete({ ev, mode: 'purge' });
-													}}
-													className="text-red-500 hover:underline"
-												>
-													delete permanently
-												</button>
+												<>
+													<button
+														type="button"
+														disabled={restore.isPending}
+														onClick={() => restore.mutate({ id: ev.id })}
+														className="text-green-400 hover:underline disabled:opacity-50"
+													>
+														restore
+													</button>
+													<button
+														type="button"
+														onClick={() => {
+															setPurgeText('');
+															setPendingDelete({ ev, mode: 'purge' });
+														}}
+														className="text-red-500 hover:underline"
+													>
+														delete permanently
+													</button>
+												</>
 											)}
 										</div>
 									</td>

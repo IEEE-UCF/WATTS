@@ -145,6 +145,25 @@ export async function deleteEvent(db: WattsDb, id: string) {
 }
 
 /**
+ * Undo a soft delete: reactivate the event and re-publish it to Google Calendar
+ * (a fresh mirror, since archiving cleared `googleCalendarEventId`). No-op if it
+ * is already active.
+ */
+export async function restoreEvent(db: WattsDb, id: string) {
+	const [event] = await db.select().from(Events).where(eq(Events.id, id)).limit(1);
+	if (!event) throw new DomainError('NOT_FOUND', 'Event not found');
+	if (event.active) return { event };
+
+	await db
+		.update(Events)
+		.set({ active: true, updatedAt: new Date().toISOString() })
+		.where(eq(Events.id, id));
+
+	const synced = await syncEventToGoogle(db, id);
+	return { event: synced ?? event };
+}
+
+/**
  * Permanently remove an event (and its attendee rows, via FK cascade) and its
  * Google Calendar mirror. For real cleanup — soft delete via `deleteEvent` is the
  * normal path. Best-effort on the Google side: a failure there is logged, not

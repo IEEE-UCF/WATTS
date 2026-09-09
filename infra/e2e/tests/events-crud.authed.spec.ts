@@ -100,9 +100,22 @@ test('staff can create, edit and delete an event from /admin/events', async ({ p
 	expect(feed.ok()).toBeTruthy();
 	expect(await feed.text()).not.toContain(TITLE_EDITED);
 
-	// …but are still reachable via "Show archived", where a type-to-confirm purge removes them.
+	// …but are still reachable via "Show archived".
 	await page.getByLabel(/Show archived/).check();
 	await expect(editedRow).toBeVisible();
+	await expect(editedRow).toContainText('archived');
+
+	// Restore brings it back to the active list and the public feed.
+	await editedRow.getByRole('button', { name: 'restore' }).click();
+	await expect(editedRow).not.toContainText('archived');
+	await expect(async () => {
+		expect(await (await page.request.get(feedUrl)).text()).toContain(TITLE_EDITED);
+	}).toPass();
+
+	// Re-archive, then a type-to-confirm purge removes it for good.
+	await editedRow.getByRole('button', { name: 'delete', exact: true }).click();
+	await page.getByRole('button', { name: 'Archive event' }).click();
+	await page.getByLabel(/Show archived/).check();
 	await expect(editedRow).toContainText('archived');
 	await editedRow.getByRole('button', { name: 'delete permanently' }).click();
 	const purge = page.getByRole('button', { name: 'Permanently delete' });

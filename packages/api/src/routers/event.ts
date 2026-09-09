@@ -15,6 +15,7 @@ import {
 	createEvent,
 	updateEvent,
 	deleteEvent,
+	restoreEvent,
 	hardDeleteEvent,
 	syncEventToGoogle,
 	importEventsFromGoogle,
@@ -197,6 +198,17 @@ export const eventRouter = createTRPCRouter({
 			try {
 				await deleteEvent(ctx.db, input.id);
 				return { success: true };
+			} catch (error) {
+				mapDomainError(error);
+			}
+		}),
+
+	/** Undo an archive: reactivate the event and re-publish it to Google Calendar. */
+	restore: manageEvents
+		.input(z.object({ id: z.string().uuid() }))
+		.mutation(async ({ ctx, input }) => {
+			try {
+				return { success: true, ...(await restoreEvent(ctx.db, input.id)) };
 			} catch (error) {
 				mapDomainError(error);
 			}
