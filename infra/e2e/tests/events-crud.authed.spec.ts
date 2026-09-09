@@ -73,9 +73,9 @@ test('staff can create, edit and delete an event from /admin/events', async ({ p
 	});
 	await expect(editedRow).toBeVisible();
 
-	// ── delete (soft / archive) ──
-	page.once('dialog', (d) => d.accept());
-	await editedRow.getByRole('button', { name: 'delete' }).click();
+	// ── delete (soft / archive) — in-app confirm dialog, no window.confirm ──
+	await editedRow.getByRole('button', { name: 'delete', exact: true }).click();
+	await page.getByRole('button', { name: 'Archive event' }).click();
 
 	// Archived rows leave the default grid and the public feed…
 	await expect(editedRow).toBeHidden();
@@ -85,11 +85,15 @@ test('staff can create, edit and delete an event from /admin/events', async ({ p
 	expect(feed.ok()).toBeTruthy();
 	expect(await feed.text()).not.toContain(TITLE_EDITED);
 
-	// …but are still reachable via "Show archived", where they can be purged.
+	// …but are still reachable via "Show archived", where a type-to-confirm purge removes them.
 	await page.getByLabel(/Show archived/).check();
 	await expect(editedRow).toBeVisible();
 	await expect(editedRow).toContainText('archived');
-	page.once('dialog', (d) => d.accept());
 	await editedRow.getByRole('button', { name: 'delete permanently' }).click();
+	const purge = page.getByRole('button', { name: 'Permanently delete' });
+	await expect(purge).toBeDisabled();
+	await page.getByLabel('Confirm event title').fill(TITLE_EDITED);
+	await expect(purge).toBeEnabled();
+	await purge.click();
 	await expect(editedRow).toBeHidden();
 });

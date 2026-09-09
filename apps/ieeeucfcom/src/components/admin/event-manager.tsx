@@ -436,6 +436,12 @@ function LabelBar({ labels }: { labels: Label[] }) {
 
 // ─────────────────────────── main ───────────────────────────
 
+type ImportPreview = RouterOutputs['event']['importFromGoogle'];
+interface PendingDelete {
+	ev: AdminEvent;
+	mode: 'archive' | 'purge';
+}
+
 export function EventManager() {
 	const utils = trpc.useUtils();
 	const { data: events, isLoading } = trpc.event.getAllForAdmin.useQuery();
@@ -448,44 +454,78 @@ export function EventManager() {
 	const flyerRef = useRef<HTMLInputElement>(null);
 	const flyerTarget = useRef<string | null>(null);
 
+	// In-app confirmation + status — no window.confirm/alert (browsers can suppress
+	// those after repeated dialogs, which silently swallows the action).
+	const [pendingDelete, setPendingDelete] = useState<PendingDelete | null>(null);
+	const [purgeText, setPurgeText] = useState('');
+	const [importPreview, setImportPreview] = useState<ImportPreview | null>(null);
+	const [banner, setBanner] = useState<{ kind: 'ok' | 'err'; text: string } | null>(null);
+
 	const invalidate = () => {
 		void utils.event.getAllForAdmin.invalidate();
 		void utils.event.getAll.invalidate();
 	};
 
-	const del = trpc.event.delete.useMutation({ onSuccess: invalidate });
-	const hardDel = trpc.event.hardDelete.useMutation({ onSuccess: invalidate });
+	const del = trpc.event.delete.useMutation();
+	const hardDel = trpc.event.hardDelete.useMutation();
 	const resync = trpc.event.resync.useMutation({ onSuccess: invalidate });
 	const confirmFlyer = trpc.event.confirmFlyer.useMutation();
 	const importGoogle = trpc.event.importFromGoogle.useMutation();
+	const deleteBusy = del.isPending || hardDel.isPending;
 
-	async function runImport() {
+	async function confirmDelete() {
+		if (!pendingDelete) return;
+		const { ev, mode } = pendingDelete;
+		try {
+			if (mode === 'archive') {
+				await del.mutateAsync({ id: ev.id });
+				setBanner({ kind: 'ok', text: `Archived “${ev.title}”.` });
+			} else {
+				await hardDel.mutateAsync({ id: ev.id });
+				setBanner({ kind: 'ok', text: `Permanently deleted “${ev.title}”.` });
+			}
+			invalidate();
+		} catch (err) {
+			setBanner({ kind: 'err', text: err instanceof Error ? err.message : 'Delete failed' });
+		} finally {
+			setPendingDelete(null);
+			setPurgeText('');
+		}
+	}
+
+	async function previewImport() {
+		setBanner(null);
 		try {
 			const preview = await importGoogle.mutateAsync({ dryRun: true });
 			if (!preview.enabled) {
-				alert('Google Calendar is not connected (no service-account credentials).');
+				setBanner({ kind: 'err', text: 'Google Calendar is not connected (no service-account credentials).' });
 				return;
 			}
 			if (preview.imported === 0) {
-				alert(`Nothing new to import. ${preview.skipped} calendar event(s) are already linked.`);
+				setBanner({
+					kind: 'ok',
+					text: `Nothing new to import — ${preview.skipped} calendar event(s) already linked.`,
+				});
 				return;
 			}
-			const names = preview.results
-				.filter((r) => r.action === 'imported')
-				.slice(0, 15)
-				.map((r) => `  • ${r.title}`)
-				.join('\n');
-			const ok = confirm(
-				`Import ${preview.imported} event(s) from Google Calendar?\n` +
-					`(${preview.skipped} already linked)\n\n${names}` +
-					(preview.imported > 15 ? '\n  …' : ''),
-			);
-			if (!ok) return;
+			setImportPreview(preview);
+		} catch (err) {
+			setBanner({ kind: 'err', text: err instanceof Error ? err.message : 'Import preview failed' });
+		}
+	}
+
+	async function commitImport() {
+		try {
 			const done = await importGoogle.mutateAsync({});
 			invalidate();
-			alert(`Imported ${done.imported}, updated ${done.updated}, skipped ${done.skipped}.`);
+			setBanner({
+				kind: 'ok',
+				text: `Imported ${done.imported}, updated ${done.updated}, skipped ${done.skipped}.`,
+			});
 		} catch (err) {
-			alert(err instanceof Error ? err.message : 'Import failed');
+			setBanner({ kind: 'err', text: err instanceof Error ? err.message : 'Import failed' });
+		} finally {
+			setImportPreview(null);
 		}
 	}
 
@@ -520,8 +560,9 @@ export function EventManager() {
 			await uploadEventFlyer(eventId, file);
 			await confirmFlyer.mutateAsync({ eventId, filename: file.name });
 			invalidate();
+			setBanner({ kind: 'ok', text: 'Flyer uploaded.' });
 		} catch (err) {
-			alert(err instanceof Error ? err.message : 'Flyer upload failed');
+			setBanner({ kind: 'err', text: err instanceof Error ? err.message : 'Flyer upload failed' });
 		} finally {
 			setFlyerBusy(null);
 		}
@@ -530,6 +571,21 @@ export function EventManager() {
 	return (
 		<div className="text-gray-100">
 			<LabelBar labels={labels ?? []} />
+
+			{banner && (
+				<div
+					className={`mb-4 flex items-start justify-between gap-3 rounded-md border px-3 py-2 text-sm ${
+						banner.kind === 'ok'
+							? 'border-green-800 bg-green-900/30 text-green-200'
+							: 'border-red-800 bg-red-900/30 text-red-200'
+					}`}
+				>
+					<span>{banner.text}</span>
+					<button type="button" onClick={() => setBanner(null)} className="text-xs opacity-70 hover:opacity-100">
+						dismiss
+					</button>
+				</div>
+			)}
 
 			<div className="mb-4 flex flex-wrap gap-3">
 				<button
@@ -542,10 +598,10 @@ export function EventManager() {
 				<button
 					type="button"
 					disabled={importGoogle.isPending}
-					onClick={runImport}
+					onClick={previewImport}
 					className="rounded-md border border-gray-700 px-4 py-2 text-sm text-gray-200 disabled:opacity-50"
 				>
-					{importGoogle.isPending ? 'Importing…' : 'Import from Google Calendar'}
+					{importGoogle.isPending ? 'Working…' : 'Import from Google Calendar'}
 				</button>
 				{archivedCount > 0 && (
 					<label className="ml-auto flex items-center gap-2 text-xs text-gray-400">
@@ -558,6 +614,39 @@ export function EventManager() {
 					</label>
 				)}
 			</div>
+
+			{importPreview && (
+				<div className="mb-6 rounded-lg border border-gray-700 bg-gray-900/60 p-4 text-sm">
+					<p className="mb-2 font-semibold text-gray-200">
+						Import {importPreview.imported} event(s) from Google Calendar?
+					</p>
+					<p className="mb-2 text-xs text-gray-400">{importPreview.skipped} already linked and will be left alone.</p>
+					<ul className="mb-3 max-h-40 overflow-y-auto text-xs text-gray-300">
+						{importPreview.results
+							.filter((r) => r.action === 'imported')
+							.map((r) => (
+								<li key={r.googleCalendarEventId}>• {r.title}</li>
+							))}
+					</ul>
+					<div className="flex gap-3">
+						<button
+							type="button"
+							disabled={importGoogle.isPending}
+							onClick={commitImport}
+							className="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+						>
+							{importGoogle.isPending ? 'Importing…' : 'Confirm import'}
+						</button>
+						<button
+							type="button"
+							onClick={() => setImportPreview(null)}
+							className="rounded-md border border-gray-700 px-4 py-2 text-sm text-gray-300"
+						>
+							Cancel
+						</button>
+					</div>
+				</div>
+			)}
 
 			{showForm && (
 				<EventForm
@@ -674,15 +763,7 @@ export function EventManager() {
 											{ev.active ? (
 												<button
 													type="button"
-													onClick={() => {
-														if (
-															confirm(
-																`Archive “${ev.title}”? It's removed from the site and Google Calendar, but kept here (with attendee history) until you delete it permanently.`,
-															)
-														) {
-															del.mutate({ id: ev.id });
-														}
-													}}
+													onClick={() => setPendingDelete({ ev, mode: 'archive' })}
 													className="text-red-400 hover:underline"
 												>
 													delete
@@ -690,17 +771,11 @@ export function EventManager() {
 											) : (
 												<button
 													type="button"
-													disabled={hardDel.isPending}
 													onClick={() => {
-														if (
-															confirm(
-																`Permanently delete “${ev.title}”? This cannot be undone and removes its attendee records.`,
-															)
-														) {
-															hardDel.mutate({ id: ev.id });
-														}
+														setPurgeText('');
+														setPendingDelete({ ev, mode: 'purge' });
 													}}
-													className="text-red-500 hover:underline disabled:opacity-50"
+													className="text-red-500 hover:underline"
 												>
 													delete permanently
 												</button>
@@ -718,6 +793,81 @@ export function EventManager() {
 							)}
 						</tbody>
 					</table>
+				</div>
+			)}
+
+			{pendingDelete && (
+				<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
+					<div className="w-full max-w-md rounded-lg border border-gray-700 bg-gray-900 p-6">
+						{pendingDelete.mode === 'archive' ? (
+							<>
+								<h3 className="mb-2 text-lg font-semibold text-gray-100">
+									Archive “{pendingDelete.ev.title}”?
+								</h3>
+								<p className="mb-5 text-sm text-gray-400">
+									It's removed from the website
+									{pendingDelete.ev.googleCalendarEventId ? ' and Google Calendar' : ''}, but kept
+									here with its attendee history. You can restore or permanently delete it from
+									“Show archived”.
+								</p>
+								<div className="flex justify-end gap-3">
+									<button
+										type="button"
+										onClick={() => setPendingDelete(null)}
+										className="rounded-md border border-gray-700 px-4 py-2 text-sm text-gray-300"
+									>
+										Cancel
+									</button>
+									<button
+										type="button"
+										disabled={deleteBusy}
+										onClick={confirmDelete}
+										className="rounded-md bg-red-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+									>
+										{deleteBusy ? 'Archiving…' : 'Archive event'}
+									</button>
+								</div>
+							</>
+						) : (
+							<>
+								<h3 className="mb-2 text-lg font-semibold text-red-300">
+									Permanently delete “{pendingDelete.ev.title}”?
+								</h3>
+								<p className="mb-3 text-sm text-gray-400">
+									This cannot be undone. It removes the event, its attendee records
+									{pendingDelete.ev.googleCalendarEventId ? ', and its Google Calendar entry' : ''}.
+								</p>
+								<label className="mb-1 block text-xs text-gray-400">
+									Type <span className="font-mono text-gray-200">{pendingDelete.ev.title}</span> to confirm
+								</label>
+								<input
+									autoFocus
+									aria-label="Confirm event title"
+									value={purgeText}
+									onChange={(e) => setPurgeText(e.target.value)}
+									className="mb-5 w-full rounded-md border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-gray-100"
+								/>
+
+								<div className="flex justify-end gap-3">
+									<button
+										type="button"
+										onClick={() => setPendingDelete(null)}
+										className="rounded-md border border-gray-700 px-4 py-2 text-sm text-gray-300"
+									>
+										Cancel
+									</button>
+									<button
+										type="button"
+										disabled={deleteBusy || purgeText.trim() !== pendingDelete.ev.title.trim()}
+										onClick={confirmDelete}
+										className="rounded-md bg-red-700 px-4 py-2 text-sm font-semibold text-white disabled:opacity-40"
+									>
+										{deleteBusy ? 'Deleting…' : 'Permanently delete'}
+									</button>
+								</div>
+							</>
+						)}
+					</div>
 				</div>
 			)}
 		</div>
