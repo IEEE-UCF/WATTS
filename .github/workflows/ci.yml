@@ -1,0 +1,109 @@
+# Continuous integration.
+#
+#   verify — typecheck + lint + build every workspace through Turborepo.
+#   smoke  — migrate + seed a throwaway Postgres, then run the @watts/core
+#            /whois checks against the real schema (catches schema/seed drift).
+#
+# Both run on every PR and on push to main. No unit tests yet — Vitest is a
+# tracked follow-up. Production migrations live in .github/workflows/deploy.yml.
+
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      # next.config.ts runs getServerEnv() at load. APP_ENV=local relaxes the
+      # auth-secret requirement; DATABASE_URL only needs to be a non-empty string
+      # (nothing connects to a database during `next build`). turbo.json forwards
+      # both into the build task (globalPassThroughEnv / build.env).
+      APP_ENV: local
+      DATABASE_URL: postgres://ci:ci@localhost:5432/watts
+      TURBO_TELEMETRY_DISABLED: "1"
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.1.2
+
+      - name: Install Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Restore turbo cache
+        uses: actions/cache@v4
+        with:
+          path: .turbo/cache
+          key: turbo-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml', 'turbo.json') }}-${{ github.sha }}
+          restore-keys: |
+            turbo-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml', 'turbo.json') }}-
+            turbo-${{ runner.os }}-
+
+      - name: Typecheck, lint, build
+        run: pnpm exec turbo run typecheck lint build --cache-dir=.turbo/cache
+
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: watts
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d watts"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      APP_ENV: local
+      DATABASE_URL: postgres://postgres:postgres@localhost:5432/watts
+      TURBO_TELEMETRY_DISABLED: "1"
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.1.2
+
+      - name: Install Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Migrate + seed
+        run: |
+          pnpm db:migrate
+          pnpm db:seed
+
+      - name: /whois checks
+        run: pnpm --filter @watts/bot check:whois
