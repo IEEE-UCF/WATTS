@@ -17,8 +17,30 @@ const STAMP = Date.now();
 const TITLE = `E2E CRUD ${STAMP}`;
 const TITLE_EDITED = `${TITLE} (edited)`;
 const TITLE_PREFIX = 'E2E CRUD ';
+const SEED_LABEL_SLUG = 'e2e-category';
+
+// CI's e2e job migrates but does not seed, so `event_labels` is empty there.
+// This suite manages its own data (like lib/role.ts / lib/session.ts) — seed one
+// active label so the category select has something to pick, and remove it after.
+let seededLabel = false;
 
 test.describe.configure({ mode: 'serial' });
+
+test.beforeAll(async () => {
+	if (!dbHostAllowed() || !process.env.DATABASE_URL) return;
+	const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
+	try {
+		await pool.query(
+			`insert into event_labels (name, slug, color_id, hex, sort_order, active)
+			 values ('E2E Category', $1, '1', '#a4bdfc', 5, true)
+			 on conflict (slug) do update set active = true`,
+			[SEED_LABEL_SLUG],
+		);
+		seededLabel = true;
+	} finally {
+		await pool.end();
+	}
+});
 
 test.afterAll(async () => {
 	// No factories in this suite — clean our rows directly. Same local-only guard
@@ -27,6 +49,7 @@ test.afterAll(async () => {
 	const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
 	try {
 		await pool.query('delete from events where title like $1', [`${TITLE_PREFIX}%`]);
+		if (seededLabel) await pool.query('delete from event_labels where slug = $1', [SEED_LABEL_SLUG]);
 	} finally {
 		await pool.end();
 	}
@@ -45,10 +68,12 @@ test('staff can create, edit and delete an event from /admin/events', async ({ p
 	await page.fill('#startTime', '2099-01-15T18:00');
 	await page.fill('#endTime', '2099-01-15T19:30');
 
-	// The category select must be present and populated from the label seed.
-	const labelOptions = page.locator('#labelId option');
-	expect(await labelOptions.count()).toBeGreaterThan(1);
-	await page.locator('#labelId').selectOption({ index: 1 });
+	// Category select is always present; pick a real label when one exists
+	// (seeded in beforeAll on a local/CI DB; a captured-session run may have none).
+	await expect(page.locator('#labelId')).toBeVisible();
+	if ((await page.locator('#labelId option').count()) > 1) {
+		await page.locator('#labelId').selectOption({ index: 1 });
+	}
 
 	await page.screenshot({
 		path: 'screenshots/admin-events-create-form.png',
