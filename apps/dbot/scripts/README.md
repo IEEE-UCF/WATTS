@@ -182,12 +182,11 @@ pnpm db:reset                        # wipe + migrate + seed  (the scripts assum
 pnpm --filter @watts/bot check:whois
 ```
 
-These are **not** part of `.github/workflows/ci.yml` yet — CI runs `turbo run typecheck
-lint build` and never starts a database. To gate them in CI, add a Postgres
-`services:` block to the workflow, run `pnpm db:migrate && pnpm db:seed` against it,
-then invoke the `check:*` scripts (individually, or wire a `check` task into
-`turbo.json` and run `turbo run check`). Until then, run them before pushing changes to
-`@watts/core` or the seed.
+In CI, the **`smoke`** job in `.github/workflows/ci.yml` does exactly this: it
+starts a `postgres:15` service, runs `pnpm db:migrate && pnpm db:seed` against it,
+then `pnpm --filter @watts/bot check:whois` — on every PR and every push to `main`.
+Add new `check:*` scripts to that job's final step as they land (or wire a `check`
+task into `turbo.json` and switch the step to `turbo run check`).
 
 ## When to reach for a real test runner instead
 

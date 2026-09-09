@@ -1,0 +1,56 @@
+# Production deploy automation.
+#
+#   migrate — apply pending Drizzle migrations to the production database.
+#             GATED: the `production` environment requires a manual approval
+#             (Actions run -> "Review deployments") before this job runs, so a
+#             merge to main never touches the remote database without the
+#             maintainer clicking approve.
+#
+# The website deploys via Vercel's own Git integration on the same push; Vercel
+# does NOT wait for this job. Keep migrations expand/contract-safe (new code must
+# work against the old schema). For a breaking change, run `pnpm db:migrate`
+# manually against prod BEFORE pushing, then approve the (now no-op) job.
+
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+
+concurrency:
+  group: deploy-migrate
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: production
+    env:
+      # Neon's UNPOOLED / direct URL — pgbouncer transaction pooling can break a
+      # multi-statement migration. Held on the `production` environment, so it is
+      # only exposed to this job after approval.
+      DATABASE_URL: ${{ secrets.PROD_DATABASE_URL_UNPOOLED }}
+      TURBO_TELEMETRY_DISABLED: "1"
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.1.2
+
+      - name: Install Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Apply migrations
+        run: pnpm --filter @watts/db db:migrate

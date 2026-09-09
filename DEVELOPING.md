@@ -97,3 +97,8 @@ pnpm infra:reset     # stop containers, DELETE data volumes (full wipe)
 - `./.env` and `apps/dbot/.env` are gitignored — never commit them.
 - Deploying the website: see [`apps/ieeeucfcom/DEPLOY.md`](apps/ieeeucfcom/DEPLOY.md).
 - Deploying the bot: see [`apps/dbot/README.md`](apps/dbot/README.md#deploying-to-the-vps-docker).
+
+## Contributing
+
+Branch / commit / PR conventions, and the gated production-migration flow, are in
+[`CONTRIBUTING.md`](CONTRIBUTING.md).
