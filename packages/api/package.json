@@ -19,7 +19,7 @@
     "@watts/db": "workspace:*",
     "@watts/permissions": "workspace:*",
     "@watts/storage": "workspace:*",
-    "drizzle-orm": "0.44.7",
+    "drizzle-orm": "0.45.2",
     "luxon": "^3.7.2",
     "superjson": "^2.2.6",
     "zod": "^4.3.6"
