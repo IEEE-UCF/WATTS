@@ -29,6 +29,12 @@ const serverSchema = z.object({
 	DISCORD_CLIENT_ID: z.string().optional(),
 	DISCORD_CLIENT_SECRET: z.string().optional(),
 
+	// Google Calendar sync (apps/ieeeucfcom + apps/jobs). Optional everywhere: when
+	// unset the @watts/calendar client no-ops and events save with syncStatus
+	// 'skipped'. GOOGLE_SERVICE_ACCOUNT_JSON is raw or base64-encoded JSON.
+	GOOGLE_SERVICE_ACCOUNT_JSON: z.string().optional(),
+	GOOGLE_CALENDAR_ID: z.string().optional(),
+
 	DEV_ADMIN_EMAIL: z.string().default('admin@watts.local'),
 
 	RESUME_UPLOAD_AUDIENCE: z.enum(['admins', 'officers', 'members']).default('admins'),
