@@ -7,30 +7,51 @@ testing notes for the deeper layers (shelved).
 
 ## Specs
 
-| File | Checks |
-| --- | --- |
-| `pages.spec.ts` | Every public page returns < 400, renders `<body>`, no error overlay. Screenshot each → `apps/ieeeucfcom/screenshots/`. |
-| `auth-gates.spec.ts` | Anonymous → `/dashboard`, `/settings`, `/admin/*`, `/staff` all redirect to `/auth/signin`. With the seeded `dev-admin-session` cookie → those pages render (local only). |
-| `integrations.spec.ts` | `/api/auth/providers` lists Discord · a public tRPC query returns without a 5xx (DB) · `/api/auth/session` responds · a gated file route 401/403s for anon (storage adapter loads). |
+| File | Project | Checks |
+| --- | --- | --- |
+| `pages.spec.ts` | `chromium` | Every public page returns < 400, renders `<body>`, no error overlay. Screenshot each → `apps/ieeeucfcom/screenshots/`. |
+| `auth-gates.spec.ts` | `chromium` | Anonymous → `/dashboard`, `/settings`, `/admin/*`, `/staff` all redirect to `/auth/signin`. |
+| `integrations.spec.ts` | `chromium` | `/api/auth/providers` lists Discord · a public tRPC query returns without a 5xx (DB) · `/api/auth/session` responds · a gated file route 401/403s for anon (storage adapter loads). |
+| `authed.spec.ts` | `authenticated` | The gated pages render (no redirect) and get screenshotted. Runs **only** with a real captured session — see below. |
 
-## Run it
+## Run the anonymous suite
 
-**Against a local build** (Postgres must be up + seeded):
+Local build (Postgres must be up + migrated + seeded):
 
 ```bash
-pnpm infra:up && pnpm db:reset          # Postgres + schema + seed (incl. dev-admin-session)
-pnpm --filter @watts/web e2e            # builds, serves :3000, runs the suite
+pnpm infra:up && pnpm db:migrate && pnpm db:seed
+pnpm --filter @watts/web e2e            # builds, serves :3000, runs chromium project
 pnpm --filter @watts/web e2e:ui         # interactive
 ```
 
-**Against a deployment** (skips the local server + the admin-cookie specs):
+Against a deployment:
 
 ```bash
 E2E_BASE_URL=https://<deploy>.vercel.app pnpm --filter @watts/web e2e
 ```
 
+## Run the authenticated suite (`authed.spec.ts`)
+
+No fabricated sessions — you log in through Discord for real, once, and the
+resulting cookies are saved for reuse until they expire (~10 days).
+
+```bash
+pnpm dev                                        # dev server, https://localhost:3050
+pnpm --filter @watts/web e2e:auth               # opens a window — finish the Discord login
+E2E_BASE_URL=https://localhost:3050 pnpm --filter @watts/web e2e
+```
+
+`e2e:auth` writes `e2e/.auth/user.json` (gitignored). The `authenticated`
+Playwright project exists only when that file is present **and** `E2E_BASE_URL` is
+set — so plain `pnpm e2e` and CI never touch it. Re-run `e2e:auth` after the
+session expires or after `pnpm db:reset`.
+
+To land as an admin: set `DEV_ADMIN_DISCORD_ID` to your Discord id before seeding,
+or register on first login and flip `members.administrator` in Drizzle Studio
+(`http://127.0.0.1:3055`).
+
 ## CI
 
-The `e2e` job in `.github/workflows/ci.yml` runs this on every PR / push to main
-with a throwaway `postgres:15`, and uploads `playwright-report/` + `screenshots/`
-as the `e2e-report` artifact.
+The `e2e` job in `.github/workflows/ci.yml` runs the `chromium` project only (no
+captured session) on every PR / push to main with a throwaway `postgres:15`, and
+uploads `playwright-report/` + `screenshots/` as the `e2e-report` artifact.

@@ -83,6 +83,20 @@ pnpm e2e                             # Playwright smoke suite (needs infra up + 
 redirects, and backing-service reachability. Point it at a deployment with
 `E2E_BASE_URL=https://… pnpm e2e`.
 
+To exercise the **authenticated** side, log in through Discord for real once and
+save the session — no fabricated cookies:
+
+```bash
+pnpm dev                                        # https://localhost:3050
+pnpm --filter @watts/web e2e:auth               # finish the Discord login in the window
+E2E_BASE_URL=https://localhost:3050 pnpm --filter @watts/web e2e
+```
+
+`e2e:auth` saves `apps/ieeeucfcom/e2e/.auth/user.json` (gitignored, ~10-day
+lifetime). That same captured session is also what you use to click around the
+app logged-in — it's a normal browser session, so it just works in your dev
+browser until it expires.
+
 Turbo caches by content hash — a second run with nothing changed is `>>> FULL TURBO`.
 `pnpm build lint typecheck` mirrors `.github/workflows/ci.yml` exactly.
 

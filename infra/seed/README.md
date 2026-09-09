@@ -17,17 +17,20 @@ runs it as the last step). The Postgres / MinIO containers live in `infra/docker
 
 ### Dev admin
 
-Upserts a **working admin** so you can sign in locally with no Discord and no manual SQL:
+Upserts an **admin identity** so the roster / permission ladder / `/whois` have
+someone to resolve:
 
 | Table | Row |
 | --- | --- |
-| `users` | `DEV_ADMIN_EMAIL` (default `admin@watts.local`), `discord_id = dev-admin` |
+| `users` | `DEV_ADMIN_EMAIL` (default `admin@watts.local`), `discord_id` = `DEV_ADMIN_DISCORD_ID` (default `dev-admin`) |
 | `accounts` | a `discord` provider row linked to that user |
 | `members` | linked, `administrator = true`, `officer_status = true`, `Executive Chair` |
-| `sessions` | `session_token = dev-admin-session`, ~100y expiry |
 
-Then `/api/dev/login` (enabled by `ALLOW_DEV_LOGIN=true` in `./.env`) plants that session
-cookie and drops you on `/dashboard`.
+**No session is seeded.** Sign in through Discord OAuth for real (see
+`../../DEVELOPING.md`). To land as this admin, set `DEV_ADMIN_DISCORD_ID` to your
+Discord id before seeding, then after your first login link your `users` row to
+this `members` row in Drizzle Studio — or just register and flip
+`members.administrator` yourself.
 
 `DATABASE_URL` comes from the repo-root `./.env` (via `@watts/config`) unless a URL is
 passed as an argument.

@@ -28,6 +28,7 @@ test-results/
 blob-report/
 playwright/.cache/
 apps/*/screenshots/
+apps/*/e2e/.auth/
 
 # --- logs ---
 *.log
