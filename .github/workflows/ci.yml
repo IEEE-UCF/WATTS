@@ -3,10 +3,11 @@
 #   verify — typecheck + lint + build every workspace through Turborepo.
 #   smoke  — migrate + seed a throwaway Postgres, then run the @watts/core
 #            /whois checks against the real schema (catches schema/seed drift).
-#   e2e    — build + serve @watts/web against a throwaway Postgres, then a
-#            Playwright smoke suite: every page renders, gated routes redirect,
-#            and the app can reach its backing services (DB, auth, storage).
-#            Screenshots + the HTML report upload as artifacts.
+#   e2e    — build + serve @watts/web against a throwaway Postgres (schema only,
+#            no fixtures — the anonymous suite is auth / route-gating / service
+#            reachability, none of which reads seeded rows). A Playwright smoke
+#            suite: every page renders, gated routes redirect, and the app can
+#            reach its backing services. Screenshots + HTML report as artifacts.
 #
 # All run on every PR and on push to main. No unit tests yet — Vitest is a
 # tracked follow-up. Production migrations live in .github/workflows/deploy.yml.
@@ -178,10 +179,8 @@ jobs:
       - name: Build the web app
         run: pnpm --filter @watts/web build
 
-      - name: Migrate + seed
-        run: |
-          pnpm db:migrate
-          pnpm db:seed
+      - name: Migrate the schema
+        run: pnpm db:migrate
 
       - name: Playwright smoke suite
         run: pnpm --filter @watts/e2e test
