@@ -39,6 +39,39 @@ From the **repo root**:
 Postgres must be up (`pnpm infra:up`); the bot needs no MinIO. `/events` still
 runs off the public Google-Calendar ICS feed (`CALENDAR_ICAL_URL`), not the DB.
 
+## Deploying to the VPS (Docker)
+
+Not deployed yet — this is the intended path. The image runs the bot's TypeScript
+directly through `tsx` (no compile step) and **must be built from the repo root** so
+the pnpm workspace resolves:
+
+```bash
+# from the repo root
+docker build -f apps/dbot/Dockerfile -t watts-bot .
+docker run --rm --env-file .env watts-bot
+```
+
+or, on the VPS, via `infra/docker/bot/compose.yml`:
+
+```bash
+cd infra/docker/bot
+docker compose build
+docker compose up -d
+docker compose logs -f
+```
+
+- **Env** comes from the repo-root `./.env` (same file `@watts/config` reads locally).
+  Keep it beside the checkout on the VPS; it is gitignored. Fill the `DISCORD BOT`
+  section with the **production** app's `DISCORD_TOKEN` / `MAIN_SERVER_ID` / `OWNER_ID`.
+- **`restart: unless-stopped`** + json-file log rotation (10 MB × 5) are set in the
+  compose file.
+- **Slash-command registration** — the bot currently registers commands to
+  `MAIN_SERVER_ID` (a single guild, instant propagation). For a public deployment
+  decide between keeping a fixed production guild id or switching to global command
+  registration (up to ~1 h propagation, no guild pin). Not changed here.
+- The old single-package Dockerfile (context `apps/dbot/`) could not resolve the
+  `@watts/*` workspace deps — that is why the build context is now the repo root.
+
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.

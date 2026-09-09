@@ -1,0 +1,27 @@
+# @watts/bot on the VPS.
+#
+#   cd infra/docker/bot
+#   docker compose build      # context is the repo root (see `build:` below)
+#   docker compose up -d
+#   docker compose logs -f
+#
+# Env comes from the repo-root ./.env (the same file @watts/config reads locally).
+# Keep that file on the VPS next to the checkout; it is gitignored.
+
+name: watts-bot
+
+services:
+  bot:
+    build:
+      context: ../../..
+      dockerfile: apps/dbot/Dockerfile
+    image: watts-bot
+    restart: unless-stopped
+    env_file:
+      - ../../../.env
+    # discord.js keeps its own outbound gateway connection; no ports to publish.
+    logging:
+      driver: json-file
+      options:
+        max-size: '10m'
+        max-file: '5'

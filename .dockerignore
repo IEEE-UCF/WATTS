@@ -1,0 +1,25 @@
+# Applies to `docker build` runs whose context is the repo root
+# (currently: the @watts/bot image — `docker build -f apps/dbot/Dockerfile .`).
+# Keeps the build context small and secrets out of the image.
+#
+# The whole workspace tree IS copied on purpose: `pnpm install --frozen-lockfile`
+# validates every importer in pnpm-lock.yaml, so removing sibling workspaces here
+# would break the install. `--filter @watts/bot...` limits what actually installs.
+
+**/node_modules
+**/.next
+**/dist
+**/build
+**/.turbo
+
+# secrets — never ship these; prod passes env through the container
+.env
+.env.*
+!.env.example
+
+.git
+.github
+**/*.log
+**/coverage
+**/.DS_Store
+infra/certs/*
