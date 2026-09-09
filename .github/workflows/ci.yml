@@ -116,6 +116,12 @@ jobs:
   e2e:
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    # Run inside the official Playwright image: browsers + every OS library are
+    # baked in, so there is no `playwright install --with-deps` / apt-get step to
+    # flake on the runner's pre-installed google-chrome repo.
+    # KEEP THIS TAG IN LOCKSTEP with @watts/e2e's @playwright/test version.
+    container:
+      image: mcr.microsoft.com/playwright:v1.63.0-noble
     services:
       postgres:
         image: postgres:15
@@ -123,8 +129,6 @@ jobs:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
           POSTGRES_DB: watts
-        ports:
-          - 5432:5432
         options: >-
           --health-cmd "pg_isready -U postgres -d watts"
           --health-interval 5s
@@ -132,11 +136,12 @@ jobs:
           --health-retries 10
     env:
       # `next build` + `next start` both run getServerEnv(); these satisfy the
-      # schema and point the runtime at the service container. The Discord and
-      # NEXTAUTH values just need to be present — no real OAuth round trip.
+      # schema. The web server + Playwright run inside this job's container, so
+      # they reach the app on localhost; the postgres SERVICE is reached by its
+      # label. The Discord / NEXTAUTH values just need to be present.
       APP_ENV: local
       DB_PROVIDER: local
-      DATABASE_URL: postgres://postgres:postgres@localhost:5432/watts
+      DATABASE_URL: postgres://postgres:postgres@postgres:5432/watts
       STORAGE_PROVIDER: local
       NEXT_PUBLIC_STORAGE_PROVIDER: local
       S3_ENDPOINT: http://localhost:9000
@@ -166,15 +171,8 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Cache Playwright browsers
-        uses: actions/cache@v6
-        with:
-          path: ~/.cache/ms-playwright
-          key: playwright-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
-          restore-keys: playwright-${{ runner.os }}-
-
-      - name: Install Playwright Chromium
-        run: pnpm --filter @watts/e2e exec playwright install --with-deps chromium
+      - name: Sync Playwright browser (no-op if the image already matches)
+        run: pnpm --filter @watts/e2e exec playwright install chromium
 
       - name: Build the web app
         run: pnpm --filter @watts/web build
