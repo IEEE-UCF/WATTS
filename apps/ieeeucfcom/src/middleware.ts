@@ -12,6 +12,7 @@ export async function middleware(request: NextRequest) {
 	// Capability-gated routes: reachable by admins, officers, or a member holding the
 	// named granular permission. Checked before the admin routes (more specific).
 	const capabilityRoutes: { prefix: string; capability: string }[] = [
+		{ prefix: '/admin/events', capability: 'manage_events' },
 		{ prefix: '/admin/photos', capability: 'manage_event_photos' },
 		{ prefix: '/admin/resumes', capability: 'review_resumes' },
 	];
