@@ -3,8 +3,18 @@
 #   verify — typecheck + lint + build every workspace through Turborepo.
 #   smoke  — migrate + seed a throwaway Postgres, then run the @watts/core
 #            /whois checks against the real schema (catches schema/seed drift).
+#   e2e    — build + serve @watts/web against a throwaway Postgres (schema only,
+#            no fixtures — the suite tests auth / route-gating / service
+#            reachability / the per-role redirect matrix, none of which reads
+#            seeded rows). Playwright, both projects: the anonymous specs, plus
+#            the `authenticated` project running against a guarded SYNTHETIC
+#            session that global-setup.ts mints in the CI database and deletes in
+#            teardown (infra/e2e/lib/session.ts) — there is no captured Discord
+#            login in CI, and the synthetic session does NOT exercise Discord
+#            OAuth (deferred; see infra/e2e/README.md). Screenshots + HTML report
+#            as artifacts.
 #
-# Both run on every PR and on push to main. No unit tests yet — Vitest is a
+# All run on every PR and on push to main. No unit tests yet — Vitest is a
 # tracked follow-up. Production migrations live in .github/workflows/deploy.yml.
 
 name: CI
@@ -107,3 +117,86 @@ jobs:
 
       - name: /whois checks
         run: pnpm --filter @watts/bot check:whois
+
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    # Run inside the official Playwright image: browsers + every OS library are
+    # baked in, so there is no `playwright install --with-deps` / apt-get step to
+    # flake on the runner's pre-installed google-chrome repo.
+    # KEEP THIS TAG IN LOCKSTEP with @watts/e2e's @playwright/test version.
+    container:
+      image: mcr.microsoft.com/playwright:v1.63.0-noble
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: watts
+        options: >-
+          --health-cmd "pg_isready -U postgres -d watts"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      # `next build` + `next start` both run getServerEnv(); these satisfy the
+      # schema. The web server + Playwright run inside this job's container, so
+      # they reach the app on localhost; the postgres SERVICE is reached by its
+      # label. The Discord / NEXTAUTH values just need to be present.
+      # DATABASE_URL host `postgres` is in the synthetic-session host allowlist
+      # (infra/e2e/lib/session.ts), so global-setup mints the authenticated
+      # fixture here; it can never reach an off-box database.
+      APP_ENV: local
+      DB_PROVIDER: local
+      DATABASE_URL: postgres://postgres:postgres@postgres:5432/watts
+      STORAGE_PROVIDER: local
+      NEXT_PUBLIC_STORAGE_PROVIDER: local
+      S3_ENDPOINT: http://localhost:9000
+      S3_ACCESS_KEY_ID: minioadmin
+      S3_SECRET_ACCESS_KEY: minioadmin
+      S3_BUCKET_PUBLIC: media-public
+      S3_BUCKET_PRIVATE: resumes-private
+      NEXTAUTH_URL: http://localhost:3000
+      NEXTAUTH_SECRET: e2e-not-a-real-secret
+      DISCORD_CLIENT_ID: e2e-client-id
+      DISCORD_CLIENT_SECRET: e2e-client-secret
+      TURBO_TELEMETRY_DISABLED: "1"
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          version: 11.1.2
+
+      - name: Install Node
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Sync Playwright browser (no-op if the image already matches)
+        run: pnpm --filter @watts/e2e exec playwright install chromium
+
+      - name: Build the web app
+        run: pnpm --filter @watts/web build
+
+      - name: Migrate the schema
+        run: pnpm db:migrate
+
+      - name: Playwright suite (anon + synthetic-session authenticated)
+        run: pnpm --filter @watts/e2e test
+
+      - name: Upload report + screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-report
+          path: |
+            infra/e2e/playwright-report/
+            infra/e2e/screenshots/
+          retention-days: 14

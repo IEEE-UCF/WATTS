@@ -75,7 +75,27 @@ pnpm typecheck                       # tsc --noEmit across every workspace  (tur
 pnpm lint                            # eslint across every workspace         (turbo, cached)
 pnpm build                           # next build + bot tsc                  (turbo, cached)
 pnpm --filter @watts/bot check:whois # validate the /whois lookup against the seeded DB
+pnpm e2e                             # Playwright smoke suite (needs infra up + seeded)
 ```
+
+`pnpm e2e` (→ `@watts/e2e`, in `infra/e2e/`) builds and serves the web app on
+:3000 and runs [`infra/e2e/`](infra/e2e/README.md) — page renders, auth-gate
+redirects, and backing-service reachability. Point it at a deployment with
+`E2E_BASE_URL=https://… pnpm e2e`.
+
+To exercise the **authenticated** side, log in through Discord for real once and
+save the session — no fabricated cookies:
+
+```bash
+pnpm dev                                        # https://localhost:3050
+pnpm --filter @watts/e2e auth                   # finish the Discord login in the window
+E2E_BASE_URL=https://localhost:3050 pnpm --filter @watts/e2e test
+```
+
+`@watts/e2e auth` saves `infra/e2e/.auth/user.json` (gitignored, ~10-day
+lifetime). That same captured session is also what you use to click around the
+app logged-in — it's a normal browser session, so it just works in your dev
+browser until it expires.
 
 Turbo caches by content hash — a second run with nothing changed is `>>> FULL TURBO`.
 `pnpm build lint typecheck` mirrors `.github/workflows/ci.yml` exactly.

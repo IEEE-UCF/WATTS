@@ -30,7 +30,6 @@ const {
 	Users,
 	Accounts,
 	Members,
-	Sessions,
 	Sponsorships,
 	Projects,
 	Committees,
@@ -45,7 +44,6 @@ const DEV_ADMIN_EMAIL = process.env.DEV_ADMIN_EMAIL ?? 'admin@watts.local';
 // Set DEV_ADMIN_DISCORD_ID to your real Discord user id so the bot (Larry, /whois,
 // the permission ladder) resolves you in a test guild. Falls back to a placeholder.
 const DEV_ADMIN_DISCORD_ID = process.env.DEV_ADMIN_DISCORD_ID || 'dev-admin';
-const DEV_SESSION_TOKEN = 'dev-admin-session';
 const FIXTURES_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', 'fixtures');
 
 // Load order respects foreign keys.
@@ -137,15 +135,10 @@ async function seedAdmin() {
 		console.log('• member profile already an administrator + officer');
 	}
 
-	const [session] = await db.select().from(Sessions).where(eq(Sessions.sessionToken, DEV_SESSION_TOKEN)).limit(1);
-	if (!session) {
-		await db.insert(Sessions).values({
-			sessionToken: DEV_SESSION_TOKEN,
-			userId,
-			expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 365 * 100),
-		});
-		console.log('• created a long-lived dev session');
-	}
+	// No session is seeded — sign in through Discord OAuth for real. Point the
+	// seeded admin at yourself by setting DEV_ADMIN_DISCORD_ID to your Discord id
+	// (then, after your first login, link your Users row to this Members row in
+	// Drizzle Studio, or just register + self-promote).
 }
 
 async function loadFixtures(only?: string[]) {
