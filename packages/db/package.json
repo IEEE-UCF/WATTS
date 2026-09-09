@@ -30,6 +30,6 @@
     "@watts/eslint-config": "workspace:*",
     "@watts/tsconfig": "workspace:*",
     "drizzle-kit": "^0.31.8",
-    "eslint": "^9.39.4"
+    "eslint": "^10.10.0"
   }
 }
