@@ -40,6 +40,7 @@ export class ReadyEvent extends Event {
 		}
 
 		await this.client.eventsAutomation.start();
+		await this.client.discordEventSync.start();
 
 		// Clean permission cache periodically
 		setInterval(() => {

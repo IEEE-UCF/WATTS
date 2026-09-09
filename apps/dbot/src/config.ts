@@ -30,6 +30,11 @@ interface Config {
 				enabled: boolean;
 				updateIntervalMinutes: number;
 			};
+			/** Mirror website "global" events to Discord guild scheduled events. */
+			discordEventSync: {
+				enabled: boolean;
+				intervalMinutes: number;
+			};
 			eventReminders: {
 				enabled: boolean;
 				reminderMinutes: number;
@@ -85,6 +90,10 @@ const config: Config = {
 				enabled: process.env.EVENTS_AUTOMATION_ENABLED === 'true',
 				updateIntervalMinutes: Number(process.env.EVENTS_AUTOMATION_INTERVAL_MINS) || 30,
 			},
+			discordEventSync: {
+				enabled: process.env.DISCORD_EVENT_SYNC_ENABLED === 'true',
+				intervalMinutes: Number(process.env.DISCORD_EVENT_SYNC_INTERVAL_MINS) || 15,
+			},
 			eventReminders: {
 				enabled: process.env.EVENT_REMINDERS_ENABLED !== 'false',
 				reminderMinutes: Number(process.env.EVENT_REMINDERS_MINUTES) || 60,
@@ -135,6 +144,7 @@ const config: Config = {
 		GatewayIntentBits.GuildMessageReactions,
 		GatewayIntentBits.GuildVoiceStates,
 		GatewayIntentBits.GuildExpressions,
+		GatewayIntentBits.GuildScheduledEvents,
 		GatewayIntentBits.MessageContent,
 		GatewayIntentBits.DirectMessages,
 		GatewayIntentBits.DirectMessageReactions,

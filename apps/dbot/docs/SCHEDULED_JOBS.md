@@ -15,6 +15,7 @@ for as long as the process lives.
 |---|---|---|---|---|---|
 | **Weekly events board** | `EVENTS_AUTOMATION_INTERVAL_MINS` (def. 30 min) | `EVENTS_AUTOMATION_ENABLED=true` | Google Calendar ICS | edits 1 pinned embed in `CHANNEL_CALENDAR_ID` | `modules/calendar/eventsAutomation.ts` → `updateWeeklyBoard()` |
 | **Event reminders** | 5 min (hard-coded) | `EVENT_REMINDERS_ENABLED` ≠ `false` (default on) | Google Calendar ICS | posts / deletes reminder embeds in `CHANNEL_REMINDERS_ID`, pings `ROLE_REMINDER_ID` | `eventsAutomation.ts` → `checkUpcomingEvents()` |
+| **Discord event sync** | `DISCORD_EVENT_SYNC_INTERVAL_MINS` (def. 15 min) | `DISCORD_EVENT_SYNC_ENABLED=true` | shared `events` table (website is the source of truth) | creates / edits / deletes **guild scheduled events** in `MAIN_SERVER_ID` for rows where `is_global AND active AND NOT hidden`; writes `discord_scheduled_event_id` back | `modules/events/discordEventSync.ts` → `reconcile()` |
 | **Cooldown sweep** | 1 min | always | in-memory | — | `events/clientReady.ts` |
 | **Permission-cache sweep** | 5 min | always | in-memory | — | `events/clientReady.ts` — ⚠️ currently a no-op, see note |
 | **Voice idle auto-disconnect** | event-driven, 60 s timer | always (only when in a VC) | voice state | leaves the voice channel | `events/voiceStateUpdate.ts` |
