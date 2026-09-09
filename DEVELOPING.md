@@ -75,7 +75,13 @@ pnpm typecheck                       # tsc --noEmit across every workspace  (tur
 pnpm lint                            # eslint across every workspace         (turbo, cached)
 pnpm build                           # next build + bot tsc                  (turbo, cached)
 pnpm --filter @watts/bot check:whois # validate the /whois lookup against the seeded DB
+pnpm e2e                             # Playwright smoke suite (needs infra up + seeded)
 ```
+
+`pnpm e2e` builds and serves the web app on :3000 and runs
+[`apps/ieeeucfcom/e2e/`](apps/ieeeucfcom/e2e/README.md) — page renders, auth-gate
+redirects, and backing-service reachability. Point it at a deployment with
+`E2E_BASE_URL=https://… pnpm e2e`.
 
 Turbo caches by content hash — a second run with nothing changed is `>>> FULL TURBO`.
 `pnpm build lint typecheck` mirrors `.github/workflows/ci.yml` exactly.

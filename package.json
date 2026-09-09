@@ -19,6 +19,7 @@
     "lint": "turbo run lint",
     "typecheck": "turbo run typecheck",
     "build": "turbo run build",
+    "e2e": "pnpm --filter @watts/web e2e",
     "bootstrap": "node infra/scripts/bootstrap.mjs",
     "dev": "pnpm --filter @watts/web dev",
     "dev:bot": "pnpm --filter @watts/bot dev",
