@@ -52,5 +52,18 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Check the production secret is set
+        run: |
+          if [ -z "$DATABASE_URL" ]; then
+            echo "::error::PROD_DATABASE_URL_UNPOOLED is not set on the 'production' environment."
+            echo "One-time setup — GitHub -> Settings -> Environments -> production:"
+            echo "  1. add yourself under Required reviewers (this also arms the approval gate)"
+            echo "  2. add secret PROD_DATABASE_URL_UNPOOLED = the Neon DATABASE_URL_UNPOOLED"
+            echo "     from the Vercel project's Production env vars"
+            echo "See apps/ieeeucfcom/DEPLOY.md section 5."
+            exit 1
+          fi
+          echo "DATABASE_URL is set (${#DATABASE_URL} chars)."
+
       - name: Apply migrations
         run: pnpm --filter @watts/db db:migrate
