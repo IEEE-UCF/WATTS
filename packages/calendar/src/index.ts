@@ -1,7 +1,7 @@
 export { getCalendarConfig, type CalendarConfig } from './config';
 export {
 	CALENDAR_SCOPES,
-	parseServiceAccountKey,
+	resolveServiceAccountKey,
 	createJwtClient,
 	type ServiceAccountKey,
 } from './auth';
@@ -19,4 +19,5 @@ export {
 	type CalendarWriteResult,
 	type CalendarDeleteResult,
 	type GoogleEvent,
+	type NativeCalendarLabel,
 } from './client';

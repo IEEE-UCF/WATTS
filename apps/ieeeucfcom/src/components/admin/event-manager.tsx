@@ -325,16 +325,39 @@ function LabelBar({ labels }: { labels: Label[] }) {
 		},
 	});
 	const setActive = trpc.eventLabel.setActive.useMutation({ onSuccess: invalidate });
+	const pull = trpc.eventLabel.pullFromGoogle.useMutation({
+		onSuccess: (r) => {
+			invalidate();
+			alert(
+				`Linked ${r.matched.length} label(s) to Google` +
+					(r.unmatchedNative.length
+						? `. No local match for: ${r.unmatchedNative.join(', ')}`
+						: '.'),
+			);
+		},
+	});
 
 	return (
 		<div className="mb-6 rounded-lg border border-gray-800 bg-gray-900/40 p-4">
-			<button
-				type="button"
-				onClick={() => setOpen((o) => !o)}
-				className="text-sm font-semibold text-gray-300"
-			>
-				Categories ({labels.filter((l) => l.active).length}) {open ? '▾' : '▸'}
-			</button>
+			<div className="flex items-center justify-between">
+				<button
+					type="button"
+					onClick={() => setOpen((o) => !o)}
+					className="text-sm font-semibold text-gray-300"
+				>
+					Categories ({labels.filter((l) => l.active).length}) {open ? '▾' : '▸'}
+				</button>
+				{open && (
+					<button
+						type="button"
+						disabled={pull.isPending}
+						onClick={() => pull.mutate()}
+						className="rounded border border-gray-700 px-2 py-1 text-xs text-gray-300 disabled:opacity-50"
+					>
+						{pull.isPending ? 'Pulling…' : 'Pull colours from Google'}
+					</button>
+				)}
+			</div>
 
 			{open && (
 				<div className="mt-3 space-y-3">
@@ -342,6 +365,7 @@ function LabelBar({ labels }: { labels: Label[] }) {
 						{labels.map((l) => (
 							<span
 								key={l.id}
+								title={l.googleLabelId ? 'Linked to a Google event label' : 'Not linked to Google'}
 								className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs ${
 									l.active ? 'border-gray-700 text-gray-200' : 'border-gray-800 text-gray-500 line-through'
 								}`}
@@ -351,6 +375,7 @@ function LabelBar({ labels }: { labels: Label[] }) {
 									style={{ backgroundColor: l.hex ?? '#888' }}
 								/>
 								{l.name}
+								{l.googleLabelId && <span className="text-[10px] text-green-400">G</span>}
 								<button
 									type="button"
 									onClick={() => setActive.mutate({ id: l.id, active: !l.active })}

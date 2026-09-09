@@ -11,6 +11,8 @@ export interface CreateLabelInput {
 	name: string;
 	slug: string;
 	colorId?: string | null;
+	/** Native Google Calendar event-label UUID (for calendars using Event Labels). */
+	googleLabelId?: string | null;
 	hex?: string | null;
 	sortOrder?: number;
 }
@@ -52,6 +54,7 @@ export async function createLabel(db: WattsDb, input: CreateLabelInput) {
 			name: input.name,
 			slug: input.slug,
 			colorId: input.colorId ?? null,
+			googleLabelId: input.googleLabelId ?? null,
 			hex: input.hex ?? null,
 			sortOrder: input.sortOrder ?? 0,
 		})
@@ -79,6 +82,41 @@ export async function updateLabel(db: WattsDb, id: string, data: UpdateLabelInpu
 		.returning();
 	if (!label) throw new DomainError('NOT_FOUND', 'Label not found');
 	return { label };
+}
+
+/**
+ * Pull the calendar's native event labels and link them to our rows by name
+ * (case-insensitive). Fills `googleLabelId` + refreshes `hex` from Google's
+ * backgroundColor. Returns which of our labels matched and which native labels
+ * had no counterpart. No-op (matched: []) when calendar credentials are absent.
+ */
+export async function syncNativeLabelsFromGoogle(db: WattsDb) {
+	const { createCalendarClient } = await import('@watts/calendar');
+	const native = await createCalendarClient().listNativeLabels();
+	if (native.length === 0) return { matched: [] as string[], unmatchedNative: [] as string[] };
+
+	const rows = await db.select().from(EventLabels);
+	const byName = new Map(rows.map((r) => [r.name.trim().toLowerCase(), r]));
+	const matched: string[] = [];
+	const unmatchedNative: string[] = [];
+
+	for (const label of native) {
+		const row = byName.get(label.name.trim().toLowerCase());
+		if (!row) {
+			unmatchedNative.push(label.name);
+			continue;
+		}
+		await db
+			.update(EventLabels)
+			.set({
+				googleLabelId: label.id,
+				hex: label.backgroundColor ?? row.hex,
+				updatedAt: new Date().toISOString(),
+			})
+			.where(eq(EventLabels.id, row.id));
+		matched.push(row.name);
+	}
+	return { matched, unmatchedNative };
 }
 
 /** Soft toggle — events keep their `labelId`, the label just drops out of selects. */

@@ -1,8 +1,8 @@
 [
-	{ "id": "e1a11111-0000-4000-8000-000000000001", "name": "General Body Meeting", "slug": "gbm", "colorId": "1", "hex": "#a4bdfc", "sortOrder": 10 },
-	{ "id": "e1a11111-0000-4000-8000-000000000002", "name": "Technical Workshop", "slug": "workshop", "colorId": "6", "hex": "#ffb878", "sortOrder": 20 },
-	{ "id": "e1a11111-0000-4000-8000-000000000003", "name": "Social", "slug": "social", "colorId": "5", "hex": "#fbd75b", "sortOrder": 30 },
-	{ "id": "e1a11111-0000-4000-8000-000000000004", "name": "Professional Development", "slug": "pro-dev", "colorId": "3", "hex": "#dbadff", "sortOrder": 40 },
-	{ "id": "e1a11111-0000-4000-8000-000000000005", "name": "Service", "slug": "service", "colorId": "2", "hex": "#7ae7bf", "sortOrder": 50 },
-	{ "id": "e1a11111-0000-4000-8000-000000000006", "name": "Other", "slug": "other", "colorId": "8", "hex": "#e1e1e1", "sortOrder": 60 }
+	{ "id": "e1a11111-0000-4000-8000-000000000001", "name": "General Body Meeting", "slug": "gbm", "colorId": "1", "googleLabelId": "11111111-2222-3333-4444-555555555551", "hex": "#4285f4", "sortOrder": 10 },
+	{ "id": "e1a11111-0000-4000-8000-000000000002", "name": "Technical Workshop", "slug": "workshop", "colorId": "6", "googleLabelId": "11111111-2222-3333-4444-555555555552", "hex": "#ef6c00", "sortOrder": 20 },
+	{ "id": "e1a11111-0000-4000-8000-000000000003", "name": "Social", "slug": "social", "colorId": "5", "googleLabelId": "11111111-2222-3333-4444-555555555553", "hex": "#f6bf26", "sortOrder": 30 },
+	{ "id": "e1a11111-0000-4000-8000-000000000004", "name": "Professional Development", "slug": "pro-dev", "colorId": "3", "googleLabelId": "11111111-2222-3333-4444-555555555554", "hex": "#8e24aa", "sortOrder": 40 },
+	{ "id": "e1a11111-0000-4000-8000-000000000005", "name": "Service", "slug": "service", "colorId": "2", "googleLabelId": "11111111-2222-3333-4444-555555555555", "hex": "#33b679", "sortOrder": 50 },
+	{ "id": "e1a11111-0000-4000-8000-000000000006", "name": "Other", "slug": "other", "colorId": "8", "googleLabelId": "11111111-2222-3333-4444-555555555556", "hex": "#616161", "sortOrder": 60 }
 ]

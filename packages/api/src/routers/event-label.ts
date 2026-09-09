@@ -5,8 +5,9 @@ import {
 	createLabel,
 	updateLabel,
 	setLabelActive,
+	syncNativeLabelsFromGoogle,
 } from '@watts/core/event-labels';
-import { GOOGLE_COLOR_IDS } from '@watts/calendar';
+import { createCalendarClient, GOOGLE_COLOR_IDS } from '@watts/calendar';
 import { mapDomainError } from '../map-domain-error';
 
 const manageEvents = capabilityProcedure('manage_events');
@@ -21,6 +22,7 @@ const labelCreateSchema = z.object({
 	name: z.string().min(1).max(64),
 	slug: z.string().min(1).max(32),
 	colorId,
+	googleLabelId: z.string().max(64).nullish(),
 	hex,
 	sortOrder: z.number().int().min(0).max(9999).optional(),
 });
@@ -62,4 +64,22 @@ export const eventLabelRouter = createTRPCRouter({
 				mapDomainError(error);
 			}
 		}),
+
+	/** The native event labels configured on the connected Google Calendar. */
+	nativeLabels: manageEvents.query(async () => {
+		try {
+			return await createCalendarClient().listNativeLabels();
+		} catch (error) {
+			mapDomainError(error);
+		}
+	}),
+
+	/** Link our labels to the calendar's native labels by name + refresh their colours. */
+	pullFromGoogle: manageEvents.mutation(async ({ ctx }) => {
+		try {
+			return { success: true, ...(await syncNativeLabelsFromGoogle(ctx.db)) };
+		} catch (error) {
+			mapDomainError(error);
+		}
+	}),
 });

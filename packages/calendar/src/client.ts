@@ -7,8 +7,15 @@
 // unconditionally: a create still succeeds, it just records syncStatus 'skipped'.
 //
 // The REST shapes mirror playground/Calendar Sync/service_account_manager.py.
+//
+// Colour: this chapter's calendar uses NATIVE event labels (Calendar Settings →
+// "Event labels", eventLabelVersion=1). When a calendar has them, per-event
+// `colorId` writes are ignored on update — the colour is driven by `eventLabelId`.
+// We send BOTH: `eventLabelId` (native-label calendars) and `colorId` (fallback
+// for calendars without labels; also honoured on create everywhere). Every event
+// request carries ?eventLabelVersion=1 so the label field round-trips.
 
-import { createJwtClient, parseServiceAccountKey } from './auth';
+import { createJwtClient, resolveServiceAccountKey } from './auth';
 import { getCalendarConfig } from './config';
 import { toGoogleColorId } from './labels';
 
@@ -26,8 +33,10 @@ export interface CalendarEventInput {
 	end?: string | null;
 	timeZone: string;
 	allDay?: boolean;
-	/** Stored label colorId ("1".."11") or null. */
+	/** Stored label colorId ("1".."11") or null — fallback for label-less calendars. */
 	colorId?: string | null;
+	/** Native Google Calendar event-label id (UUID) or null — the real colour driver here. */
+	googleLabelId?: string | null;
 	/** Our `events.id` — the durable link, written to extendedProperties.private. */
 	wattsEventId: string;
 	/** Label slug — written to extendedProperties.shared for Google-side filtering. */
@@ -42,10 +51,18 @@ export interface GoogleEvent {
 	location?: string;
 	htmlLink?: string;
 	colorId?: string;
+	eventLabelId?: string;
 	updated?: string;
 	start?: { date?: string; dateTime?: string; timeZone?: string };
 	end?: { date?: string; dateTime?: string; timeZone?: string };
 	extendedProperties?: { private?: Record<string, string>; shared?: Record<string, string> };
+}
+
+/** A native event label configured on the calendar (Settings → Event labels). */
+export interface NativeCalendarLabel {
+	id: string;
+	name: string;
+	backgroundColor?: string;
 }
 
 export interface CalendarWriteResult {
@@ -65,6 +82,8 @@ export interface CalendarClient {
 	deleteEvent(googleEventId: string): Promise<CalendarDeleteResult>;
 	getEvent(googleEventId: string): Promise<GoogleEvent | null>;
 	listEvents(opts?: { timeMinIso?: string; maxResults?: number }): Promise<GoogleEvent[]>;
+	/** The native event labels configured on the calendar. Empty if none / no creds. */
+	listNativeLabels(): Promise<NativeCalendarLabel[]>;
 }
 
 function dateOnly(iso: string): string {
@@ -96,6 +115,8 @@ function buildBody(input: CalendarEventInput): Record<string, unknown> {
 
 	const colorId = toGoogleColorId(input.colorId);
 	if (colorId) body.colorId = colorId;
+	// null clears any existing label; undefined leaves it untouched on PATCH.
+	if (input.googleLabelId !== undefined) body.eventLabelId = input.googleLabelId ?? null;
 	return body;
 }
 
@@ -116,6 +137,9 @@ const NOOP_CLIENT: CalendarClient = {
 	async listEvents() {
 		return [];
 	},
+	async listNativeLabels() {
+		return [];
+	},
 };
 
 class HttpError extends Error {
@@ -128,13 +152,18 @@ class HttpError extends Error {
 	}
 }
 
+/** Append ?eventLabelVersion=1 (or &…) so the native-label field round-trips. */
+function withLabelVersion(url: string): string {
+	return url + (url.includes('?') ? '&' : '?') + 'eventLabelVersion=1';
+}
+
 /**
  * Build the sync client. Reads env each call but the JWT client caches its token
  * internally, so repeated calls are cheap.
  */
 export function createCalendarClient(): CalendarClient {
-	const { serviceAccountJson, calendarId } = getCalendarConfig();
-	const key = parseServiceAccountKey(serviceAccountJson);
+	const { serviceAccount, serviceAccountFile, calendarId } = getCalendarConfig();
+	const key = resolveServiceAccountKey(serviceAccount, serviceAccountFile);
 	if (!key || !calendarId) return NOOP_CLIENT;
 
 	const jwt = createJwtClient(key);
@@ -159,7 +188,7 @@ export function createCalendarClient(): CalendarClient {
 		enabled: true,
 
 		async createEvent(input) {
-			const created = await request<GoogleEvent>(`${calPath}/events`, {
+			const created = await request<GoogleEvent>(withLabelVersion(`${calPath}/events`), {
 				method: 'POST',
 				body: JSON.stringify(buildBody(input)),
 			});
@@ -170,7 +199,7 @@ export function createCalendarClient(): CalendarClient {
 		async updateEvent(googleEventId, input) {
 			// PATCH is a merge — leaves fields we don't send (attendees, reminders…) intact.
 			const updated = await request<GoogleEvent>(
-				`${calPath}/events/${encodeURIComponent(googleEventId)}`,
+				withLabelVersion(`${calPath}/events/${encodeURIComponent(googleEventId)}`),
 				{ method: 'PATCH', body: JSON.stringify(buildBody(input)) },
 			);
 			if (!updated?.id) {
@@ -186,9 +215,10 @@ export function createCalendarClient(): CalendarClient {
 		},
 
 		async getEvent(googleEventId) {
-			return request<GoogleEvent>(`${calPath}/events/${encodeURIComponent(googleEventId)}`, {
-				method: 'GET',
-			});
+			return request<GoogleEvent>(
+				withLabelVersion(`${calPath}/events/${encodeURIComponent(googleEventId)}`),
+				{ method: 'GET' },
+			);
 		},
 
 		async listEvents(opts) {
@@ -196,13 +226,20 @@ export function createCalendarClient(): CalendarClient {
 				singleEvents: 'true',
 				orderBy: 'startTime',
 				maxResults: String(opts?.maxResults ?? 250),
+				eventLabelVersion: '1',
 			});
 			if (opts?.timeMinIso) params.set('timeMin', opts.timeMinIso);
-			const page = await request<{ items?: GoogleEvent[] }>(
-				`${calPath}/events?${params.toString()}`,
-				{ method: 'GET' },
-			);
+			const page = await request<{ items?: GoogleEvent[] }>(`${calPath}/events?${params.toString()}`, {
+				method: 'GET',
+			});
 			return page?.items ?? [];
+		},
+
+		async listNativeLabels() {
+			const cal = await request<{
+				labelProperties?: { eventLabels?: NativeCalendarLabel[] };
+			}>(withLabelVersion(calPath), { method: 'GET' });
+			return cal?.labelProperties?.eventLabels ?? [];
 		},
 	};
 }

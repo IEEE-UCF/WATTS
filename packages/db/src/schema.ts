@@ -324,7 +324,8 @@ export const EventLabels = pgTable("event_labels", {
 	id: uuid("id").defaultRandom().primaryKey().notNull(),
 	name: varchar("name", { length: 64 }).notNull(),
 	slug: varchar("slug", { length: 32 }).notNull(),
-	colorId: varchar("color_id", { length: 2 }), // Google Calendar colorId "1".."11"
+	colorId: varchar("color_id", { length: 2 }), // Google Calendar colorId "1".."11" (label-less calendars)
+	googleLabelId: varchar("google_label_id", { length: 64 }), // native event-label UUID (calendars with Event Labels)
 	hex: varchar("hex", { length: 7 }), // display swatch on our side, e.g. "#a4bdfc"
 	sortOrder: integer("sort_order").default(0).notNull(),
 	active: boolean("active").default(true).notNull(),

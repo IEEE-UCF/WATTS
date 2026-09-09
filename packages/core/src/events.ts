@@ -143,10 +143,16 @@ export async function syncEventToGoogle(db: WattsDb, id: string) {
 	const [event] = await db.select().from(Events).where(eq(Events.id, id)).limit(1);
 	if (!event) return null;
 
-	let label: { slug: string; colorId: string | null } | null = null;
+	let label:
+		| { slug: string; colorId: string | null; googleLabelId: string | null }
+		| null = null;
 	if (event.labelId) {
 		const [row] = await db
-			.select({ slug: EventLabels.slug, colorId: EventLabels.colorId })
+			.select({
+				slug: EventLabels.slug,
+				colorId: EventLabels.colorId,
+				googleLabelId: EventLabels.googleLabelId,
+			})
 			.from(EventLabels)
 			.where(eq(EventLabels.id, event.labelId))
 			.limit(1);
@@ -165,6 +171,7 @@ export async function syncEventToGoogle(db: WattsDb, id: string) {
 			timeZone: event.timeZone,
 			allDay: event.allDay,
 			colorId: label?.colorId ?? null,
+			googleLabelId: label?.googleLabelId ?? null,
 			wattsEventId: event.id,
 			wattsLabel: label?.slug ?? null,
 		};
