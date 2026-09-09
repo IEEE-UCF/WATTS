@@ -34,7 +34,7 @@ jobs:
       DATABASE_URL: postgres://ci:ci@localhost:5432/watts
       TURBO_TELEMETRY_DISABLED: "1"
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Install pnpm
         uses: pnpm/action-setup@v6
@@ -84,7 +84,7 @@ jobs:
       DATABASE_URL: postgres://postgres:postgres@localhost:5432/watts
       TURBO_TELEMETRY_DISABLED: "1"
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Install pnpm
         uses: pnpm/action-setup@v6
