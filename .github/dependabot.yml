@@ -21,3 +21,13 @@ updates:
         update-types:
           - minor
           - patch
+    ignore:
+      # TypeScript 7 is the native ("tsgo") compiler preview — not production-ready.
+      - dependency-name: typescript
+        update-types: ["version-update:semver-major"]
+      # recharts 3 is a breaking API change; @watts/ui/src/chart.tsx needs a migration first.
+      - dependency-name: recharts
+        update-types: ["version-update:semver-major"]
+      # @mui/icons-material must move together with @mui/material — bump them in one PR by hand.
+      - dependency-name: "@mui/icons-material"
+        update-types: ["version-update:semver-major"]
