@@ -1,9 +1,10 @@
 import { Navbar } from '@/components/navbar';
 import { MembersManager } from '@/components/admin/members-manager';
 
-// /admin/members — admins and officers (src/middleware.ts officerAdminRoutes).
-// Admins manage all roles/capabilities; officers see the roster and can toggle only
-// the capabilities an admin has delegated, for regular members.
+// /admin/members — admins and officers. The admin-or-officer gate is admin/layout.tsx
+// (server-side) plus src/middleware.ts (edge); this page's own requirement matches that
+// floor exactly, so it adds no further check. Admins manage all roles/capabilities;
+// officers see the roster and can toggle only admin-delegated capabilities.
 export default function AdminMembersPage() {
 	return (
 		<div className="flex min-h-screen flex-col bg-black">

@@ -1,9 +1,11 @@
 import Link from 'next/link';
+import { redirect } from 'next/navigation';
 import { Navbar } from '@/components/navbar';
 import { FormPopup } from '@/components/dashboard/newEventForm';
 import { EventList } from '@/components/dashboard/event-list';
 import { Card, CardHeader } from '@watts/ui/card';
 import { QREventScanner } from '@/components/admin/qr_event_scanner';
+import { getSessionRoles } from '@/lib/auth-guards';
 
 const ADMIN_TOOLS = [
 	{ href: '/admin/members', title: 'Members', desc: 'Grant admin / officer status & roles' },
@@ -11,7 +13,11 @@ const ADMIN_TOOLS = [
 	{ href: '/admin/resumes', title: 'Résumés', desc: 'Browse member résumés' },
 ];
 
-export default function Dashboard() {
+export default async function Dashboard() {
+	// admin/layout.tsx already required admin-or-officer; this page is admin-only.
+	const { roles } = await getSessionRoles();
+	if (!roles?.administrator) redirect('/dashboard');
+
 	return (
 		<div className="flex flex-col max-w-screen overflow-hidden bg-black min-h-screen text-black">
 			{/* Navbar – match home spacing */}

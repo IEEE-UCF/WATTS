@@ -1,9 +1,14 @@
+import { redirect } from 'next/navigation';
 import { Navbar } from '@/components/navbar';
 import { ResumeDashboard } from '@/components/admin/resume-dashboard';
+import { getSessionRoles } from '@/lib/auth-guards';
+import { hasCapability } from '@watts/permissions';
 
-// /admin/resumes is officer-OR-admin (src/middleware.ts officerRoutes).
-// (The listResumes query is officer-or-admin; this page sits under the admin area.)
-export default function AdminResumesPage() {
+// admin/layout.tsx requires admin-or-officer; this page needs review_resumes (PII).
+export default async function AdminResumesPage() {
+	const { roles } = await getSessionRoles();
+	if (!hasCapability(roles, 'review_resumes')) redirect('/dashboard');
+
 	return (
 		<div className="flex min-h-screen flex-col bg-black">
 			<div className="w-full px-5">

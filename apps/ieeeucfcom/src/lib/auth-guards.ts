@@ -1,10 +1,25 @@
 import 'server-only';
 
+import { cache } from 'react';
 import { getServerSession, type Session } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { db } from '@/lib/database/client';
-import { resolveMemberRoles } from '@watts/core/members';
+import { resolveMemberRoles, type MemberRoles } from '@watts/core/members';
 import { hasCapability, type Capability } from '@watts/permissions';
+
+/**
+ * Session + DB-resolved roles for a Server Component / layout. Wrapped in React
+ * `cache()` so an `/admin` layout and the page it wraps share one resolve per
+ * request. Returns `{ session: null, roles: null }` for an anonymous request.
+ */
+export const getSessionRoles = cache(
+	async (): Promise<{ session: Session | null; roles: MemberRoles | null }> => {
+		const session = await getServerSession(authOptions);
+		if (!session?.user?.id) return { session: null, roles: null };
+		const roles = await resolveMemberRoles(db, session.user.id);
+		return { session, roles };
+	},
+);
 
 /**
  * Auth gates for raw Route Handlers (byte streaming, webhooks) — the tRPC procedure
