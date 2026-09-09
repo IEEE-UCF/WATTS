@@ -358,6 +358,7 @@ export const Events = pgTable("events", {
 	// ── Calendar / Discord sync (website is the source of truth) ──
 	labelId: uuid("label_id"),
 	isGlobal: boolean("is_global").default(false).notNull(), // also publish a Discord scheduled event
+	hidden: boolean("hidden").default(false).notNull(), // kept in the system but excluded from the public/dashboard feed (holidays, breaks…)
 	timeZone: varchar("time_zone", { length: 64 }).default('America/New_York').notNull(),
 	allDay: boolean("all_day").default(false).notNull(),
 	googleCalendarEventId: varchar("google_calendar_event_id", { length: 256 }),

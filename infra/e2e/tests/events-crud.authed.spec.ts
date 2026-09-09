@@ -62,6 +62,21 @@ test('staff can create, edit and delete an event from /admin/events', async ({ p
 	await expect(row).toBeVisible();
 	await expect(row).not.toContainText('error'); // sync must not have failed
 
+	// ── hidden flag: "hide" drops it from the public feed, "unhide" restores it ──
+	const feedUrl = '/api/trpc/event.getAll?batch=1&input=%7B%220%22%3A%7B%22json%22%3Anull%7D%7D';
+	await expect(async () => {
+		expect(await (await page.request.get(feedUrl)).text()).toContain(TITLE);
+	}).toPass();
+
+	await row.getByRole('button', { name: 'hide', exact: true }).click();
+	await expect(row).toContainText('hidden');
+	await expect(async () => {
+		expect(await (await page.request.get(feedUrl)).text()).not.toContain(TITLE);
+	}).toPass();
+
+	await row.getByRole('button', { name: 'unhide' }).click();
+	await expect(row).not.toContainText('hidden');
+
 	// ── edit ──
 	await row.getByRole('button', { name: 'edit' }).click();
 	await expect(page.locator('#title')).toHaveValue(TITLE);
@@ -96,4 +111,14 @@ test('staff can create, edit and delete an event from /admin/events', async ({ p
 	await expect(purge).toBeEnabled();
 	await purge.click();
 	await expect(editedRow).toBeHidden();
+});
+
+test('the dashboard events list splits upcoming and past', async ({ page }) => {
+	await page.goto('/dashboard', { waitUntil: 'domcontentloaded' });
+	await expect(page.getByRole('button', { name: /^upcoming \(\d+\)$/i })).toBeVisible();
+	const pastTab = page.getByRole('button', { name: /^past \(\d+\)$/i });
+	await expect(pastTab).toBeVisible();
+	await pastTab.click();
+	// Switching tabs must not error the page.
+	await expect(page.locator('body')).not.toContainText('Application error');
 });

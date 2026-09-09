@@ -19,6 +19,8 @@ export interface CreateEventInput {
 	labelId?: string | null;
 	/** Also publish a Discord scheduled event (picked up by the bot reconciler). */
 	isGlobal?: boolean;
+	/** Keep in the system + Google Calendar but exclude from the public/dashboard feed. */
+	hidden?: boolean;
 	/** IANA tz, e.g. "America/New_York". Defaults to Eastern. */
 	timeZone?: string;
 	allDay?: boolean;
@@ -26,9 +28,16 @@ export interface CreateEventInput {
 
 export type UpdateEventInput = Partial<CreateEventInput>;
 
-/** Every active event, oldest start first. Raw timestamp strings — the caller formats. */
+/**
+ * Every visible active event, oldest start first — the public/dashboard feed.
+ * Excludes `hidden` events (holidays, breaks, anything staff flagged out).
+ */
 export async function listActiveEvents(db: WattsDb) {
-	return db.select().from(Events).where(eq(Events.active, true)).orderBy(asc(Events.startTime));
+	return db
+		.select()
+		.from(Events)
+		.where(and(eq(Events.active, true), eq(Events.hidden, false)))
+		.orderBy(asc(Events.startTime));
 }
 
 /** Every event including inactive/soft-deleted — for the staff management grid. */
@@ -68,6 +77,7 @@ export async function createEvent(
 			requiresDues: input.requiresDues ?? false,
 			labelId: input.labelId ?? null,
 			isGlobal: input.isGlobal ?? false,
+			hidden: input.hidden ?? false,
 			timeZone: input.timeZone ?? 'America/New_York',
 			allDay: input.allDay ?? false,
 			createdByUserId: opts.createdByUserId ?? null,
@@ -92,6 +102,7 @@ export async function updateEvent(db: WattsDb, id: string, data: UpdateEventInpu
 	if (data.requiresDues !== undefined) patch.requiresDues = data.requiresDues;
 	if (data.labelId !== undefined) patch.labelId = data.labelId ?? null;
 	if (data.isGlobal !== undefined) patch.isGlobal = data.isGlobal;
+	if (data.hidden !== undefined) patch.hidden = data.hidden;
 	if (data.timeZone !== undefined) patch.timeZone = data.timeZone;
 	if (data.allDay !== undefined) patch.allDay = data.allDay;
 
@@ -386,6 +397,10 @@ export async function importEventsFromGoogle(db: WattsDb, opts: ImportFromGoogle
 			(g.extendedProperties?.shared?.wattsLabel &&
 				labelBySlug.get(g.extendedProperties.shared.wattsLabel)) ||
 			null;
+		// All-day + uncategorised is almost always a holiday / break / academic-calendar
+		// entry — import it hidden so it doesn't clutter the events feed. Staff can unhide.
+		const allDay = Boolean(g.start?.date);
+		const hidden = allDay && !labelId;
 
 		if (!opts.dryRun) {
 			await db.insert(Events).values({
@@ -394,7 +409,8 @@ export async function importEventsFromGoogle(db: WattsDb, opts: ImportFromGoogle
 				location: g.location?.trim() || 'TBA',
 				startTime: new Date(start).toISOString(),
 				endTime: googleEnd(g),
-				allDay: Boolean(g.start?.date),
+				allDay,
+				hidden,
 				timeZone: g.start?.timeZone ?? 'America/New_York',
 				labelId,
 				googleCalendarEventId: g.id,
@@ -409,7 +425,7 @@ export async function importEventsFromGoogle(db: WattsDb, opts: ImportFromGoogle
 			title,
 			start,
 			action: 'imported',
-			reason: labelId ? undefined : 'no category matched',
+			reason: hidden ? 'imported hidden (all-day, no category)' : labelId ? undefined : 'no category matched',
 		});
 	}
 

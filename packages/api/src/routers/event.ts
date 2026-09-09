@@ -92,6 +92,7 @@ const eventCreateSchema = z.object({
 	requiresDues: z.boolean().optional(),
 	labelId: z.string().uuid().nullish(),
 	isGlobal: z.boolean().optional(),
+	hidden: z.boolean().optional(),
 	timeZone: z.string().max(64).optional(),
 	allDay: z.boolean().optional(),
 });

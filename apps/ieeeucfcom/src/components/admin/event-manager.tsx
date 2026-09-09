@@ -44,6 +44,7 @@ interface FormState {
 	labelId: string;
 	timeZone: string;
 	isGlobal: boolean;
+	hidden: boolean;
 	allDay: boolean;
 	requiresDues: boolean;
 	rsvpLink: string;
@@ -60,6 +61,7 @@ function emptyForm(): FormState {
 		labelId: '',
 		timeZone: 'America/New_York',
 		isGlobal: false,
+		hidden: false,
 		allDay: false,
 		requiresDues: false,
 		rsvpLink: '',
@@ -77,6 +79,7 @@ function fromEvent(ev: AdminEvent): FormState {
 		labelId: ev.labelId ?? '',
 		timeZone: ev.timeZone ?? 'America/New_York',
 		isGlobal: ev.isGlobal,
+		hidden: ev.hidden,
 		allDay: ev.allDay,
 		requiresDues: ev.requiresDues,
 		rsvpLink: ev.rsvpLink ?? '',
@@ -125,6 +128,7 @@ function EventForm({
 			labelId: form.labelId || null,
 			timeZone: form.timeZone,
 			isGlobal: form.isGlobal,
+			hidden: form.hidden,
 			allDay: form.allDay,
 			requiresDues: form.requiresDues,
 			rsvpLink: form.rsvpLink || undefined,
@@ -264,6 +268,15 @@ function EventForm({
 						onChange={(e) => set('isGlobal', e.target.checked)}
 					/>
 					Global (also post to Discord)
+				</label>
+				<label className="flex items-center gap-2">
+					<input
+						id="hidden"
+						type="checkbox"
+						checked={form.hidden}
+						onChange={(e) => set('hidden', e.target.checked)}
+					/>
+					Hidden (keep in the calendar, hide from the events feed)
 				</label>
 				<label className="flex items-center gap-2">
 					<input
@@ -468,6 +481,7 @@ export function EventManager() {
 
 	const del = trpc.event.delete.useMutation();
 	const hardDel = trpc.event.hardDelete.useMutation();
+	const setHidden = trpc.event.update.useMutation({ onSuccess: invalidate });
 	const resync = trpc.event.resync.useMutation({ onSuccess: invalidate });
 	const confirmFlyer = trpc.event.confirmFlyer.useMutation();
 	const importGoogle = trpc.event.importFromGoogle.useMutation();
@@ -696,6 +710,11 @@ export function EventManager() {
 													archived
 												</span>
 											)}
+											{ev.hidden && (
+												<span className="ml-2 rounded bg-gray-800 px-1.5 py-0.5 text-[10px] uppercase text-amber-400">
+													hidden
+												</span>
+											)}
 										</div>
 										<div className="text-xs text-gray-500">{ev.location}</div>
 									</td>
@@ -741,6 +760,14 @@ export function EventManager() {
 												className="text-blue-400 hover:underline"
 											>
 												edit
+											</button>
+											<button
+												type="button"
+												disabled={setHidden.isPending}
+												onClick={() => setHidden.mutate({ id: ev.id, data: { hidden: !ev.hidden } })}
+												className="text-blue-400 hover:underline disabled:opacity-50"
+											>
+												{ev.hidden ? 'unhide' : 'hide'}
 											</button>
 											<button
 												type="button"

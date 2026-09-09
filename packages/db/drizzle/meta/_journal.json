@@ -43,6 +43,13 @@
       "when": 1788985604771,
       "tag": "0005_colossal_tomorrow_man",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1788991436308,
+      "tag": "0006_polite_menace",
+      "breakpoints": true
     }
   ]
 }
