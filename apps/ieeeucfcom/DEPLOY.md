@@ -47,6 +47,14 @@ want preview deploys to be functional):
 Optional S3 vars (`S3_*`) are only for `STORAGE_PROVIDER=local` / self-hosted MinIO —
 leave unset on Vercel.
 
+> **Turborepo strict env mode.** The build runs through `turbo run build`, and
+> Turborepo 2.x only forwards environment variables **declared in `turbo.json`**.
+> Every var above is listed there (`globalPassThroughEnv` for the secrets,
+> `build.env` for the build-shaping ones). If you add a new env var the app reads at
+> build time, add it to `turbo.json` too — otherwise `next build` won't see it and
+> `getServerEnv()` throws `ZodError`. Vercel's build log prints the full list of vars
+> it stripped when this happens.
+
 ## 4. Discord OAuth redirect URI
 
 In the **website's** Discord application → OAuth2 → Redirects, add:
