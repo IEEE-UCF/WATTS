@@ -38,7 +38,7 @@
     "embla-carousel-react": "^8.6.0",
     "lucide-react": "^0.510.0",
     "radix-ui": "^1.4.3",
-    "recharts": "^2.15.4",
+    "recharts": "^3.10.1",
     "tailwind-merge": "^3.4.0"
   },
   "scripts": {
