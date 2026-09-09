@@ -53,6 +53,8 @@ export interface GoogleEvent {
 	colorId?: string;
 	eventLabelId?: string;
 	updated?: string;
+	/** Set on an instance expanded from a recurring series. */
+	recurringEventId?: string;
 	start?: { date?: string; dateTime?: string; timeZone?: string };
 	end?: { date?: string; dateTime?: string; timeZone?: string };
 	extendedProperties?: { private?: Record<string, string>; shared?: Record<string, string> };

@@ -16,6 +16,7 @@ import {
 	updateEvent,
 	deleteEvent,
 	syncEventToGoogle,
+	importEventsFromGoogle,
 	checkInMember,
 } from '@watts/core/events';
 import { listLabels } from '@watts/core/event-labels';
@@ -188,6 +189,47 @@ export const eventRouter = createTRPCRouter({
 				});
 			} catch (err) {
 				mapUploadError(err);
+			}
+		}),
+
+	/**
+	 * Pull events already on the Google Calendar into the DB. `dryRun` previews
+	 * without writing. Idempotent — re-running only imports newly-seen events.
+	 */
+	importFromGoogle: manageEvents
+		.input(
+			z
+				.object({
+					dryRun: z.boolean().optional(),
+					updateExisting: z.boolean().optional(),
+					sinceDays: z.number().int().min(0).max(3650).optional(),
+				})
+				.optional(),
+		)
+		.mutation(async ({ ctx, input }) => {
+			try {
+				const sinceIso =
+					input?.sinceDays != null
+						? new Date(Date.now() - input.sinceDays * 86_400_000).toISOString()
+						: undefined;
+				const { enabled, results } = await importEventsFromGoogle(ctx.db, {
+					dryRun: input?.dryRun,
+					updateExisting: input?.updateExisting,
+					sinceIso,
+					importedByUserId: ctx.session.user.id,
+				});
+				const count = (a: string) => results.filter((r) => r.action === a).length;
+				return {
+					success: true,
+					enabled,
+					dryRun: Boolean(input?.dryRun),
+					imported: count('imported'),
+					updated: count('updated'),
+					skipped: count('skipped'),
+					results,
+				};
+			} catch (error) {
+				mapDomainError(error);
 			}
 		}),
 

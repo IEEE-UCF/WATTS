@@ -455,6 +455,37 @@ export function EventManager() {
 	const del = trpc.event.delete.useMutation({ onSuccess: invalidate });
 	const resync = trpc.event.resync.useMutation({ onSuccess: invalidate });
 	const confirmFlyer = trpc.event.confirmFlyer.useMutation();
+	const importGoogle = trpc.event.importFromGoogle.useMutation();
+
+	async function runImport() {
+		try {
+			const preview = await importGoogle.mutateAsync({ dryRun: true });
+			if (!preview.enabled) {
+				alert('Google Calendar is not connected (no service-account credentials).');
+				return;
+			}
+			if (preview.imported === 0) {
+				alert(`Nothing new to import. ${preview.skipped} calendar event(s) are already linked.`);
+				return;
+			}
+			const names = preview.results
+				.filter((r) => r.action === 'imported')
+				.slice(0, 15)
+				.map((r) => `  • ${r.title}`)
+				.join('\n');
+			const ok = confirm(
+				`Import ${preview.imported} event(s) from Google Calendar?\n` +
+					`(${preview.skipped} already linked)\n\n${names}` +
+					(preview.imported > 15 ? '\n  …' : ''),
+			);
+			if (!ok) return;
+			const done = await importGoogle.mutateAsync({});
+			invalidate();
+			alert(`Imported ${done.imported}, updated ${done.updated}, skipped ${done.skipped}.`);
+		} catch (err) {
+			alert(err instanceof Error ? err.message : 'Import failed');
+		}
+	}
 
 	const sorted = useMemo(
 		() => (events ?? []).slice().sort((a, b) => (a.startTimeRaw < b.startTimeRaw ? 1 : -1)),
@@ -496,13 +527,21 @@ export function EventManager() {
 		<div className="text-gray-100">
 			<LabelBar labels={labels ?? []} />
 
-			<div className="mb-4">
+			<div className="mb-4 flex flex-wrap gap-3">
 				<button
 					type="button"
 					onClick={openCreate}
 					className="rounded-md bg-[var(--ieee-dark-yellow)] px-4 py-2 text-sm font-semibold text-black"
 				>
 					+ New event
+				</button>
+				<button
+					type="button"
+					disabled={importGoogle.isPending}
+					onClick={runImport}
+					className="rounded-md border border-gray-700 px-4 py-2 text-sm text-gray-200 disabled:opacity-50"
+				>
+					{importGoogle.isPending ? 'Importing…' : 'Import from Google Calendar'}
 				</button>
 			</div>
 

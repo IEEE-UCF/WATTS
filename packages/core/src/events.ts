@@ -202,6 +202,198 @@ export async function syncEventToGoogle(db: WattsDb, id: string) {
 	}
 }
 
+// ─────────────────────────── import from Google ───────────────────────────
+
+export interface ImportFromGoogleOptions {
+	/** Only consider Google events starting at/after this ISO. Default: start of today. */
+	sinceIso?: string;
+	/** Refresh already-linked rows when Google's copy is newer. Default false. */
+	updateExisting?: boolean;
+	/** Report only — write nothing. Default false. */
+	dryRun?: boolean;
+	/** Stamped onto newly imported rows for audit. */
+	importedByUserId?: string | null;
+}
+
+export interface ImportedEventSummary {
+	googleCalendarEventId: string;
+	title: string;
+	start: string | null;
+	action: 'imported' | 'updated' | 'skipped';
+	reason?: string;
+}
+
+function startOfTodayIso(): string {
+	const d = new Date();
+	d.setHours(0, 0, 0, 0);
+	return d.toISOString();
+}
+
+function googleStart(g: import('@watts/calendar').GoogleEvent): string | null {
+	if (g.start?.dateTime) return g.start.dateTime;
+	if (g.start?.date) return `${g.start.date}T00:00:00Z`;
+	return null;
+}
+
+function googleEnd(g: import('@watts/calendar').GoogleEvent): string | null {
+	if (g.end?.dateTime) return new Date(g.end.dateTime).toISOString();
+	if (g.end?.date) return new Date(`${g.end.date}T00:00:00Z`).toISOString();
+	return null;
+}
+
+/**
+ * Pull events off the connected Google Calendar into the `events` table. Existing
+ * events already linked by `googleCalendarEventId` are left alone (or refreshed
+ * when `updateExisting` + Google's copy is newer). Recurring series contribute a
+ * single row (the earliest upcoming instance). No-op when calendar credentials
+ * are absent. Idempotent — safe to run repeatedly.
+ */
+export async function importEventsFromGoogle(db: WattsDb, opts: ImportFromGoogleOptions = {}) {
+	const { createCalendarClient } = await import('@watts/calendar');
+	const client = createCalendarClient();
+	if (!client.enabled) {
+		return { enabled: false as const, results: [] as ImportedEventSummary[] };
+	}
+
+	const sinceIso = opts.sinceIso ?? startOfTodayIso();
+	const googleEvents = await client.listEvents({ timeMinIso: sinceIso, maxResults: 2500 });
+
+	const existing = await db
+		.select({
+			id: Events.id,
+			title: Events.title,
+			startTime: Events.startTime,
+			gcalId: Events.googleCalendarEventId,
+			updatedAt: Events.updatedAt,
+			lastSyncedAt: Events.lastSyncedAt,
+		})
+		.from(Events);
+	const linkedByGcalId = new Map(
+		existing.filter((e) => e.gcalId).map((e) => [e.gcalId as string, e]),
+	);
+	// Rows someone already typed into the website but that were never synced —
+	// keyed by "title|YYYY-MM-DD" so an import adopts them instead of duplicating.
+	const adoptable = new Map<string, (typeof existing)[number]>();
+	for (const e of existing) {
+		if (e.gcalId) continue;
+		adoptable.set(`${e.title.trim().toLowerCase()}|${e.startTime.slice(0, 10)}`, e);
+	}
+	const adopted = new Set<string>();
+
+	const labels = await db
+		.select({ id: EventLabels.id, slug: EventLabels.slug, googleLabelId: EventLabels.googleLabelId })
+		.from(EventLabels);
+	const labelByGoogleId = new Map(
+		labels.filter((l) => l.googleLabelId).map((l) => [l.googleLabelId as string, l.id]),
+	);
+	const labelBySlug = new Map(labels.map((l) => [l.slug, l.id]));
+
+	const results: ImportedEventSummary[] = [];
+	const seenSeries = new Set<string>();
+
+	for (const g of googleEvents) {
+		const start = googleStart(g);
+		const title = g.summary?.trim() || '(untitled)';
+		if (g.status === 'cancelled') {
+			results.push({ googleCalendarEventId: g.id, title, start, action: 'skipped', reason: 'cancelled' });
+			continue;
+		}
+		if (!start) {
+			results.push({ googleCalendarEventId: g.id, title, start, action: 'skipped', reason: 'no start time' });
+			continue;
+		}
+
+		const linked = linkedByGcalId.get(g.id);
+		if (linked) {
+			const gUpdated = g.updated ? new Date(g.updated).getTime() : 0;
+			const ourStamp = new Date(linked.lastSyncedAt ?? linked.updatedAt).getTime();
+			if (opts.updateExisting && gUpdated > ourStamp) {
+				if (!opts.dryRun) {
+					await db
+						.update(Events)
+						.set({
+							title,
+							description: g.description?.trim() || title,
+							location: g.location?.trim() || 'TBA',
+							startTime: new Date(start).toISOString(),
+							endTime: googleEnd(g),
+							allDay: Boolean(g.start?.date),
+							timeZone: g.start?.timeZone ?? undefined,
+							lastSyncedAt: new Date().toISOString(),
+							updatedAt: new Date().toISOString(),
+						})
+						.where(eq(Events.id, linked.id));
+				}
+				results.push({ googleCalendarEventId: g.id, title, start, action: 'updated' });
+			} else {
+				results.push({ googleCalendarEventId: g.id, title, start, action: 'skipped', reason: 'already linked' });
+			}
+			continue;
+		}
+
+		// Adopt a matching website-only row rather than creating a duplicate.
+		const adoptKey = `${title.toLowerCase()}|${start.slice(0, 10)}`;
+		const twin = adoptable.get(adoptKey);
+		if (twin && !adopted.has(twin.id)) {
+			adopted.add(twin.id);
+			if (!opts.dryRun) {
+				await db
+					.update(Events)
+					.set({
+						googleCalendarEventId: g.id,
+						syncStatus: 'synced',
+						lastSyncedAt: new Date().toISOString(),
+						updatedAt: new Date().toISOString(),
+					})
+					.where(eq(Events.id, twin.id));
+			}
+			results.push({ googleCalendarEventId: g.id, title, start, action: 'updated', reason: 'linked existing row' });
+			continue;
+		}
+
+		if (g.recurringEventId) {
+			if (seenSeries.has(g.recurringEventId)) {
+				results.push({ googleCalendarEventId: g.id, title, start, action: 'skipped', reason: 'recurring instance' });
+				continue;
+			}
+			seenSeries.add(g.recurringEventId);
+		}
+
+		const labelId =
+			(g.eventLabelId && labelByGoogleId.get(g.eventLabelId)) ||
+			(g.extendedProperties?.shared?.wattsLabel &&
+				labelBySlug.get(g.extendedProperties.shared.wattsLabel)) ||
+			null;
+
+		if (!opts.dryRun) {
+			await db.insert(Events).values({
+				title,
+				description: g.description?.trim() || title,
+				location: g.location?.trim() || 'TBA',
+				startTime: new Date(start).toISOString(),
+				endTime: googleEnd(g),
+				allDay: Boolean(g.start?.date),
+				timeZone: g.start?.timeZone ?? 'America/New_York',
+				labelId,
+				googleCalendarEventId: g.id,
+				syncStatus: 'synced',
+				lastSyncedAt: new Date().toISOString(),
+				createdByUserId: opts.importedByUserId ?? null,
+				active: true,
+			});
+		}
+		results.push({
+			googleCalendarEventId: g.id,
+			title,
+			start,
+			action: 'imported',
+			reason: labelId ? undefined : 'no category matched',
+		});
+	}
+
+	return { enabled: true as const, results };
+}
+
 /**
  * Check a member into an event by their Discord id (QR-scan flow).
  * Invariants: event exists + active, member exists + active, not already checked
