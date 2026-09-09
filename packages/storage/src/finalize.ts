@@ -12,6 +12,7 @@ import { createHash } from 'crypto';
 import { and, eq, gte, sql } from 'drizzle-orm';
 import type { WattsDb } from '@watts/db';
 import { EventPhotos, Events, Members, UploadEvents } from '@watts/db/schema';
+import { hasCapability } from '@watts/permissions';
 import { canUploadResumeSession, type SessionLike } from './audience';
 import {
 	PHOTO_CONTENT_TYPES,
@@ -22,7 +23,13 @@ import {
 	UPLOAD_COOLDOWN_WINDOW_MS,
 } from './env';
 import { getStorage } from './index';
-import { magicBytesMatchKind, newPhotoKeys, resumeKey, sanitizeFilename } from './keys';
+import {
+	eventFlyerKey,
+	magicBytesMatchKind,
+	newPhotoKeys,
+	resumeKey,
+	sanitizeFilename,
+} from './keys';
 import type { StorageBucket, UploadKind } from './types';
 
 export class UploadError extends Error {
@@ -175,6 +182,50 @@ export async function authorizeUpload(
 		};
 	}
 
+	if (intent.kind === 'event-flyer') {
+		// Staff who can manage events can set a flyer — not just admins.
+		if (!hasCapability(session.user, 'manage_events')) {
+			throw new UploadError('FORBIDDEN', 'The manage_events capability is required');
+		}
+		if (!intent.eventId) {
+			throw new UploadError('BAD_REQUEST', 'eventId is required');
+		}
+		if (!(PHOTO_CONTENT_TYPES as readonly string[]).includes(intent.contentType)) {
+			throw new UploadError('BAD_REQUEST', 'Flyer must be a JPEG, PNG or WebP');
+		}
+		if (intent.byteSize > PHOTO_MAX_BYTES) {
+			throw new UploadError('BAD_REQUEST', 'Flyer exceeds the 15 MB limit');
+		}
+
+		const [event] = await db
+			.select({ id: Events.id })
+			.from(Events)
+			.where(eq(Events.id, intent.eventId))
+			.limit(1);
+		if (!event) {
+			throw new UploadError('NOT_FOUND', 'Event not found');
+		}
+
+		await assertCooldown(db, userId, 'event-flyer');
+
+		const key = eventFlyerKey(intent.eventId);
+		return {
+			kind: 'event-flyer',
+			bucket: 'public',
+			key,
+			contentType: intent.contentType,
+			maxBytes: PHOTO_MAX_BYTES,
+			contentLength: intent.byteSize,
+			tokenPayload: {
+				kind: 'event-flyer',
+				key,
+				userId,
+				eventId: intent.eventId,
+				filename: sanitizeFilename(intent.filename),
+			},
+		};
+	}
+
 	// event-photo
 	if (!session.user.administrator) {
 		throw new UploadError('FORBIDDEN', 'Administrator privileges required');
@@ -234,6 +285,7 @@ export interface FinalizeResult {
 	kind: UploadKind;
 	resume?: { memberId: string; url: string };
 	photoId?: string;
+	flyerUrl?: string;
 }
 
 /**
@@ -242,9 +294,9 @@ export interface FinalizeResult {
  */
 export async function finalizeUpload(db: WattsDb, payload: AuthorizedUpload['tokenPayload']): Promise<FinalizeResult> {
 	const storage = await getStorage();
-	// Both resumes and event photos are stored privately; event photos are exposed to
-	// the public feed only via a per-row visibility flag, never a direct bucket URL.
-	const bucket: StorageBucket = 'private';
+	// resume + event-photo live in the private bucket (photos surface to the public
+	// feed only via a per-row visibility flag). The event flyer is a public asset.
+	const bucket: StorageBucket = payload.kind === 'event-flyer' ? 'public' : 'private';
 
 	const head = await storage.head({ key: payload.key, bucket });
 	if (!head) {
@@ -291,6 +343,20 @@ export async function finalizeUpload(db: WattsDb, payload: AuthorizedUpload['tok
 
 		await db.insert(UploadEvents).values({ userId: payload.userId, kind: 'resume' });
 		return { kind: 'resume', resume: { memberId: member.id, url } };
+	}
+
+	if (payload.kind === 'event-flyer') {
+		const flyerUrl = storage.publicUrl(payload.key);
+		const updated = await db
+			.update(Events)
+			.set({ flyerUrl, updatedAt: new Date().toISOString() })
+			.where(eq(Events.id, payload.eventId!))
+			.returning();
+		if (updated.length === 0) {
+			throw new UploadError('NOT_FOUND', 'Event not found');
+		}
+		await db.insert(UploadEvents).values({ userId: payload.userId, kind: 'event-flyer' });
+		return { kind: 'event-flyer', flyerUrl };
 	}
 
 	// event-photo
