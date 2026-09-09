@@ -9,6 +9,7 @@
 		"test:ui": "playwright test --ui",
 		"auth": "node capture-auth.mjs",
 		"role-restore": "node restore-role.mjs",
+		"session-clean": "node session-clean.mjs",
 		"lint": "eslint .",
 		"typecheck": "tsc --noEmit"
 	},

@@ -9,11 +9,20 @@ import { existsSync, readFileSync, writeFileSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { loadRootEnv } from '@watts/config/load-env';
 import pg from 'pg';
+import { dbHostAllowed } from './session';
 
 loadRootEnv();
 const connectionString = process.env.DATABASE_URL;
 if (!connectionString) {
 	throw new Error('DATABASE_URL is not set — the role helper needs the local Postgres.');
+}
+if (!dbHostAllowed()) {
+	// Same un-bypassable allowlist as the synthetic session: local / CI Postgres
+	// only. role-matrix mutates a real member row — it must never touch a remote DB.
+	throw new Error(
+		`refusing to run the role helper against a non-local database (${new URL(connectionString).hostname}). ` +
+			'Only localhost / 127.0.0.1 / ::1 / postgres are allowed.',
+	);
 }
 const pool = new pg.Pool({ connectionString });
 

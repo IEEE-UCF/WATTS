@@ -4,10 +4,15 @@
 #   smoke  — migrate + seed a throwaway Postgres, then run the @watts/core
 #            /whois checks against the real schema (catches schema/seed drift).
 #   e2e    — build + serve @watts/web against a throwaway Postgres (schema only,
-#            no fixtures — the anonymous suite is auth / route-gating / service
-#            reachability, none of which reads seeded rows). A Playwright smoke
-#            suite: every page renders, gated routes redirect, and the app can
-#            reach its backing services. Screenshots + HTML report as artifacts.
+#            no fixtures — the suite tests auth / route-gating / service
+#            reachability / the per-role redirect matrix, none of which reads
+#            seeded rows). Playwright, both projects: the anonymous specs, plus
+#            the `authenticated` project running against a guarded SYNTHETIC
+#            session that global-setup.ts mints in the CI database and deletes in
+#            teardown (infra/e2e/lib/session.ts) — there is no captured Discord
+#            login in CI, and the synthetic session does NOT exercise Discord
+#            OAuth (deferred; see infra/e2e/README.md). Screenshots + HTML report
+#            as artifacts.
 #
 # All run on every PR and on push to main. No unit tests yet — Vitest is a
 # tracked follow-up. Production migrations live in .github/workflows/deploy.yml.
@@ -139,6 +144,9 @@ jobs:
       # schema. The web server + Playwright run inside this job's container, so
       # they reach the app on localhost; the postgres SERVICE is reached by its
       # label. The Discord / NEXTAUTH values just need to be present.
+      # DATABASE_URL host `postgres` is in the synthetic-session host allowlist
+      # (infra/e2e/lib/session.ts), so global-setup mints the authenticated
+      # fixture here; it can never reach an off-box database.
       APP_ENV: local
       DB_PROVIDER: local
       DATABASE_URL: postgres://postgres:postgres@postgres:5432/watts
@@ -180,7 +188,7 @@ jobs:
       - name: Migrate the schema
         run: pnpm db:migrate
 
-      - name: Playwright smoke suite
+      - name: Playwright suite (anon + synthetic-session authenticated)
         run: pnpm --filter @watts/e2e test
 
       - name: Upload report + screenshots
