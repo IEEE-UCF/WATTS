@@ -2,6 +2,7 @@ import { memberRouter } from './routers/member';
 import { createTRPCRouter, createCallerFactory } from './trpc';
 import { authRouter } from './routers/auth';
 import { eventRouter } from './routers/event';
+import { eventLabelRouter } from './routers/event-label';
 import { officerRouter } from './routers/officer';
 import { projectRouter } from './routers/project';
 import { awardRouter } from './routers/award';
@@ -13,6 +14,7 @@ export const appRouter = createTRPCRouter({
 	member: memberRouter,
 	auth: authRouter,
 	event: eventRouter,
+	eventLabel: eventLabelRouter,
 	officer: officerRouter,
 	project: projectRouter,
 	award: awardRouter,
