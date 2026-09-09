@@ -43,9 +43,16 @@ want preview deploys to be functional):
 | `NEXT_PUBLIC_STORAGE_PROVIDER` | `vercel` | Client-side mirror; used by the browser upload code. |
 | `BLOB_READ_WRITE_TOKEN` | *(from Vercel Blob)* | Create a Blob store first (Storage tab); Vercel can inject this automatically once the store is linked. |
 | `RESUME_UPLOAD_AUDIENCE` | `admins` \| `officers` \| `members` | Who may upload a résumé. Defaults to `admins`. |
+| `GOOGLE_SERVICE_ACCOUNT_JSON` | *(raw JSON, base64, or a file path)* | Service-account key for Google Calendar sync. **Optional** — unset ⇒ events save with `sync_status = 'skipped'` and nothing hits Google. Also read by `apps/jobs`. |
+| `GOOGLE_CALENDAR_ID` | `ieee.ucf@gmail.com` | Target calendar; must be shared with the service-account email with "Make changes to events". Optional (pairs with the key above). |
 
 Optional S3 vars (`S3_*`) are only for `STORAGE_PROVIDER=local` / self-hosted MinIO —
 leave unset on Vercel.
+
+The Discord bot (`apps/dbot`, deployed separately — not Vercel) additionally reads
+`DISCORD_EVENT_SYNC_ENABLED` (`true` to mirror "global" events to the guild's
+scheduled events) and `DISCORD_EVENT_SYNC_INTERVAL_MINS` (default `15`). Bot-only —
+not part of the web build, so not in `turbo.json`.
 
 > **Turborepo strict env mode.** The build runs through `turbo run build`, and
 > Turborepo 2.x only forwards environment variables **declared in `turbo.json`**.
