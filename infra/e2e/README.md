@@ -16,9 +16,9 @@ testing notes for the deeper layers (shelved).
 | `role-matrix.spec.ts` | `authenticated` | Per-role access: toggles the captured user's real `members` row (`e2e/lib/role.ts`) through member / officer / admin (+ a lone staff-capability grant) and asserts each gated route **renders or redirects to `/dashboard`** as expected. Also pins the "role revoked while idle on `/staff`" gap. Serial; snapshots + restores your row. |
 
 > **role-matrix mutates your real member row.** It snapshots (`administrator`,
-> `officer_status`, `officer_role`, permissions) to `e2e/.auth/role-backup.json`
+> `officer_status`, `officer_role`, permissions) to `infra/e2e/.auth/role-backup.json`
 > first and restores in `afterAll`. If a run is killed mid-flight:
-> `pnpm --filter @watts/web e2e:role-restore`. The authenticated run also forces
+> `pnpm --filter @watts/e2e role-restore`. The authenticated run also forces
 > `workers: 1` so nothing else hits the DB while roles are being toggled.
 
 ## Run the anonymous suite
@@ -27,14 +27,14 @@ Local build (Postgres must be up + migrated + seeded):
 
 ```bash
 pnpm infra:up && pnpm db:migrate && pnpm db:seed
-pnpm --filter @watts/web e2e            # builds, serves :3000, runs chromium project
-pnpm --filter @watts/web e2e:ui         # interactive
+pnpm --filter @watts/e2e test            # builds, serves :3000, runs chromium project
+pnpm --filter @watts/e2e test:ui         # interactive
 ```
 
 Against a deployment:
 
 ```bash
-E2E_BASE_URL=https://<deploy>.vercel.app pnpm --filter @watts/web e2e
+E2E_BASE_URL=https://<deploy>.vercel.app pnpm --filter @watts/e2e test
 ```
 
 ## Run the authenticated suite (`authed.spec.ts`)
@@ -44,11 +44,11 @@ resulting cookies are saved for reuse until they expire (~10 days).
 
 ```bash
 pnpm dev                                        # dev server, https://localhost:3050
-pnpm --filter @watts/web e2e:auth               # opens a window — finish the Discord login
-E2E_BASE_URL=https://localhost:3050 pnpm --filter @watts/web e2e
+pnpm --filter @watts/e2e auth               # opens a window — finish the Discord login
+E2E_BASE_URL=https://localhost:3050 pnpm --filter @watts/e2e test
 ```
 
-`e2e:auth` writes `e2e/.auth/user.json` (gitignored). The `authenticated`
+`e2e:auth` writes `infra/e2e/.auth/user.json` (gitignored). The `authenticated`
 Playwright project exists only when that file is present **and** `E2E_BASE_URL` is
 set — so plain `pnpm e2e` and CI never touch it. Re-run `e2e:auth` after the
 session expires or after `pnpm db:reset`.

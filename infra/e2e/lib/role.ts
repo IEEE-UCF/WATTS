@@ -3,7 +3,7 @@
 // Local DB only.
 //
 // Safety: snapshot() also writes e2e/.auth/role-backup.json. If a run crashes
-// before afterAll restores you, run `pnpm --filter @watts/web e2e:role-restore`.
+// before afterAll restores you, run `pnpm --filter @watts/e2e role-restore`.
 
 import { existsSync, readFileSync, writeFileSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
@@ -17,9 +17,9 @@ if (!connectionString) {
 }
 const pool = new pg.Pool({ connectionString });
 
-// Playwright runs from the config dir (apps/ieeeucfcom).
-const AUTH_FILE = join(process.cwd(), 'e2e', '.auth', 'user.json');
-const BACKUP_FILE = join(process.cwd(), 'e2e', '.auth', 'role-backup.json');
+// Playwright runs from the config dir (infra/e2e).
+const AUTH_FILE = join(process.cwd(), '.auth', 'user.json');
+const BACKUP_FILE = join(process.cwd(), '.auth', 'role-backup.json');
 
 export type Role = 'member' | 'officer' | 'admin';
 
@@ -28,7 +28,7 @@ function sessionToken(): string {
 	try {
 		state = JSON.parse(readFileSync(AUTH_FILE, 'utf8'));
 	} catch {
-		throw new Error('e2e/.auth/user.json missing — run `pnpm --filter @watts/web e2e:auth` first.');
+		throw new Error('infra/e2e/.auth/user.json missing — run `pnpm --filter @watts/e2e auth` first.');
 	}
 	const cookie = state.cookies.find((c) => c.name.endsWith('next-auth.session-token'));
 	if (!cookie) throw new Error('no next-auth session-token cookie in e2e/.auth/user.json');
@@ -42,7 +42,7 @@ export async function testMemberId(): Promise<string> {
 		'select user_id from sessions where session_token = $1',
 		[sessionToken()],
 	);
-	if (!sRows[0]) throw new Error('captured session not in the DB — it may have expired; re-run e2e:auth.');
+	if (!sRows[0]) throw new Error('captured session not in the DB — it may have expired; re-run `pnpm --filter @watts/e2e auth`.');
 	const { rows: mRows } = await pool.query<{ id: string }>('select id from members where user_id = $1', [
 		sRows[0].user_id,
 	]);

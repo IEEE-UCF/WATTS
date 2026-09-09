@@ -1,9 +1,9 @@
-// Capture a REAL Discord login into e2e/.auth/user.json so the `authenticated`
+// Capture a REAL Discord login into infra/e2e/.auth/user.json so the `authenticated`
 // Playwright project can reuse it. No fabricated sessions.
 //
 //   pnpm dev                                 # dev server on https://localhost:3050
-//   pnpm --filter @watts/web e2e:auth        # opens a window; finish the Discord login
-//   E2E_BASE_URL=https://localhost:3050 pnpm --filter @watts/web e2e
+//   pnpm --filter @watts/e2e auth        # opens a window; finish the Discord login
+//   E2E_BASE_URL=https://localhost:3050 pnpm --filter @watts/e2e test
 //
 // Re-run this when the session expires (~10 days) or after `pnpm db:reset`.
 
@@ -53,5 +53,5 @@ await context.storageState({ path: outPath });
 await browser.close();
 
 console.log(`\n✓ Saved a real session for user ${userId}`);
-console.log('  apps/ieeeucfcom/e2e/.auth/user.json  (gitignored)');
-console.log(`\n  Run the authenticated suite:\n    E2E_BASE_URL=${BASE} pnpm --filter @watts/web e2e\n`);
+console.log('  infra/e2e/.auth/user.json  (gitignored)');
+console.log(`\n  Run the authenticated suite:\n    E2E_BASE_URL=${BASE} pnpm --filter @watts/e2e test\n`);

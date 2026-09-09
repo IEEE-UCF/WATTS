@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 
 // Runs only in the `authenticated` Playwright project, which exists only when
 // e2e/.auth/user.json is present — captured by a REAL Discord login via
-// `pnpm --filter @watts/web e2e:auth`. No fabricated sessions. CI never has the
+// `pnpm --filter @watts/e2e auth`. No fabricated sessions. CI never has the
 // file, so this file is skipped there.
 
 const routes = [
@@ -30,7 +30,7 @@ test.describe('with a captured Discord session', () => {
 		const session = await res.json();
 		expect(
 			session?.user?.id,
-			'e2e/.auth/user.json has no live session — re-run `pnpm --filter @watts/web e2e:auth`',
+			'e2e/.auth/user.json has no live session — re-run `pnpm --filter @watts/e2e auth`',
 		).toBeTruthy();
 	});
 

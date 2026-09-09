@@ -1,8 +1,8 @@
-// Recover the captured user's member row from e2e/.auth/role-backup.json, which
+// Recover the captured user's member row from infra/e2e/.auth/role-backup.json, which
 // role-matrix.spec.ts writes at the start of every run. Use this if a run was
 // killed before its afterAll could restore you.
 //
-//   pnpm --filter @watts/web e2e:role-restore
+//   pnpm --filter @watts/e2e role-restore
 //
 // Standalone (plain JS + pg) so `node` can run it with no TS loader.
 
@@ -16,7 +16,7 @@ loadRootEnv();
 
 const backupFile = join(dirname(fileURLToPath(import.meta.url)), '.auth', 'role-backup.json');
 if (!existsSync(backupFile)) {
-	console.log('No e2e/.auth/role-backup.json — nothing to restore.');
+	console.log('No infra/e2e/.auth/role-backup.json — nothing to restore.');
 	process.exit(0);
 }
 if (!process.env.DATABASE_URL) {

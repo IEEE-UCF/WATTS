@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { closeDb, restore, setRole, snapshot, type RoleSnapshot } from './lib/role';
+import { closeDb, restore, setRole, snapshot, type RoleSnapshot } from '../lib/role';
 
 // Runs in the `authenticated` project (needs e2e/.auth/user.json + E2E_BASE_URL).
 // Mutates the captured user's real member row (the same writes the members-manager
@@ -41,7 +41,7 @@ test.afterAll(async () => {
 	} catch (err) {
 		console.error(
 			'\n!!! ROLE RESTORE FAILED — your member row may be wrong.\n' +
-				'    Recover with: pnpm --filter @watts/web e2e:role-restore\n',
+				'    Recover with: pnpm --filter @watts/e2e role-restore\n',
 			err,
 		);
 		throw err;

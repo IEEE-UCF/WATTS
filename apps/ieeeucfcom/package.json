@@ -9,11 +9,7 @@
 		"build": "next build",
 		"start": "next start",
 		"lint": "next lint",
-		"typecheck": "tsc --noEmit",
-		"e2e": "playwright test",
-		"e2e:ui": "playwright test --ui",
-		"e2e:auth": "node e2e/capture-auth.mjs",
-		"e2e:role-restore": "node e2e/restore-role.mjs"
+		"typecheck": "tsc --noEmit"
 	},
 	"dependencies": {
 		"@auth/drizzle-adapter": "^1.11.1",
@@ -87,7 +83,6 @@
 		"@types/react-dom": "^19.2.3",
 		"@types/react-vertical-timeline-component": "^3.3.6",
 		"@types/yargs": "^17.0.35",
-		"@playwright/test": "^1.50.0",
 		"@watts/eslint-config": "workspace:*",
 		"@watts/tsconfig": "workspace:*",
 		"autoprefixer": "^10.4.24",

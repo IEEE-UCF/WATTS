@@ -4,6 +4,7 @@ packages:
   - 'apps/*'
   - 'packages/*'
   - 'infra/seed'
+  - 'infra/e2e'
 
 # Dependencies allowed to run install/build lifecycle scripts (pnpm blocks the rest
 # by default). Managed by `pnpm approve-builds`.

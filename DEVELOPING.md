@@ -78,8 +78,8 @@ pnpm --filter @watts/bot check:whois # validate the /whois lookup against the se
 pnpm e2e                             # Playwright smoke suite (needs infra up + seeded)
 ```
 
-`pnpm e2e` builds and serves the web app on :3000 and runs
-[`apps/ieeeucfcom/e2e/`](apps/ieeeucfcom/e2e/README.md) — page renders, auth-gate
+`pnpm e2e` (→ `@watts/e2e`, in `infra/e2e/`) builds and serves the web app on
+:3000 and runs [`infra/e2e/`](infra/e2e/README.md) — page renders, auth-gate
 redirects, and backing-service reachability. Point it at a deployment with
 `E2E_BASE_URL=https://… pnpm e2e`.
 
@@ -88,11 +88,11 @@ save the session — no fabricated cookies:
 
 ```bash
 pnpm dev                                        # https://localhost:3050
-pnpm --filter @watts/web e2e:auth               # finish the Discord login in the window
-E2E_BASE_URL=https://localhost:3050 pnpm --filter @watts/web e2e
+pnpm --filter @watts/e2e auth                   # finish the Discord login in the window
+E2E_BASE_URL=https://localhost:3050 pnpm --filter @watts/e2e test
 ```
 
-`e2e:auth` saves `apps/ieeeucfcom/e2e/.auth/user.json` (gitignored, ~10-day
+`@watts/e2e auth` saves `infra/e2e/.auth/user.json` (gitignored, ~10-day
 lifetime). That same captured session is also what you use to click around the
 app logged-in — it's a normal browser session, so it just works in your dev
 browser until it expires.
