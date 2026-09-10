@@ -25,7 +25,7 @@ import {
 export const runtime = 'nodejs';
 
 const intentSchema = z.object({
-	kind: z.enum(['resume', 'event-photo']),
+	kind: z.enum(['resume', 'event-photo', 'event-flyer']),
 	contentType: z.string().min(1).max(100),
 	byteSize: z.number().int().positive(),
 	filename: z.string().max(255).nullish(),
@@ -59,7 +59,8 @@ export async function POST(request: Request): Promise<Response> {
 						allowedContentTypes: [authorized.contentType],
 						maximumSizeInBytes: authorized.maxBytes,
 						addRandomSuffix: false,
-						allowOverwrite: authorized.kind === 'resume',
+						// resume + event-flyer are one deterministic key per owner, replaced in place.
+						allowOverwrite: authorized.kind === 'resume' || authorized.kind === 'event-flyer',
 						tokenPayload: JSON.stringify(authorized.tokenPayload),
 					};
 				},

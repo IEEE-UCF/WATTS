@@ -3,7 +3,6 @@
 import Link from 'next/link';
 import { trpc } from '@/lib/trpc/client';
 import { hasCapability, CAPABILITIES, type Capability } from '@watts/permissions';
-import { FormPopup } from '@/components/dashboard/newEventForm';
 import { QREventScanner } from '@/components/admin/qr_event_scanner';
 
 function CapTag({ cap }: { cap: Capability }) {
@@ -109,13 +108,10 @@ export function StaffHub() {
 
 				{can('manage_events') && (
 					<Panel title="Events" cap="manage_events">
-						<p className="mb-3 text-sm text-gray-400">Create a new event.</p>
-						<FormPopup />
-						{isAdmin && (
-							<div className="mt-3">
-								<LinkCard href="/admin/dashboard" label="Full event management" />
-							</div>
-						)}
+						<p className="mb-3 text-sm text-gray-400">
+							Create &amp; edit events, pick a category, upload a flyer, and sync to Google Calendar.
+						</p>
+						<LinkCard href="/admin/events" label="Open event manager" />
 					</Panel>
 				)}
 

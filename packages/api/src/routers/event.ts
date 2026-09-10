@@ -6,16 +6,22 @@ import { publicProcedure, capabilityProcedure, createTRPCRouter } from '../trpc'
 import { DateTime } from 'luxon';
 import { finalizeUpload } from '@watts/storage/finalize';
 import { getStorage } from '@watts/storage';
-import { newPhotoKeys, sanitizeFilename } from '@watts/storage/keys';
+import { eventFlyerKey, newPhotoKeys, sanitizeFilename } from '@watts/storage/keys';
 import {
 	listActiveEvents,
+	listAllEvents,
 	getEventById,
 	getEventBySlug,
 	createEvent,
 	updateEvent,
 	deleteEvent,
+	restoreEvent,
+	hardDeleteEvent,
+	syncEventToGoogle,
+	importEventsFromGoogle,
 	checkInMember,
 } from '@watts/core/events';
+import { listLabels } from '@watts/core/event-labels';
 import { mapDomainError, mapUploadError } from '../map-domain-error';
 
 const manageEvents = capabilityProcedure('manage_events');
@@ -49,15 +55,28 @@ function toEasternTime(time: string): string {
 
 // Presentation shape for an events row: human-readable Eastern strings for display
 // plus the raw UTC strings for reliable client-side Date parsing/sorting.
-type EventRow = Awaited<ReturnType<typeof listActiveEvents>>[number];
-function toDisplay(event: EventRow) {
+type EventRow = Awaited<ReturnType<typeof listAllEvents>>[number];
+type LabelRow = Awaited<ReturnType<typeof listLabels>>[number];
+
+function toDisplay(event: EventRow, label: LabelRow | null = null) {
 	return {
 		...event,
 		startTime: toEasternTime(event.startTime),
 		endTime: event.endTime ? toEasternTime(event.endTime) : null,
 		startTimeRaw: event.startTime,
 		endTimeRaw: event.endTime ?? null,
+		label: label
+			? { id: label.id, name: label.name, slug: label.slug, colorId: label.colorId, hex: label.hex }
+			: null,
 	};
+}
+
+async function withLabels(
+	events: EventRow[],
+	labels: LabelRow[],
+): Promise<ReturnType<typeof toDisplay>[]> {
+	const byId = new Map(labels.map((l) => [l.id, l]));
+	return events.map((e) => toDisplay(e, e.labelId ? byId.get(e.labelId) ?? null : null));
 }
 
 // Validation schemas
@@ -72,6 +91,11 @@ const eventCreateSchema = z.object({
 	rsvpLink: z.string().max(500).optional(),
 	slug: z.string().max(64).optional(),
 	requiresDues: z.boolean().optional(),
+	labelId: z.string().uuid().nullish(),
+	isGlobal: z.boolean().optional(),
+	hidden: z.boolean().optional(),
+	timeZone: z.string().max(64).optional(),
+	allDay: z.boolean().optional(),
 });
 
 const eventUpdateSchema = eventCreateSchema.partial();
@@ -79,8 +103,18 @@ const eventUpdateSchema = eventCreateSchema.partial();
 export const eventRouter = createTRPCRouter({
 	getAll: publicProcedure.query(async ({ ctx }) => {
 		try {
-			const events = await listActiveEvents(ctx.db);
-			return events.map(toDisplay);
+			const [events, labels] = await Promise.all([listActiveEvents(ctx.db), listLabels(ctx.db)]);
+			return withLabels(events, labels);
+		} catch (error) {
+			mapDomainError(error);
+		}
+	}),
+
+	/** Staff grid: every event including inactive/soft-deleted ones. */
+	getAllForAdmin: manageEvents.query(async ({ ctx }) => {
+		try {
+			const [events, labels] = await Promise.all([listAllEvents(ctx.db), listLabels(ctx.db)]);
+			return withLabels(events, labels);
 		} catch (error) {
 			mapDomainError(error);
 		}
@@ -90,7 +124,9 @@ export const eventRouter = createTRPCRouter({
 		.input(z.object({ id: z.string().uuid() }))
 		.query(async ({ ctx, input }) => {
 			try {
-				return toDisplay(await getEventById(ctx.db, input.id));
+				const event = await getEventById(ctx.db, input.id);
+				const labels = event.labelId ? await listLabels(ctx.db) : [];
+				return toDisplay(event, labels.find((l) => l.id === event.labelId) ?? null);
 			} catch (error) {
 				mapDomainError(error);
 			}
@@ -100,7 +136,34 @@ export const eventRouter = createTRPCRouter({
 		.input(z.object({ slug: z.string() }))
 		.query(async ({ ctx, input }) => {
 			try {
-				return toDisplay(await getEventBySlug(ctx.db, input.slug));
+				const event = await getEventBySlug(ctx.db, input.slug);
+				const labels = event.labelId ? await listLabels(ctx.db) : [];
+				return toDisplay(event, labels.find((l) => l.id === event.labelId) ?? null);
+			} catch (error) {
+				mapDomainError(error);
+			}
+		}),
+
+	/**
+	 * The soonest upcoming active event in a given category (label slug), or null.
+	 * Used by the homepage GBM countdown — pass `{ labelSlug: 'gbm' }`.
+	 */
+	next: publicProcedure
+		.input(z.object({ labelSlug: z.string().max(32) }))
+		.query(async ({ ctx, input }) => {
+			try {
+				const [events, labels] = await Promise.all([
+					listActiveEvents(ctx.db),
+					listLabels(ctx.db),
+				]);
+				const label = labels.find((l) => l.slug === input.labelSlug);
+				if (!label) return null;
+				const now = Date.now();
+				// listActiveEvents is already ordered by startTime asc.
+				const upcoming = events.find(
+					(e) => e.labelId === label.id && new Date(e.startTime).getTime() >= now,
+				);
+				return upcoming ? toDisplay(upcoming, label) : null;
 			} catch (error) {
 				mapDomainError(error);
 			}
@@ -110,7 +173,10 @@ export const eventRouter = createTRPCRouter({
 		.input(eventCreateSchema)
 		.mutation(async ({ ctx, input }) => {
 			try {
-				return { success: true, ...(await createEvent(ctx.db, input)) };
+				return {
+					success: true,
+					...(await createEvent(ctx.db, input, { createdByUserId: ctx.session.user.id })),
+				};
 			} catch (error) {
 				mapDomainError(error);
 			}
@@ -133,6 +199,101 @@ export const eventRouter = createTRPCRouter({
 				await deleteEvent(ctx.db, input.id);
 				return { success: true };
 			} catch (error) {
+				mapDomainError(error);
+			}
+		}),
+
+	/** Undo an archive: reactivate the event and re-publish it to Google Calendar. */
+	restore: manageEvents
+		.input(z.object({ id: z.string().uuid() }))
+		.mutation(async ({ ctx, input }) => {
+			try {
+				return { success: true, ...(await restoreEvent(ctx.db, input.id)) };
+			} catch (error) {
+				mapDomainError(error);
+			}
+		}),
+
+	/** Permanently remove an event + its attendees + its Google Calendar mirror. */
+	hardDelete: manageEvents
+		.input(z.object({ id: z.string().uuid() }))
+		.mutation(async ({ ctx, input }) => {
+			try {
+				await hardDeleteEvent(ctx.db, input.id);
+				return { success: true };
+			} catch (error) {
+				mapDomainError(error);
+			}
+		}),
+
+	/** Called by the admin UI after a flyer's bytes have landed in the public bucket. */
+	confirmFlyer: manageEvents
+		.input(z.object({ eventId: z.string().uuid(), filename: z.string().max(255).optional() }))
+		.mutation(async ({ ctx, input }) => {
+			try {
+				return await finalizeUpload(ctx.db, {
+					kind: 'event-flyer',
+					key: eventFlyerKey(input.eventId),
+					userId: ctx.session.user.id,
+					eventId: input.eventId,
+					filename: sanitizeFilename(input.filename),
+				});
+			} catch (err) {
+				mapUploadError(err);
+			}
+		}),
+
+	/**
+	 * Pull events already on the Google Calendar into the DB. `dryRun` previews
+	 * without writing. Idempotent — re-running only imports newly-seen events.
+	 */
+	importFromGoogle: manageEvents
+		.input(
+			z
+				.object({
+					dryRun: z.boolean().optional(),
+					updateExisting: z.boolean().optional(),
+					sinceDays: z.number().int().min(0).max(3650).optional(),
+				})
+				.optional(),
+		)
+		.mutation(async ({ ctx, input }) => {
+			try {
+				const sinceIso =
+					input?.sinceDays != null
+						? new Date(Date.now() - input.sinceDays * 86_400_000).toISOString()
+						: undefined;
+				const { enabled, results } = await importEventsFromGoogle(ctx.db, {
+					dryRun: input?.dryRun,
+					updateExisting: input?.updateExisting,
+					sinceIso,
+					importedByUserId: ctx.session.user.id,
+				});
+				const count = (a: string) => results.filter((r) => r.action === a).length;
+				return {
+					success: true,
+					enabled,
+					dryRun: Boolean(input?.dryRun),
+					imported: count('imported'),
+					updated: count('updated'),
+					skipped: count('skipped'),
+					results,
+				};
+			} catch (error) {
+				mapDomainError(error);
+			}
+		}),
+
+	/** Retry the Google Calendar mirror for one event (after a syncStatus 'error'). */
+	resync: manageEvents
+		.input(z.object({ id: z.string().uuid() }))
+		.mutation(async ({ ctx, input }) => {
+			try {
+				const event = await syncEventToGoogle(ctx.db, input.id);
+				if (!event) throw new TRPCError({ code: 'NOT_FOUND', message: 'Event not found' });
+				return { success: true, syncStatus: event.syncStatus, lastSyncedAt: event.lastSyncedAt };
+			} catch (error) {
+				if (error instanceof TRPCError) throw error;
 				mapDomainError(error);
 			}
 		}),

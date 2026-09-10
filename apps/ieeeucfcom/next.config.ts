@@ -36,7 +36,7 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
 	// Workspace packages that ship raw .ts — Next transpiles them into the app bundle.
-	transpilePackages: ['@watts/permissions', '@watts/db', '@watts/core', '@watts/auth', '@watts/storage', '@watts/api', '@watts/ui'],
+	transpilePackages: ['@watts/permissions', '@watts/db', '@watts/core', '@watts/auth', '@watts/storage', '@watts/api', '@watts/calendar', '@watts/ui'],
 	async headers() {
 		return [{ source: '/:path*', headers: securityHeaders }];
 	},

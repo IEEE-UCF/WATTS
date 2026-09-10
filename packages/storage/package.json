@@ -18,6 +18,7 @@
     "@aws-sdk/s3-request-presigner": "^3.1124.0",
     "@vercel/blob": "^2.8.0",
     "@watts/db": "workspace:*",
+    "@watts/permissions": "workspace:*",
     "browser-image-compression": "^2.0.2",
     "drizzle-orm": "0.45.2",
     "exifr": "^7.1.3"

@@ -7,6 +7,7 @@
   "exports": {
     "./awards": "./src/awards.ts",
     "./errors": "./src/errors.ts",
+    "./event-labels": "./src/event-labels.ts",
     "./events": "./src/events.ts",
     "./meetings": "./src/meetings.ts",
     "./members": "./src/members.ts",
@@ -15,6 +16,7 @@
     "./settings": "./src/settings.ts"
   },
   "dependencies": {
+    "@watts/calendar": "workspace:*",
     "@watts/db": "workspace:*",
     "@watts/permissions": "workspace:*",
     "drizzle-orm": "0.45.2"

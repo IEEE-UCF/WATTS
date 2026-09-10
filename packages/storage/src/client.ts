@@ -115,6 +115,58 @@ export async function uploadEventPhoto(
 	return { photoId, width, height, takenAt };
 }
 
+/**
+ * Upload (or replace) an event's flyer. Public asset, one per event, keyed by
+ * eventId; re-encoded to JPEG like event photos. Mirrors uploadEventPhoto: the
+ * caller runs the `event.confirmFlyer` tRPC mutation afterwards, which validates
+ * the landed bytes and writes `events.flyer_url`.
+ */
+export async function uploadEventFlyer(eventId: string, original: File): Promise<{ key: string }> {
+	const { default: imageCompression } = await import('browser-image-compression');
+	const web = await imageCompression(original, {
+		maxWidthOrHeight: 2000,
+		maxSizeMB: 2,
+		useWebWorker: true,
+		fileType: 'image/jpeg',
+	});
+
+	const intent = {
+		kind: 'event-flyer' as const,
+		eventId,
+		contentType: 'image/jpeg',
+		byteSize: web.size,
+		filename: original.name,
+	};
+
+	if (PROVIDER === 'vercel') {
+		const { upload } = await import('@vercel/blob/client');
+		await upload(`event-flyers/${eventId}.jpg`, web, {
+			access: 'public',
+			handleUploadUrl: UPLOAD_URL,
+			clientPayload: JSON.stringify(intent),
+		});
+		return { key: `event-flyers/${eventId}.jpg` };
+	}
+
+	const res = await fetch(UPLOAD_URL, {
+		method: 'POST',
+		headers: { 'content-type': 'application/json' },
+		body: JSON.stringify(intent),
+	});
+	if (!res.ok) {
+		const body = await res.json().catch(() => ({}));
+		throw new Error(body.error || `Flyer upload authorization failed (${res.status})`);
+	}
+	const { uploadUrl, key } = await res.json();
+	const put = await fetch(uploadUrl, {
+		method: 'PUT',
+		headers: { 'content-type': 'image/jpeg' },
+		body: web,
+	});
+	if (!put.ok) throw new Error(`Flyer upload failed (${put.status})`);
+	return { key };
+}
+
 async function imageDimensions(blob: Blob): Promise<{ width: number; height: number }> {
 	const url = URL.createObjectURL(blob);
 	try {

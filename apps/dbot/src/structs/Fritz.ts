@@ -11,6 +11,7 @@ import { resolveMemberTier } from '@watts/core/members';
 import { Command } from './Command.ts';
 import { Event } from './Event.ts';
 import { eventsAutomation } from '../modules/calendar/eventsAutomation.ts';
+import { DiscordEventSync } from '../modules/events/discordEventSync.ts';
 
 interface CachedPermission {
 	level: PermissionLevel;
@@ -25,6 +26,7 @@ class Fritz extends Client {
 	public database: Database;
 	public calendar: any;
 	public eventsAutomation: eventsAutomation;
+	public discordEventSync: DiscordEventSync;
 	public utils: Utils;
 	private permissionCache: Collection<string, CachedPermission>;
 	private readonly CACHE_TTL = 10 * 60 * 1000; // 10 minutes
@@ -43,6 +45,7 @@ class Fritz extends Client {
 		this.database = new Database(this, this.config.postgres);
 		this.calendar = new Calendar(this, this.config.calendarURLs);
 		this.eventsAutomation = new eventsAutomation(this);
+		this.discordEventSync = new DiscordEventSync(this);
 		this.utils = new Utils(this);
 		this.permissionCache = new Collection();
 
@@ -367,6 +370,7 @@ class Fritz extends Client {
 
 		this.eventsAutomation.stop();
 		await this.eventsAutomation.cleanupOnShutdown();
+		this.discordEventSync.stop();
 		await this.database.closeDatabase();
 		await super.destroy();
 		this.logger.shutdown('Client destroyed and database connection closed.');

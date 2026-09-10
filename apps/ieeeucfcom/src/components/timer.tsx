@@ -2,11 +2,16 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { Calendar } from '@/components/calendar';
 import { trpc } from '@/lib/trpc/client';
 
+// The countdown targets the next event categorised "GBM" in the Events system
+// (/admin/events). This manual date is only the fallback shown before that
+// event exists.
+const GBM_LABEL_SLUG = 'gbm';
 const STORAGE_KEY = 'ieee_ucf_gbm_date';
-const DEFAULT_GBM_DATE = '2026-04-01T19:30:00-04:00'; // update each semester
+const DEFAULT_GBM_DATE = '2026-04-01T19:30:00-04:00'; // fallback only
 
 function loadGBMDate(): string {
 	if (typeof window === 'undefined') return DEFAULT_GBM_DATE;
@@ -51,14 +56,20 @@ const Timer: React.FC = () => {
 	const { data: authStatus } = trpc.auth.getAuthStatus.useQuery();
 	const isAdmin = authStatus?.isAdmin ?? false;
 
-	// Countdown tick — re-runs whenever gbmDate changes
+	// The next event categorised "GBM" in the Events system. When present it drives
+	// the countdown; the manual localStorage date is the fallback.
+	const { data: nextGbm } = trpc.event.next.useQuery({ labelSlug: GBM_LABEL_SLUG });
+	const eventIso = nextGbm?.startTimeRaw ?? null;
+	const targetIso = eventIso ?? gbmDate;
+
+	// Countdown tick — re-runs whenever the effective target changes
 	useEffect(() => {
 		if (intervalRef.current) clearInterval(intervalRef.current);
-		const target = new Date(gbmDate).getTime();
+		const target = new Date(targetIso).getTime();
 		setTimeLeft(calcTimeLeft(target));
 		intervalRef.current = setInterval(() => setTimeLeft(calcTimeLeft(target)), 1000);
 		return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
-	}, [gbmDate]);
+	}, [targetIso]);
 
 	const handleSave = () => {
 		if (!inputValue) return;
@@ -92,14 +103,34 @@ const Timer: React.FC = () => {
 				<div className="flex flex-col w-full lg:w-1/2 items-center justify-center text-center py-4">
 					<div className="p-4 w-full">
 						<h2 className="text-4xl text-white font-[subheading-font]">
-							NEXT GENERAL BODY MEETING
+							{nextGbm ? nextGbm.title.toUpperCase() : 'NEXT GENERAL BODY MEETING'}
 						</h2>
 						<p className="mt-2 text-2xl text-white font-[body-font]">
-							Join IEEE @ UCF for the upcoming GBM in Room TBD!
+							{nextGbm
+								? `Join IEEE @ UCF — ${nextGbm.location}`
+								: 'Join IEEE @ UCF for the upcoming GBM in Room TBD!'}
 						</p>
 
-						{/* Admin-only date editor */}
-						{isAdmin && (
+						{/* When a GBM event exists it drives the countdown; admins manage it in
+						    the Events system. The manual date editor below is the fallback. */}
+						{isAdmin && nextGbm && (
+							<div className="mt-4 flex flex-wrap items-center justify-center gap-3">
+								<span className="text-sm text-gray-400 font-[body-font]">
+									{new Date(nextGbm.startTimeRaw ?? '').toLocaleString('en-US', {
+										month: 'long', day: 'numeric', year: 'numeric',
+										hour: 'numeric', minute: '2-digit', timeZoneName: 'short',
+									})}
+								</span>
+								<Link
+									href="/admin/events"
+									className="text-xs font-[heading-font] px-3 py-1 rounded border border-[var(--ieee-bright-yellow)] text-[var(--ieee-bright-yellow)] hover:bg-[var(--ieee-bright-yellow)] hover:text-black transition-all"
+								>
+									MANAGE IN EVENTS
+								</Link>
+							</div>
+						)}
+
+						{isAdmin && !nextGbm && (
 							<div className="mt-4">
 								{!isEditing ? (
 									<div className="flex flex-wrap items-center justify-center gap-3">

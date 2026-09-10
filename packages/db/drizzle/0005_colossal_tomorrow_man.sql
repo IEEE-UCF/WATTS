@@ -1,0 +1,1 @@
+ALTER TABLE "event_labels" ADD COLUMN "google_label_id" varchar(64);

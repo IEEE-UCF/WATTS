@@ -38,6 +38,14 @@ export function resumeKey(userId: string): string {
 	return `resumes/${userId}.pdf`;
 }
 
+/**
+ * One flyer per event, in the PUBLIC bucket, overwritten in place. The client
+ * always re-encodes to JPEG (like event photos), so the extension is fixed.
+ */
+export function eventFlyerKey(eventId: string): string {
+	return `event-flyers/${eventId}.jpg`;
+}
+
 export interface PhotoKeys {
 	photoId: string;
 	webKey: string;
@@ -107,6 +115,9 @@ export function isImage(buf: Uint8Array): boolean {
 }
 
 /** Does the object's leading bytes match what the declared kind requires? */
-export function magicBytesMatchKind(kind: 'resume' | 'event-photo', buf: Uint8Array): boolean {
+export function magicBytesMatchKind(
+	kind: 'resume' | 'event-photo' | 'event-flyer',
+	buf: Uint8Array,
+): boolean {
 	return kind === 'resume' ? isPdf(buf) : isImage(buf);
 }

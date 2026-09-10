@@ -29,6 +29,34 @@
       "when": 1788460662142,
       "tag": "0003_app_settings",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1788983862296,
+      "tag": "0004_far_la_nuit",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1788985604771,
+      "tag": "0005_colossal_tomorrow_man",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1788991436308,
+      "tag": "0006_polite_menace",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1788993623839,
+      "tag": "0007_sloppy_lockheed",
+      "breakpoints": true
     }
   ]
 }

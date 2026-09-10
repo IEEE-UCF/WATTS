@@ -316,6 +316,27 @@ export const CommitteeMembers = pgTable('committee_members', {
 	unique('committee_member_unique').on(table.committeeId, table.memberId),
 ]);
 
+// EventLabels: the adjustable category set staff manage in /admin/events/labels.
+// Each label maps to one of Google Calendar's 11 built-in colour ids; the slug is
+// mirrored onto the Google event's extendedProperties.shared.wattsLabel. Adding a
+// label is a row insert — no migration, no deploy.
+export const EventLabels = pgTable("event_labels", {
+	id: uuid("id").defaultRandom().primaryKey().notNull(),
+	name: varchar("name", { length: 64 }).notNull(),
+	slug: varchar("slug", { length: 32 }).notNull(),
+	colorId: varchar("color_id", { length: 2 }), // Google Calendar colorId "1".."11" (label-less calendars)
+	googleLabelId: varchar("google_label_id", { length: 64 }), // native event-label UUID (calendars with Event Labels)
+	hex: varchar("hex", { length: 7 }), // display swatch on our side, e.g. "#a4bdfc"
+	sortOrder: integer("sort_order").default(0).notNull(),
+	active: boolean("active").default(true).notNull(),
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+}, (table) => [
+	index("event_labels_idx_slug").using("btree", table.slug.asc().nullsLast().op("text_ops")),
+	index("event_labels_idx_sort_order").using("btree", table.sortOrder.asc().nullsLast().op("int4_ops")),
+	unique("event_labels_slug_unique").on(table.slug),
+]);
+
 // Events
 export const Events = pgTable("events", {
 	id: uuid().defaultRandom().primaryKey().notNull(),
@@ -333,6 +354,22 @@ export const Events = pgTable("events", {
 	endTime: timestamp("end_time", { withTimezone: true, mode: 'string' }),
 	requiresDues: boolean("requires_dues").default(false).notNull(),
 	active: boolean().default(true).notNull(),
+
+	// ── Calendar / Discord sync (website is the source of truth) ──
+	labelId: uuid("label_id"),
+	isGlobal: boolean("is_global").default(false).notNull(), // also publish a Discord scheduled event
+	hidden: boolean("hidden").default(false).notNull(), // kept in the system but excluded from the public/dashboard feed (holidays, breaks…)
+	timeZone: varchar("time_zone", { length: 64 }).default('America/New_York').notNull(),
+	allDay: boolean("all_day").default(false).notNull(),
+	googleCalendarEventId: varchar("google_calendar_event_id", { length: 256 }),
+	discordScheduledEventId: varchar("discord_scheduled_event_id", { length: 64 }),
+	// The flyerUrl last pushed as the Discord event's cover image — lets the bot
+	// detect a flyer added/replaced after the scheduled event was created.
+	discordFlyerSyncedUrl: varchar("discord_flyer_synced_url", { length: 500 }),
+	// pending | synced | error | skipped  (skipped = no Google credentials configured)
+	syncStatus: varchar("sync_status", { length: 16 }).default('pending').notNull(),
+	lastSyncedAt: timestamp("last_synced_at", { withTimezone: true, mode: 'string' }),
+	createdByUserId: uuid("created_by_user_id"),
 }, (table) => [
 	index("events_idx_committee_id").using("btree", table.committeeId.asc().nullsLast().op("uuid_ops")),
 	index("events_idx_created_at").using("btree", table.createdAt.asc().nullsLast().op("timestamptz_ops")),
@@ -342,11 +379,24 @@ export const Events = pgTable("events", {
 	index("events_idx_time_desc").using("btree", table.startTime.desc().nullsFirst().op("timestamptz_ops")),
 	index("events_idx_title").using("btree", table.title.asc().nullsLast().op("text_ops")),
 	index("events_idx_updated_at").using("btree", table.updatedAt.asc().nullsLast().op("timestamptz_ops")),
+	index("events_idx_label_id").using("btree", table.labelId.asc().nullsLast().op("uuid_ops")),
+	index("events_idx_google_calendar_event_id").using("btree", table.googleCalendarEventId.asc().nullsLast().op("text_ops")),
+	index("events_idx_is_global").using("btree", table.isGlobal.asc().nullsLast().op("bool_ops")),
 	foreignKey({
 		columns: [table.committeeId],
 		foreignColumns: [Committees.id],
 		name: "events_committee_id_committees_id_fk",
 	}).onDelete("cascade"),
+	foreignKey({
+		columns: [table.labelId],
+		foreignColumns: [EventLabels.id],
+		name: "events_label_id_event_labels_id_fk",
+	}).onDelete("set null"),
+	foreignKey({
+		columns: [table.createdByUserId],
+		foreignColumns: [Users.id],
+		name: "events_created_by_user_id_users_id_fk",
+	}).onDelete("set null"),
 	unique("events_slug_unique").on(table.slug),
 ]);
 // EventAttendees: Join table for many-to-many relation between Events and Members
@@ -592,6 +642,8 @@ export type Member = typeof Members.$inferSelect;
 export type NewMember = typeof Members.$inferInsert;
 export type Event = typeof Events.$inferSelect;
 export type NewEvent = typeof Events.$inferInsert;
+export type EventLabel = typeof EventLabels.$inferSelect;
+export type NewEventLabel = typeof EventLabels.$inferInsert;
 export type EventAttendee = typeof EventAttendees.$inferSelect;
 export type NewEventAttendee = typeof EventAttendees.$inferInsert;
 export type Project = typeof Projects.$inferSelect;
