@@ -12,7 +12,9 @@
 
 import { loadRootEnv } from '@watts/config/load-env';
 import {
+	CreateBucketCommand,
 	DeleteObjectCommand,
+	ListBucketsCommand,
 	PutObjectCommand,
 	S3Client,
 } from '@aws-sdk/client-s3';
@@ -63,6 +65,36 @@ function s3(): { client: S3Client; bucket: string } {
 	};
 }
 
+/**
+ * Is the object store actually up? The e2e suite runs against a local/CI Postgres
+ * for the synthetic session, but object storage (MinIO) is a separate service —
+ * the résumé-export spec is the only one that needs it. Returns false on
+ * ECONNREFUSED etc. so the spec can skip instead of failing the run.
+ */
+export async function storageReachable(): Promise<boolean> {
+	const { client } = s3();
+	try {
+		await Promise.race([
+			client.send(new ListBucketsCommand({})),
+			new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 5000)),
+		]);
+		return true;
+	} catch {
+		return false;
+	} finally {
+		client.destroy();
+	}
+}
+
+async function ensureBucket(client: S3Client, bucket: string): Promise<void> {
+	try {
+		await client.send(new CreateBucketCommand({ Bucket: bucket }));
+	} catch (err) {
+		const code = (err as { name?: string }).name ?? '';
+		if (code !== 'BucketAlreadyOwnedByYou' && code !== 'BucketAlreadyExists') throw err;
+	}
+}
+
 async function makePdf(label: string): Promise<Buffer> {
 	const doc = await PDFDocument.create();
 	const page = doc.addPage([612, 792]);
@@ -75,6 +107,8 @@ export async function seedResumeFixtures(): Promise<void> {
 	const p = pool();
 	const { client, bucket } = s3();
 	try {
+		await ensureBucket(client, bucket);
+
 		for (const f of RESUME_FIXTURES) {
 			const email = `${f.key}@watts.local`;
 			const storageKey = `resumes/${f.key}.pdf`;

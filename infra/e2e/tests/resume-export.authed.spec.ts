@@ -6,6 +6,7 @@ import {
 	STORAGE_IS_LOCAL,
 	cleanResumeFixtures,
 	seedResumeFixtures,
+	storageReachable,
 } from '../lib/resume-fixtures';
 
 // Runs in the `authenticated` project (real captured session OR the guarded
@@ -20,20 +21,34 @@ import {
 const EXPORT = '/api/files/resume/export';
 const runnable = dbHostAllowed() && Boolean(process.env.DATABASE_URL) && STORAGE_IS_LOCAL;
 
+// Open the résumé dashboard and wait for the tRPC list to resolve before
+// asserting on anything derived from it. Generous timeout so a cold `next dev`
+// route compile (E2E_BASE_URL=:3050) doesn't flake the first hit.
+async function openResumeDashboard(page: import('@playwright/test').Page) {
+	await page.goto('/admin/resumes', { waitUntil: 'load' });
+	await expect(page).not.toHaveURL(/\/auth\/signin/);
+	await expect(page.getByText('Loading…')).toBeHidden({ timeout: 20_000 });
+}
+
 test.describe('résumé bulk export', () => {
 	test.skip(!runnable, 'needs a local Postgres + local object storage (MinIO)');
 	test.describe.configure({ mode: 'serial' });
 
+	let seeded = false;
 	test.beforeAll(async () => {
+		// Object storage is a separate service from the Postgres the rest of the
+		// authed suite needs. If it isn't up (e.g. CI without the minio service),
+		// skip rather than fail the whole run.
+		test.skip(!(await storageReachable()), 'object storage (MinIO) not reachable');
 		await seedResumeFixtures();
+		seeded = true;
 	});
 	test.afterAll(async () => {
-		await cleanResumeFixtures();
+		if (seeded) await cleanResumeFixtures();
 	});
 
 	test('/admin/resumes shows the filter bar and export actions', async ({ page }) => {
-		await page.goto('/admin/resumes', { waitUntil: 'domcontentloaded' });
-		await expect(page).not.toHaveURL(/\/auth\/signin/);
+		await openResumeDashboard(page);
 		await expect(page.getByText('CLASS OF', { exact: false })).toBeVisible();
 		await expect(page.getByText('always include officers', { exact: false })).toBeVisible();
 		await expect(page.getByRole('link', { name: /Export \d+ · \.zip/ })).toBeVisible();
@@ -46,7 +61,7 @@ test.describe('résumé bulk export', () => {
 	});
 
 	test('picking a graduation year narrows the set and updates the export link', async ({ page }) => {
-		await page.goto('/admin/resumes', { waitUntil: 'domcontentloaded' });
+		await openResumeDashboard(page);
 		const zip = page.getByRole('link', { name: /Export \d+ · \.zip/ });
 
 		// 2024 = exactly the two fixture members (no other résumé in the repo is 2024)
