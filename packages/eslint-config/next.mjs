@@ -5,6 +5,7 @@ import eslint from '@eslint/js';
 import tseslint from 'typescript-eslint';
 import nextPlugin from '@next/eslint-plugin-next';
 import { houseRules } from './rules.mjs';
+import prettierCompat from './prettier-compat.mjs';
 
 /** @type {import('eslint').Linter.Config[]} */
 export const next = [
@@ -24,6 +25,9 @@ export const next = [
 			parserOptions: { projectService: true },
 		},
 	},
+	// Prettier owns formatting for @watts/web — turn off the ESLint rules that
+	// would conflict. Must stay last so it wins.
+	prettierCompat,
 ];
 
 export default next;
