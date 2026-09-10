@@ -242,6 +242,11 @@ export function listMemberResumes(db: WattsDb) {
 			lastName: Members.lastName,
 			major: Members.major,
 			graduationYear: Members.graduationYear,
+			// Fields the résumé-export filter bar reads (grad year / dues / officers).
+			// When you add a new export filter dimension, add its column here too — see
+			// the NOTE in apps/ieeeucfcom/src/lib/resume-export/filters.ts.
+			duesPaid: Members.duesPaid,
+			officerStatus: Members.officerStatus,
 			resumeFileName: Members.resumeFileName,
 			resumeUploadedAt: Members.resumeUploadedAt,
 			resumeUrl: Members.resumeURL,
@@ -250,6 +255,31 @@ export function listMemberResumes(db: WattsDb) {
 		})
 		.from(Members)
 		.orderBy(desc(Members.resumeUploadedAt), Members.lastName);
+}
+
+/**
+ * Members with an uploaded résumé — storage key plus the fields the bulk export
+ * needs to name each file. Filtered to rows that actually have a `resumeKey`.
+ */
+export function listResumesForExport(db: WattsDb) {
+	return db
+		.select({
+			memberId: Members.id,
+			firstName: Members.firstName,
+			lastName: Members.lastName,
+			major: Members.major,
+			graduationYear: Members.graduationYear,
+			// Consumed by matchesResumeFilter() / applyResumeSelection() in the export
+			// route. New filter dimension → add its column here as well.
+			duesPaid: Members.duesPaid,
+			officerStatus: Members.officerStatus,
+			resumeUploadedAt: Members.resumeUploadedAt,
+			resumeKey: Members.resumeKey,
+			resumeFileName: Members.resumeFileName,
+		})
+		.from(Members)
+		.where(isNotNull(Members.resumeKey))
+		.orderBy(Members.graduationYear, Members.lastName);
 }
 
 // ---- registration + profile ----
