@@ -49,8 +49,8 @@
     "drizzle-orm": "0.45.2",
     "eslint": "^10.10.0",
     "glob": "^13.0.0",
-    "node-ical": "^0.22.1",
-    "pg": "8.16.3",
+    "node-ical": "^0.27.1",
+    "pg": "8.23.0",
     "typescript-eslint": "^8.46.2",
     "uuid": "^13.0.0"
   },
