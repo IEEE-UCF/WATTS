@@ -18,3 +18,9 @@ for (const path of gatedRoutes) {
 		await expect(page).toHaveURL(/\/auth\/signin/);
 	});
 }
+
+// API routes answer 401 rather than redirecting.
+test('anonymous GET /api/files/resume/export is 401', async ({ request }) => {
+	const res = await request.get('/api/files/resume/export');
+	expect(res.status()).toBe(401);
+});

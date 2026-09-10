@@ -6,7 +6,9 @@
 #   e2e    — build + serve @watts/web against a throwaway Postgres (schema only,
 #            no fixtures — the suite tests auth / route-gating / service
 #            reachability / the per-role redirect matrix, none of which reads
-#            seeded rows). Playwright, both projects: the anonymous specs, plus
+#            seeded rows) plus a throwaway MinIO for the résumé-export spec
+#            (which seeds + removes its own rows). Playwright, both projects:
+#            the anonymous specs, plus
 #            the `authenticated` project running against a guarded SYNTHETIC
 #            session that global-setup.ts mints in the CI database and deletes in
 #            teardown (infra/e2e/lib/session.ts) — there is no captured Discord
@@ -187,6 +189,26 @@ jobs:
 
       - name: Migrate the schema
         run: pnpm db:migrate
+
+      # Object storage for the résumé-export spec. Runs as a process in this job's
+      # container (not a `services:` sibling) so S3_ENDPOINT=http://localhost:9000
+      # is reachable from both the web server and Playwright. The spec skips itself
+      # if this is absent, so it is not fatal — but keep it so the coverage runs.
+      - name: Start MinIO
+        run: |
+          set -e
+          URL=https://dl.min.io/server/minio/release/linux-amd64/minio
+          curl -fsSL "$URL" -o /usr/local/bin/minio || wget -qO /usr/local/bin/minio "$URL"
+          chmod +x /usr/local/bin/minio
+          mkdir -p /tmp/minio/resumes-private /tmp/minio/media-public
+          MINIO_ROOT_USER=minioadmin MINIO_ROOT_PASSWORD=minioadmin \
+            nohup minio server /tmp/minio --address ':9000' --console-address ':9001' \
+            > /tmp/minio.log 2>&1 &
+          for i in $(seq 1 60); do
+            curl -fs http://localhost:9000/minio/health/live >/dev/null && { echo "MinIO ready"; exit 0; }
+            sleep 1
+          done
+          echo "MinIO did not become ready"; cat /tmp/minio.log; exit 1
 
       - name: Playwright suite (anon + synthetic-session authenticated)
         run: pnpm --filter @watts/e2e test

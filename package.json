@@ -30,7 +30,8 @@
     "db:migrate": "pnpm --filter @watts/db db:migrate",
     "db:studio": "pnpm --filter @watts/db db:studio",
     "db:seed": "pnpm --filter @watts/seed seed",
-    "db:reset": "pnpm infra:reset && pnpm infra:up && pnpm db:migrate && pnpm db:seed"
+    "db:reset": "pnpm infra:reset && pnpm infra:up && pnpm db:migrate && pnpm db:seed",
+    "seed:resumes": "node scripts/ieeeucfcom/seed-test-resumes.mjs"
   },
   "devDependencies": {
     "turbo": "^2.10.12",
