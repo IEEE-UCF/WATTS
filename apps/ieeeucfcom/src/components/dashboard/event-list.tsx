@@ -27,7 +27,7 @@ export const EventList = () => {
 	const list = tab === 'upcoming' ? upcoming : past;
 
 	return (
-		<Card className="text-card-foreground mx-auto mt-8 flex w-full max-w-4xl flex-col rounded-xl bg-black p-6 shadow-[0_0_20px_rgba(250,204,21,0.5)] shadow-sm">
+		<Card className="mx-auto mt-8 flex w-full max-w-4xl flex-col rounded-xl bg-black p-6 text-card-foreground shadow-[0_0_20px_rgba(250,204,21,0.5)] shadow-sm">
 			<CardTitle className="-mb-2 font-[subheading-font] text-2xl text-white">
 				Events
 			</CardTitle>

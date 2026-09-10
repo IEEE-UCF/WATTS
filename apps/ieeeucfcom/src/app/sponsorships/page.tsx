@@ -29,10 +29,10 @@ export default function SponsorshipsPage() {
 					<Navbar />
 				</div>
 
-				<div className="animated-background absolute inset-0 top-0 left-0 z-2 h-full w-full items-center bg-gradient-to-r px-5 [background:radial-gradient(125%_125%_at_50%_10%,#0c0a09_5%,transparent_100%)]" />
+				<div className="absolute inset-0 top-0 left-0 z-2 h-full w-full animated-background items-center bg-gradient-to-r px-5 [background:radial-gradient(125%_125%_at_50%_10%,#0c0a09_5%,transparent_100%)]" />
 
 				<div className="absolute z-3 my-20 flex w-screen flex-row justify-center p-40">
-					<div className="float flex flex-col items-center justify-center gap-y-5 self-center text-center">
+					<div className="flex float flex-col items-center justify-center gap-y-5 self-center text-center">
 						<div className="font-[heading-font] text-5xl text-[var(--ieee-bright-yellow)] sm:text-6xl">
 							SPONSORSHIPS
 						</div>
@@ -43,7 +43,7 @@ export default function SponsorshipsPage() {
 						</div>
 						<div className="group relative cursor-pointer">
 							<div className="absolute -inset-1 rounded-lg bg-gradient-to-r from-[var(--ieee-bright-yellow)] to-[var(--ieee-bright-yellow)] opacity-25 blur transition duration-1000 group-hover:opacity-100 group-hover:duration-200" />
-							<div className="items-top relative flex justify-start space-x-6 rounded-lg bg-[#0c0a09] px-10 py-7 leading-none ring-1 ring-gray-900/5">
+							<div className="relative flex items-start justify-start space-x-6 rounded-lg bg-[#0c0a09] px-10 py-7 leading-none ring-1 ring-gray-900/5">
 								<div className="space-y-2 text-2xl font-bold text-white">
 									<MailTo
 										email="ieee@ucf.edu"

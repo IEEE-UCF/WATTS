@@ -26,9 +26,9 @@ export default function ConnectPage() {
 				<div className="absolute inset-0 z-4 h-fit w-full items-center px-5">
 					<Navbar />
 				</div>
-				<div className="animated-background absolute inset-0 top-0 left-0 z-2 h-full w-full items-center bg-gradient-to-r px-5 [background:radial-gradient(125%_125%_at_50%_10%,#0c0a09_5%,transparent_100%)]"></div>
+				<div className="absolute inset-0 top-0 left-0 z-2 h-full w-full animated-background items-center bg-gradient-to-r px-5 [background:radial-gradient(125%_125%_at_50%_10%,#0c0a09_5%,transparent_100%)]"></div>
 
-				<div className="float absolute z-3 my-20 flex w-screen flex-row justify-center p-40 lg:justify-end">
+				<div className="absolute z-3 my-20 flex w-screen float flex-row justify-center p-40 lg:justify-end">
 					<div className="flex flex-col items-center justify-end gap-y-5 self-end text-center lg:items-end lg:text-right">
 						<div className="font-[heading-font] text-5xl text-[var(--ieee-bright-yellow)] sm:text-6xl">
 							CONNECT WITH US
@@ -72,20 +72,20 @@ export default function ConnectPage() {
 				</svg>
 			</div>
 
-			<div className="display flex flex-col">
+			<div className="flex flex-col">
 				{/* SOCIALS SECTION */}
 				<div className="flex -translate-y-20 flex-col items-center justify-between gap-y-10 bg-[#30250a] px-8 py-20 lg:flex-row lg:px-15">
-					<div className="display flex w-full flex-col gap-y-3 lg:w-auto">
+					<div className="flex w-full flex-col gap-y-3 lg:w-auto">
 						<div className="font-[heading-font] text-4xl text-[var(--ieee-bright-yellow)]">
 							FOLLOW OUR SOCIALS
 						</div>
-						<div className="font-['Open Sans'] flex flex-col flex-wrap items-center gap-x-5 text-xl font-bold text-white lg:flex-row lg:text-2xl">
+						<div className="flex flex-col flex-wrap items-center gap-x-5 font-[body-font] text-xl font-bold text-white lg:flex-row lg:text-2xl">
 							ieee@ucf.edu
 						</div>
 
 						<Link
 							href={'https://discord.com/invite/WBcKem9kCq'}
-							className="font-['Open Sans'] flex flex-row items-center gap-x-5 text-base font-bold text-white transition-colors hover:text-[var(--ieee-bright-yellow)] lg:text-2xl"
+							className="flex flex-row items-center gap-x-5 font-[body-font] text-base font-bold text-white transition-colors hover:text-[var(--ieee-bright-yellow)] lg:text-2xl"
 						>
 							<svg
 								xmlns="http://www.w3.org/2000/svg"
@@ -101,7 +101,7 @@ export default function ConnectPage() {
 
 						<Link
 							href={'https://www.instagram.com/ieeeucf/?hl=en'}
-							className="font-['Open Sans'] flex flex-row items-center gap-x-5 text-base font-bold text-white transition-colors hover:text-[var(--ieee-bright-yellow)] lg:text-2xl"
+							className="flex flex-row items-center gap-x-5 font-[body-font] text-base font-bold text-white transition-colors hover:text-[var(--ieee-bright-yellow)] lg:text-2xl"
 						>
 							<svg
 								xmlns="http://www.w3.org/2000/svg"
@@ -117,7 +117,7 @@ export default function ConnectPage() {
 
 						<Link
 							href={'https://www.youtube.com/@ieeeucf2287'}
-							className="font-['Open Sans'] flex flex-row items-center gap-x-5 text-base font-bold text-white transition-colors hover:text-[var(--ieee-bright-yellow)] lg:text-2xl"
+							className="flex flex-row items-center gap-x-5 font-[body-font] text-base font-bold text-white transition-colors hover:text-[var(--ieee-bright-yellow)] lg:text-2xl"
 						>
 							<svg
 								xmlns="http://www.w3.org/2000/svg"
@@ -133,7 +133,7 @@ export default function ConnectPage() {
 
 						<Link
 							href={'https://www.linkedin.com/company/ieee-ucf/'}
-							className="font-['Open Sans'] flex flex-row items-center gap-x-5 text-base font-bold text-white transition-colors hover:text-[var(--ieee-bright-yellow)] lg:text-2xl"
+							className="flex flex-row items-center gap-x-5 font-[body-font] text-base font-bold text-white transition-colors hover:text-[var(--ieee-bright-yellow)] lg:text-2xl"
 						>
 							<svg
 								xmlns="http://www.w3.org/2000/svg"
@@ -149,7 +149,7 @@ export default function ConnectPage() {
 
 						<Link
 							href={'https://www.facebook.com/ieeeatucf/'}
-							className="font-['Open Sans'] flex flex-row items-center gap-x-5 text-base font-bold text-white transition-colors hover:text-[var(--ieee-bright-yellow)] lg:text-2xl"
+							className="flex flex-row items-center gap-x-5 font-[body-font] text-base font-bold text-white transition-colors hover:text-[var(--ieee-bright-yellow)] lg:text-2xl"
 						>
 							<svg
 								xmlns="http://www.w3.org/2000/svg"
@@ -165,7 +165,7 @@ export default function ConnectPage() {
 
 						<Link
 							href={'https://github.com/IEEE-UCF'}
-							className="font-['Open Sans'] flex flex-row items-center gap-x-5 text-base font-bold text-white transition-colors hover:text-[var(--ieee-bright-yellow)] lg:text-2xl"
+							className="flex flex-row items-center gap-x-5 font-[body-font] text-base font-bold text-white transition-colors hover:text-[var(--ieee-bright-yellow)] lg:text-2xl"
 						>
 							<svg
 								xmlns="http://www.w3.org/2000/svg"
@@ -215,8 +215,8 @@ export default function ConnectPage() {
 						INTERESTED IN JOINING?
 					</div>
 
-					<div className="display flex basis-1 flex-row flex-wrap justify-between">
-						<Card className="h-fit w-full rounded-sm border-1 border-white bg-[var(--ieee-dark-grey)] opacity-90 transition-transform hover:scale-102 hover:opacity-100 lg:h-100 lg:w-1/4 2xl:h-fit">
+					<div className="flex basis-1 flex-row flex-wrap justify-between">
+						<Card className="h-fit w-full rounded-sm border border-white bg-[var(--ieee-dark-grey)] opacity-90 transition-transform hover:scale-102 hover:opacity-100 lg:h-100 lg:w-1/4 2xl:h-fit">
 							<CardContent className="flex w-full flex-col flex-wrap items-start justify-start gap-y-1 text-left">
 								<div className="font-[heading-font] text-2xl text-white">
 									STEP ONE
@@ -239,7 +239,7 @@ export default function ConnectPage() {
 							</CardContent>
 						</Card>
 
-						<Card className="h-fit w-full rounded-sm border-1 border-white bg-[var(--ieee-dark-grey)] opacity-90 transition-transform hover:scale-102 hover:opacity-100 lg:h-100 lg:w-1/4 2xl:h-fit">
+						<Card className="h-fit w-full rounded-sm border border-white bg-[var(--ieee-dark-grey)] opacity-90 transition-transform hover:scale-102 hover:opacity-100 lg:h-100 lg:w-1/4 2xl:h-fit">
 							<CardContent className="flex w-full flex-col flex-wrap items-start justify-start gap-y-1 text-left">
 								<div className="font-[heading-font] text-2xl text-white">
 									STEP TWO
@@ -261,7 +261,7 @@ export default function ConnectPage() {
 							</CardContent>
 						</Card>
 
-						<Card className="h-fit w-full rounded-sm border-1 border-white bg-[var(--ieee-dark-grey)] opacity-90 transition-transform hover:scale-102 hover:opacity-100 lg:h-100 lg:w-1/4 2xl:h-fit">
+						<Card className="h-fit w-full rounded-sm border border-white bg-[var(--ieee-dark-grey)] opacity-90 transition-transform hover:scale-102 hover:opacity-100 lg:h-100 lg:w-1/4 2xl:h-fit">
 							<CardContent className="flex w-full flex-col flex-wrap items-start justify-start gap-y-1 text-left">
 								<div className="font-[heading-font] text-2xl text-white">
 									STEP THREE
@@ -282,7 +282,7 @@ export default function ConnectPage() {
 							</CardContent>
 						</Card>
 
-						<Card className="h-fit w-full rounded-sm border-1 border-white bg-[var(--ieee-dark-grey)] opacity-90 transition-transform hover:scale-102 hover:opacity-100 lg:h-100 lg:w-1/4 2xl:h-fit">
+						<Card className="h-fit w-full rounded-sm border border-white bg-[var(--ieee-dark-grey)] opacity-90 transition-transform hover:scale-102 hover:opacity-100 lg:h-100 lg:w-1/4 2xl:h-fit">
 							<CardContent className="flex w-full flex-col flex-wrap items-start justify-start gap-y-1 text-left">
 								<div className="font-[heading-font] text-2xl text-white">
 									STEP FOUR

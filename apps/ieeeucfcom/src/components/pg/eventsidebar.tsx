@@ -108,10 +108,10 @@ export default function EventSidebar() {
 						{currentEvent ? (
 							<div className="group relative h-fit">
 								<div className="absolute -inset-1 rounded-sm bg-gradient-to-r from-[var(--ieee-bright-yellow)] to-[var(--ieee-bright-yellow)] opacity-50 blur"></div>
-								<div className="items-top relative flex h-full justify-start space-x-6 rounded-sm bg-[#0c0a09] leading-none ring-1 ring-gray-900/5">
+								<div className="relative flex h-full items-start justify-start space-x-6 rounded-sm bg-[#0c0a09] leading-none ring-1 ring-gray-900/5">
 									<div className="flex h-full w-[70vw] flex-row gap-x-10 rounded-sm p-10 xl:w-full">
 										<Image
-											className="h-100vh w-[40vh] rounded-sm object-cover sm:w-[50vh]"
+											className="h-screen w-[40vh] rounded-sm object-cover sm:w-[50vh]"
 											src={currentEvent.eventFlyer ?? '/larry.png'}
 											alt="Event Flyer"
 											width={2000}
@@ -156,10 +156,10 @@ export default function EventSidebar() {
 									<X size={24} />
 								</Button>
 								<div className="absolute -inset-1 rounded-sm bg-gradient-to-r from-[var(--ieee-bright-yellow)] to-[var(--ieee-bright-yellow)] opacity-50 blur"></div>
-								<div className="items-top relative flex h-full justify-start space-x-6 rounded-sm bg-[#0c0a09] leading-none ring-1 ring-gray-900/5">
+								<div className="relative flex h-full items-start justify-start space-x-6 rounded-sm bg-[#0c0a09] leading-none ring-1 ring-gray-900/5">
 									<div className="flex h-full flex-col gap-6 rounded-sm p-6 lg:flex-row lg:gap-x-10 lg:p-10">
 										<Image
-											className="lg:h-100vh mt-15 h-fit w-full rounded-sm object-cover lg:w-[50vh]"
+											className="mt-15 h-fit w-full rounded-sm object-cover lg:h-screen lg:w-[50vh]"
 											src={currentEvent.eventFlyer ?? '/larry.png'}
 											alt="Event Flyer"
 											width={2000}
@@ -219,7 +219,7 @@ export default function EventSidebar() {
 									}}
 								>
 									<div
-										className="animated-border pointer-events-none absolute inset-0 z-0 scale-95 animate-spin rounded-sm bg-[conic-gradient(var(--ieee-bright-yellow)_20deg,transparent_120deg)] opacity-0 transition-all duration-300 group-hover:scale-100 group-hover:opacity-100"
+										className="pointer-events-none absolute inset-0 z-0 scale-95 animate-spin animated-border rounded-sm bg-[conic-gradient(var(--ieee-bright-yellow)_20deg,transparent_120deg)] opacity-0 transition-all duration-300 group-hover:scale-100 group-hover:opacity-100"
 										style={{
 											animationPlayState: 'paused',
 											animationDuration: '6s',
@@ -234,10 +234,10 @@ export default function EventSidebar() {
 												<div className="text-left text-lg font-bold">
 													{item.eventName}
 												</div>
-												<div className="text-md flex gap-x-2 text-left">
+												<div className="flex gap-x-2 text-left text-base">
 													{item.eventDate}
 												</div>
-												<div className="text-md flex text-left">
+												<div className="flex text-left text-base">
 													{item.eventAddress}
 												</div>
 											</div>

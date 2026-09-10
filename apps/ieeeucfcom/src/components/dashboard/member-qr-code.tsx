@@ -84,7 +84,7 @@ export const Member_QR_Code = () => {
 	// ============================================
 
 	return (
-		<Card className="text-card-foreground mx-auto flex max-w-4xl flex-col rounded-xl border-2 bg-black px-4 py-6 shadow-[0_0_20px_rgba(250,204,21,0.5)] shadow-sm">
+		<Card className="mx-auto flex max-w-4xl flex-col rounded-xl border-2 bg-black px-4 py-6 text-card-foreground shadow-[0_0_20px_rgba(250,204,21,0.5)] shadow-sm">
 			<MemberQRCode memberInfo={memberInfoString} logoUrl="/iconography/ieeeucficon.png" />
 		</Card>
 		// </div>

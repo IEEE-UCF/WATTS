@@ -30,7 +30,7 @@ export function tailwind(entryPoint) {
 			rules: {
 				'better-tailwindcss/no-duplicate-classes': 'warn',
 				// Enabled as errors by the P0 foundation PR:
-				// 'better-tailwindcss/no-unknown-classes': 'error',
+				'better-tailwindcss/no-unknown-classes': 'warn',
 				// 'better-tailwindcss/no-conflicting-classes': 'error',
 			},
 		},

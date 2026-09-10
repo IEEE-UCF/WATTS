@@ -71,7 +71,7 @@ export default function Home() {
 						<div className="w-full px-5">
 							<Navbar />
 
-							<div className="float flex flex-row flex-wrap justify-center gap-x-[3vw] self-center md:my-30 lg:my-0">
+							<div className="flex float flex-row flex-wrap justify-center gap-x-[3vw] self-center md:my-30 lg:my-0">
 								<div className="flex flex-col items-start justify-center self-center text-center xl:text-left">
 									<div className="my-8 max-w-full">
 										<div className="font-[display-font] text-7xl text-[var(--ieee-bright-yellow)] lg:text-8xl">
@@ -91,7 +91,7 @@ export default function Home() {
 									<div className="group relative cursor-pointer self-center xl:self-start">
 										<div className="absolute -inset-1 bg-gradient-to-r from-[var(--ieee-bright-yellow)] to-[var(--ieee-bright-yellow)] opacity-25 blur transition duration-1000 group-hover:opacity-100 group-hover:duration-200"></div>
 
-										<div className="items-top relative flex justify-start space-x-6 rounded-sm bg-[#0c0a09] px-12 py-5 leading-none ring-1 ring-gray-900/5">
+										<div className="relative flex items-start justify-start space-x-6 rounded-sm bg-[#0c0a09] px-12 py-5 leading-none ring-1 ring-gray-900/5">
 											<div className="space-y-2">
 												<Link href="/about">
 													<p className="font-[body-italic-font] text-xl text-white">
@@ -160,12 +160,12 @@ export default function Home() {
 								{carouselList.map((item, index) => (
 									<CarouselItem
 										key={index}
-										className="flex basis-xs cursor-grab items-center justify-center py-3 md:basis-3/5 lg:basis-5/11 xl:basis-5/12 2xl:basis-1/3"
+										className="flex basis-xs cursor-grab items-center justify-center py-3 md:basis-3/5 lg:basis-[45.45%] xl:basis-5/12 2xl:basis-1/3"
 									>
 										<div className="p-2">
 											<div className="group relative w-full cursor-grab overflow-hidden rounded-sm bg-transparent p-[3px] transition-transform hover:scale-102">
 												<div
-													className="animated-border absolute inset-0 -z-10 animate-spin rounded-sm bg-[conic-gradient(var(--ieee-bright-yellow)_20deg,transparent_120deg)] p-20 transition-all duration-300"
+													className="absolute inset-0 -z-10 animate-spin animated-border rounded-sm bg-[conic-gradient(var(--ieee-bright-yellow)_20deg,transparent_120deg)] p-20 transition-all duration-300"
 													style={{ animationDuration: '6s' }}
 												/>
 												<Card className="group relative z-10 h-90 w-65 overflow-hidden rounded-sm border-none p-0 shadow-md transition sm:h-70 sm:w-70 md:h-85 md:w-85 xl:h-90 xl:w-90">

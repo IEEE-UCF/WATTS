@@ -386,7 +386,7 @@ export default function SettingsPage() {
 									<div className="mt-8 flex w-full gap-4 self-center md:w-1/2">
 										<Button
 											type="submit"
-											className="text-md flex-1 cursor-pointer bg-[var(--ieee-dark-yellow)] py-6 font-[heading-font] transition-all hover:scale-102 hover:bg-[var(--ieee-bright-yellow)]"
+											className="flex-1 cursor-pointer bg-[var(--ieee-dark-yellow)] py-6 font-[heading-font] text-base transition-all hover:scale-102 hover:bg-[var(--ieee-bright-yellow)]"
 											disabled={isSubmitting}
 										>
 											{isSubmitting ? 'SAVING CHANGES...' : 'SAVE CHANGES'}
@@ -405,7 +405,7 @@ export default function SettingsPage() {
 										<Button
 											type="button"
 											onClick={handleSignOut}
-											className="text-md w-full cursor-pointer bg-red-600 py-6 font-[heading-font] text-white transition-all hover:scale-102 hover:bg-red-700 md:w-1/3"
+											className="w-full cursor-pointer bg-red-600 py-6 font-[heading-font] text-base text-white transition-all hover:scale-102 hover:bg-red-700 md:w-1/3"
 										>
 											SIGN OUT
 										</Button>

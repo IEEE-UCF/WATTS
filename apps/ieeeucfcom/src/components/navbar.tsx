@@ -188,7 +188,7 @@ const MobileMenu: React.FC<{ toggleMenu: () => void }> = ({ toggleMenu }) => {
 							href="/"
 							onClick={toggleMenu}
 							className={
-								'text-md inline-flex h-10 w-full items-center gap-3 font-[subheading-font] text-white transition-colors hover:text-[var(--ieee-bright-yellow)]'
+								'inline-flex h-10 w-full items-center gap-3 font-[subheading-font] text-base text-white transition-colors hover:text-[var(--ieee-bright-yellow)]'
 							}
 						>
 							<Image
@@ -207,7 +207,7 @@ const MobileMenu: React.FC<{ toggleMenu: () => void }> = ({ toggleMenu }) => {
 								href={route.href}
 								onClick={toggleMenu}
 								className={
-									'text-md inline-flex h-10 w-full items-center gap-3 font-[subheading-font] text-white transition-colors hover:text-[var(--ieee-bright-yellow)]'
+									'inline-flex h-10 w-full items-center gap-3 font-[subheading-font] text-base text-white transition-colors hover:text-[var(--ieee-bright-yellow)]'
 								}
 							>
 								<Image
@@ -232,7 +232,7 @@ const MobileMenu: React.FC<{ toggleMenu: () => void }> = ({ toggleMenu }) => {
 						<Link
 							href="/staff"
 							onClick={toggleMenu}
-							className="text-md inline-flex h-10 w-full items-center gap-3 font-[subheading-font] text-white transition-colors hover:text-[var(--ieee-bright-yellow)]"
+							className="inline-flex h-10 w-full items-center gap-3 font-[subheading-font] text-base text-white transition-colors hover:text-[var(--ieee-bright-yellow)]"
 						>
 							<Image
 								className="h-7 w-7 object-cover"
@@ -257,7 +257,7 @@ const MobileMenu: React.FC<{ toggleMenu: () => void }> = ({ toggleMenu }) => {
 								href={route.href}
 								onClick={toggleMenu}
 								className={
-									'text-md inline-flex h-10 w-full items-center gap-3 font-[subheading-font] text-white transition-colors hover:text-[var(--ieee-bright-yellow)]'
+									'inline-flex h-10 w-full items-center gap-3 font-[subheading-font] text-base text-white transition-colors hover:text-[var(--ieee-bright-yellow)]'
 								}
 							>
 								<Image
@@ -286,7 +286,7 @@ const MobileMenu: React.FC<{ toggleMenu: () => void }> = ({ toggleMenu }) => {
 								href={route.href}
 								onClick={toggleMenu}
 								className={
-									'text-md inline-flex h-10 w-full items-center gap-3 font-[subheading-font] text-white transition-colors hover:text-[var(--ieee-bright-yellow)]'
+									'inline-flex h-10 w-full items-center gap-3 font-[subheading-font] text-base text-white transition-colors hover:text-[var(--ieee-bright-yellow)]'
 								}
 							>
 								<Image

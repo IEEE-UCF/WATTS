@@ -19,9 +19,9 @@ import Image from 'next/image';
 const Footer: React.FC = () => {
 	return (
 		<div className="flex w-full flex-col items-center justify-center bg-black text-white">
-			<div className="bg-accent w-full"></div>
+			<div className="w-full bg-accent"></div>
 			<div className="h-fit w-full"></div>
-			<div className="flex w-full max-w-screen-xl flex-col gap-y-6 px-4 py-8 md:flex-row md:justify-between md:gap-x-2 md:p-10">
+			<div className="flex w-full max-w-7xl flex-col gap-y-6 px-4 py-8 md:flex-row md:justify-between md:gap-x-2 md:p-10">
 				<div className="mb-4 flex justify-center md:mb-0 md:justify-start">
 					<Image
 						className="h-24 w-24 object-cover md:h-40 md:w-40"
@@ -35,21 +35,21 @@ const Footer: React.FC = () => {
 					<div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-2 text-xs md:justify-start md:text-sm">
 						<Link
 							href={'/'}
-							className="font-['Open Sans'] font-extralight text-white hover:text-[var(--ieee-bright-yellow)]"
+							className="font-[body-font] font-extralight text-white hover:text-[var(--ieee-bright-yellow)]"
 						>
 							HOME
 						</Link>
 						<span className="hidden font-[body-font] text-xl md:inline">|</span>
 						<Link
 							href={'/about'}
-							className="font-['Open Sans'] font-extralight text-white hover:text-[var(--ieee-bright-yellow)]"
+							className="font-[body-font] font-extralight text-white hover:text-[var(--ieee-bright-yellow)]"
 						>
 							ABOUT
 						</Link>
 						<span className="hidden font-[body-font] text-xl md:inline">|</span>
 						<Link
 							href={'/connect'}
-							className="font-['Open Sans'] font-extralight text-white hover:text-[var(--ieee-bright-yellow)]"
+							className="font-[body-font] font-extralight text-white hover:text-[var(--ieee-bright-yellow)]"
 						>
 							CONTACT
 						</Link>
@@ -57,35 +57,35 @@ const Footer: React.FC = () => {
 					<div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-2 text-xs md:justify-start md:text-sm">
 						<Link
 							href={'https://www.ieee.org/accessibility_statement.html'}
-							className="font-['Open Sans'] font-extralight text-white hover:text-[var(--ieee-bright-yellow)]"
+							className="font-[body-font] font-extralight text-white hover:text-[var(--ieee-bright-yellow)]"
 						>
 							ACCESSIBILITY
 						</Link>
 						<span className="hidden font-[body-font] text-xl md:inline">|</span>
 						<Link
 							href={'https://www.ieee.org/nondiscrimination'}
-							className="font-['Open Sans'] font-extralight text-white hover:text-[var(--ieee-bright-yellow)]"
+							className="font-[body-font] font-extralight text-white hover:text-[var(--ieee-bright-yellow)]"
 						>
 							NONDISCRIMINATION POLICY
 						</Link>
 						<span className="hidden font-[body-font] text-xl md:inline">|</span>
 						<Link
 							href={'http://www.ieee-ethics-reporting.org'}
-							className="font-['Open Sans'] font-extralight text-white hover:text-[var(--ieee-bright-yellow)]"
+							className="font-[body-font] font-extralight text-white hover:text-[var(--ieee-bright-yellow)]"
 						>
 							IEEE ETHICS REPORTING
 						</Link>
 						<span className="hidden font-[body-font] text-xl md:inline">|</span>
 						<Link
 							href={'https://privacy.ieee.org/policies'}
-							className="font-['Open Sans'] font-extralight text-white hover:text-[var(--ieee-bright-yellow)]"
+							className="font-[body-font] font-extralight text-white hover:text-[var(--ieee-bright-yellow)]"
 						>
 							IEEE PRIVACY POLICY
 						</Link>
 						<span className="hidden font-[body-font] text-xl md:inline">|</span>
 						<Link
 							href={'https://www.ieee.org/site_terms_conditions.html'}
-							className="font-['Open Sans'] font-extralight text-white hover:text-[var(--ieee-bright-yellow)]"
+							className="font-[body-font] font-extralight text-white hover:text-[var(--ieee-bright-yellow)]"
 						>
 							TERMS & DISCLOSURES
 						</Link>

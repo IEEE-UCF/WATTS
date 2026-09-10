@@ -207,12 +207,12 @@ export default function AboutOfficers() {
 	const renderOfficerCard = (officer: Officer, index: number) => (
 		<div
 			key={index}
-			className="relative m-2 h-110 w-70 overflow-hidden rounded-sm border-1 border-white shadow-lg transition-transform hover:scale-102"
+			className="relative m-2 h-110 w-70 overflow-hidden rounded-sm border border-white shadow-lg transition-transform hover:scale-102"
 		>
 			<OfficerImage src={officer.photo} alt={officer.name} />
 			<div className="absolute inset-0 flex flex-col justify-end bg-black/40 p-4 text-white transition-colors hover:bg-black/0">
 				<span className="font-[heading-font] text-xl">{officer.name.toUpperCase()}</span>
-				<span className="text-md font-[heading-font]">{officer.role.toUpperCase()}</span>
+				<span className="font-[heading-font] text-base">{officer.role.toUpperCase()}</span>
 				<span className="font-[body-font] text-sm">{officer.year}</span>
 				<span className="font-[body-font] text-sm">{officer.major}</span>
 				<Link href={officer.linkedin} className="mt-2 inline-block">

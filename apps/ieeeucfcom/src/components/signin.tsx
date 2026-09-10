@@ -20,7 +20,7 @@ export default function Signinblock() {
 				</button>
 
 				<span className="flex flex-row items-center gap-2">
-					<div className="text-md font-[subheading-font] text-white">
+					<div className="font-[subheading-font] text-base text-white">
 						Don&apos;t have an account?
 					</div>
 					<a

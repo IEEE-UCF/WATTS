@@ -136,7 +136,7 @@ export const FormPopup: React.FC = () => {
 				Create Event
 			</button>
 			{isOpen && (
-				<div className="bg-opacity-60 fixed inset-0 z-50 flex items-center justify-center bg-black backdrop-blur-sm">
+				<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
 					<div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-lg bg-white p-8 text-black">
 						<h2 className="mb-4 text-2xl">Create Event</h2>
 						<form onSubmit={handleSubmit}>

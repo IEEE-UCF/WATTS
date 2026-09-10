@@ -190,7 +190,7 @@ const Timer: React.FC = () => {
 					</div>
 
 					{/* Countdown digits — always shows numbers, freezes at 00 when past */}
-					<div className="m-3 h-fit w-full rounded-sm border-1 p-3 backdrop-blur-lg">
+					<div className="m-3 h-fit w-full rounded-sm border p-3 backdrop-blur-lg">
 						<div className="flex flex-row items-center justify-around">
 							{(
 								[
@@ -222,7 +222,7 @@ const Timer: React.FC = () => {
 				</div>
 
 				{/* ── Right: calendar ── */}
-				<div className="w-full rounded-sm border-1 border-white px-2 py-4 lg:w-5/12">
+				<div className="w-full rounded-sm border border-white px-2 py-4 lg:w-5/12">
 					<Calendar className="h-[350px] w-full opacity-87 sm:h-[400px] lg:h-[400px]" />
 				</div>
 			</div>
