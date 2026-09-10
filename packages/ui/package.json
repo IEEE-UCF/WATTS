@@ -5,6 +5,7 @@
   "description": "WATTS shared UI primitives — shadcn 'new-york' / stone components + cn(). Website-only (React).",
   "type": "module",
   "exports": {
+    "./theme.css": "./src/theme.css",
     "./cn": "./src/cn.ts",
     "./accordion": "./src/accordion.tsx",
     "./button": "./src/button.tsx",

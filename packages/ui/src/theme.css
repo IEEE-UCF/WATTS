@@ -1,0 +1,250 @@
+/* ============================================================================
+ * @watts/ui — design tokens
+ *
+ * The single styling foundation for the IEEE@UCF website and any derivative.
+ * Consume it from the app's Tailwind entry:
+ *
+ *     @import 'tailwindcss';
+ *     @import '@watts/ui/theme.css';
+ *     @source '...';            // the host still owns its own content globs
+ *
+ * Layering:
+ *   :root                 neutral dark baseline — app shell, dashboard, admin, auth
+ *   .theme-marketing      the IEEE black + yellow identity, applied by the
+ *                         marketing layout (a scope, NOT "dark mode")
+ *   @theme inline         maps the CSS custom properties above onto Tailwind
+ *                         utilities (bg-primary, text-foreground, rounded-lg, …)
+ *   @utility t-*          composite typography utilities (size + weight + leading)
+ * ========================================================================== */
+
+/* Class-based dark variant. Nothing toggles `.dark` today — the site is dark by
+ * default via :root — but @watts/ui primitives carry `dark:` utilities, so this
+ * keeps them wired for a future opt-in (see packages/ui/README.md). */
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+	/* --- IEEE brand, raw --------------------------------------------------- */
+	--ieee-yellow: #ffd100; /* primary brand mark */
+	--ieee-gold: #ffc72c; /* secondary / hover */
+	--ieee-ink: #0c0a09; /* near-black surface */
+	--ieee-black: #000000;
+	--ieee-white: #ffffff;
+	--ieee-grey: #75787b;
+	--ieee-light-grey: #acb1b6;
+	--ieee-dark-grey: #2d2d2d;
+	/* Legacy aliases — the marketing pages still reference these as
+	 * `[var(--ieee-bright-yellow)]` / `[var(--ieee-dark-yellow)]`. Kept working
+	 * until those call sites migrate to the `text-ieee-yellow` utilities. */
+	--ieee-bright-yellow: var(--ieee-yellow);
+	--ieee-dark-yellow: var(--ieee-gold);
+
+	/* --- semantic tokens: neutral dark baseline -------------------------- */
+	/* shadcn "stone" dark ramp. Marketing overrides a subset below. */
+	--background: oklch(0.147 0.004 49.25);
+	--foreground: oklch(0.985 0.001 106.423);
+	--card: oklch(0.216 0.006 56.043);
+	--card-foreground: oklch(0.985 0.001 106.423);
+	--popover: oklch(0.216 0.006 56.043);
+	--popover-foreground: oklch(0.985 0.001 106.423);
+	--primary: oklch(0.923 0.003 48.717);
+	--primary-foreground: oklch(0.216 0.006 56.043);
+	--secondary: oklch(0.268 0.007 34.298);
+	--secondary-foreground: oklch(0.985 0.001 106.423);
+	--muted: oklch(0.268 0.007 34.298);
+	--muted-foreground: oklch(0.709 0.01 56.259);
+	--accent: oklch(0.268 0.007 34.298);
+	--accent-foreground: oklch(0.985 0.001 106.423);
+	--destructive: oklch(0.704 0.191 22.216);
+	--border: oklch(1 0 0 / 10%);
+	--input: oklch(1 0 0 / 15%);
+	--ring: oklch(0.553 0.013 58.071);
+	--chart-1: oklch(0.488 0.243 264.376);
+	--chart-2: oklch(0.696 0.17 162.48);
+	--chart-3: oklch(0.769 0.188 70.08);
+	--chart-4: oklch(0.627 0.265 303.9);
+	--chart-5: oklch(0.645 0.246 16.439);
+	--sidebar: oklch(0.216 0.006 56.043);
+	--sidebar-foreground: oklch(0.985 0.001 106.423);
+	--sidebar-primary: oklch(0.488 0.243 264.376);
+	--sidebar-primary-foreground: oklch(0.985 0.001 106.423);
+	--sidebar-accent: oklch(0.268 0.007 34.298);
+	--sidebar-accent-foreground: oklch(0.985 0.001 106.423);
+	--sidebar-border: oklch(1 0 0 / 10%);
+	--sidebar-ring: oklch(0.553 0.013 58.071);
+
+	/* --- radius --------------------------------------------------------- */
+	--radius: 0.625rem;
+}
+
+/* Marketing / public site — the IEEE black + yellow identity. Applied once by
+ * the (marketing) route-group layout; until that lands, the P0 codemod adds
+ * `theme-marketing` to each marketing page's outer wrapper. */
+.theme-marketing {
+	--background: var(--ieee-black);
+	--foreground: var(--ieee-white);
+	--card: var(--ieee-ink);
+	--card-foreground: var(--ieee-white);
+	--popover: var(--ieee-ink);
+	--popover-foreground: var(--ieee-white);
+	--primary: var(--ieee-yellow);
+	--primary-foreground: var(--ieee-black);
+	--secondary: oklch(1 0 0 / 8%);
+	--secondary-foreground: var(--ieee-white);
+	--muted: oklch(1 0 0 / 6%);
+	--muted-foreground: oklch(0.78 0 0);
+	--accent: var(--ieee-gold);
+	--accent-foreground: var(--ieee-black);
+	--border: oklch(1 0 0 / 12%);
+	--input: oklch(1 0 0 / 15%);
+	--ring: var(--ieee-yellow);
+}
+
+@theme inline {
+	/* semantic colors → utilities */
+	--color-background: var(--background);
+	--color-foreground: var(--foreground);
+	--color-card: var(--card);
+	--color-card-foreground: var(--card-foreground);
+	--color-popover: var(--popover);
+	--color-popover-foreground: var(--popover-foreground);
+	--color-primary: var(--primary);
+	--color-primary-foreground: var(--primary-foreground);
+	--color-secondary: var(--secondary);
+	--color-secondary-foreground: var(--secondary-foreground);
+	--color-muted: var(--muted);
+	--color-muted-foreground: var(--muted-foreground);
+	--color-accent: var(--accent);
+	--color-accent-foreground: var(--accent-foreground);
+	--color-destructive: var(--destructive);
+	--color-border: var(--border);
+	--color-input: var(--input);
+	--color-ring: var(--ring);
+	--color-chart-1: var(--chart-1);
+	--color-chart-2: var(--chart-2);
+	--color-chart-3: var(--chart-3);
+	--color-chart-4: var(--chart-4);
+	--color-chart-5: var(--chart-5);
+	--color-sidebar: var(--sidebar);
+	--color-sidebar-foreground: var(--sidebar-foreground);
+	--color-sidebar-primary: var(--sidebar-primary);
+	--color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+	--color-sidebar-accent: var(--sidebar-accent);
+	--color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+	--color-sidebar-border: var(--sidebar-border);
+	--color-sidebar-ring: var(--sidebar-ring);
+
+	/* IEEE brand as first-class utilities: bg-ieee-yellow, text-ieee-gold, … */
+	--color-ieee-yellow: var(--ieee-yellow);
+	--color-ieee-gold: var(--ieee-gold);
+	--color-ieee-ink: var(--ieee-ink);
+	--color-ieee-black: var(--ieee-black);
+	--color-ieee-white: var(--ieee-white);
+	--color-ieee-grey: var(--ieee-grey);
+	--color-ieee-light-grey: var(--ieee-light-grey);
+	--color-ieee-dark-grey: var(--ieee-dark-grey);
+
+	/* radius scale — rounded-sm … rounded-xl track --radius */
+	--radius-sm: calc(var(--radius) - 4px);
+	--radius-md: calc(var(--radius) - 2px);
+	--radius-lg: var(--radius);
+	--radius-xl: calc(var(--radius) + 4px);
+
+	/* typography — one family (Open Sans via next/font), one modular scale (1.2) */
+	--font-sans:
+		var(--font-open-sans), ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto,
+		sans-serif;
+
+	--text-caption: 0.75rem;
+	--text-caption--line-height: 1.4;
+	--text-body: 1rem;
+	--text-body--line-height: 1.6;
+	--text-h6: 1rem;
+	--text-h6--line-height: 1.4;
+	--text-h5: 1.2rem;
+	--text-h5--line-height: 1.35;
+	--text-h4: 1.44rem;
+	--text-h4--line-height: 1.3;
+	--text-h3: 1.728rem;
+	--text-h3--line-height: 1.25;
+	--text-h2: 2.074rem;
+	--text-h2--line-height: 1.2;
+	--text-h1: 2.488rem;
+	--text-h1--line-height: 1.15;
+	--text-display: clamp(2.99rem, 6vw, 4.3rem);
+	--text-display--line-height: 1.05;
+}
+
+/* --- composite typography utilities -------------------------------------- */
+/* Prefer these over ad-hoc `text-Nxl font-bold`: role, not pixels. */
+@utility t-display {
+	font-family: var(--font-sans);
+	font-weight: 800;
+	font-size: var(--text-display);
+	line-height: var(--text-display--line-height);
+	letter-spacing: -0.02em;
+}
+@utility t-h1 {
+	font-family: var(--font-sans);
+	font-weight: 700;
+	font-size: var(--text-h1);
+	line-height: var(--text-h1--line-height);
+	letter-spacing: -0.015em;
+}
+@utility t-h2 {
+	font-family: var(--font-sans);
+	font-weight: 700;
+	font-size: var(--text-h2);
+	line-height: var(--text-h2--line-height);
+	letter-spacing: -0.01em;
+}
+@utility t-h3 {
+	font-family: var(--font-sans);
+	font-weight: 700;
+	font-size: var(--text-h3);
+	line-height: var(--text-h3--line-height);
+}
+@utility t-h4 {
+	font-family: var(--font-sans);
+	font-weight: 600;
+	font-size: var(--text-h4);
+	line-height: var(--text-h4--line-height);
+}
+@utility t-h5 {
+	font-family: var(--font-sans);
+	font-weight: 600;
+	font-size: var(--text-h5);
+	line-height: var(--text-h5--line-height);
+}
+@utility t-h6 {
+	font-family: var(--font-sans);
+	font-weight: 600;
+	font-size: var(--text-h6);
+	line-height: var(--text-h6--line-height);
+}
+@utility t-body {
+	font-family: var(--font-sans);
+	font-weight: 400;
+	font-size: var(--text-body);
+	line-height: var(--text-body--line-height);
+}
+@utility t-body-strong {
+	font-family: var(--font-sans);
+	font-weight: 600;
+	font-size: var(--text-body);
+	line-height: var(--text-body--line-height);
+}
+@utility t-caption {
+	font-family: var(--font-sans);
+	font-weight: 400;
+	font-size: var(--text-caption);
+	line-height: var(--text-caption--line-height);
+}
+/* Small, uppercase, tracked label — "STUDENT CHAPTER", section eyebrows. */
+@utility t-eyebrow {
+	font-family: var(--font-sans);
+	font-weight: 600;
+	font-size: var(--text-caption);
+	line-height: 1.2;
+	letter-spacing: 0.14em;
+	text-transform: uppercase;
+}
