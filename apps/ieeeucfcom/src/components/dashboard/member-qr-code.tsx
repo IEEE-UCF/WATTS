@@ -16,10 +16,10 @@
  * Navigate to /test-qr to view examples
  * Scan the QR codes with /scan-qr page to test the full flow
  */
-"use client";
-import React from "react";
-import MemberQRCode from "@/components/pg/memberqrcode-gen";
-import { trpc } from "@/lib/trpc/client";
+'use client';
+import React from 'react';
+import MemberQRCode from '@/components/pg/memberqrcode-gen';
+import { trpc } from '@/lib/trpc/client';
 import { Card } from '@watts/ui/card';
 
 export const Member_QR_Code = () => {
@@ -30,37 +30,37 @@ export const Member_QR_Code = () => {
 
 	if (isLoading) {
 		return (
-			<div className="min-h-screen bg-black flex items-center justify-center">
-				<p className="text-white text-xl">Loading session data...</p>
+			<div className="flex min-h-screen items-center justify-center bg-black">
+				<p className="text-xl text-white">Loading session data...</p>
 			</div>
 		);
 	}
 
 	if (isError || !session?.user?.discordId) {
 		return (
-			<div className="min-h-screen bg-black flex items-center justify-center">
-				<p className="text-red-500 text-xl">
-          Error loading session or Discord ID not found.
+			<div className="flex min-h-screen items-center justify-center bg-black">
+				<p className="text-xl text-red-500">
+					Error loading session or Discord ID not found.
 				</p>
 			</div>
 		);
 	}
 
 	/**
-   * Sample member data object
-   *
-   * This represents the structure of member information that will be
-   * encoded in the QR code. The data is converted to JSON string format.
-   *
-   * Structure:
-   * - id: Unique member identifier (required)
-   * - name: Member's full name (optional)
-   * - email: Member's email address (optional)
-   * - membershipType: Type of membership (optional)
-   * - chapter: IEEE chapter name (optional)
-   *
-   * Note: Only uncommented fields will be included in the QR code
-   */
+	 * Sample member data object
+	 *
+	 * This represents the structure of member information that will be
+	 * encoded in the QR code. The data is converted to JSON string format.
+	 *
+	 * Structure:
+	 * - id: Unique member identifier (required)
+	 * - name: Member's full name (optional)
+	 * - email: Member's email address (optional)
+	 * - membershipType: Type of membership (optional)
+	 * - chapter: IEEE chapter name (optional)
+	 *
+	 * Note: Only uncommented fields will be included in the QR code
+	 */
 	const memberData = {
 		// id: "99688747573981184", // Required: Unique member ID
 		id: session.user.discordId,
@@ -72,11 +72,11 @@ export const Member_QR_Code = () => {
 	};
 
 	/**
-   * Converts member data object to JSON string
-   *
-   * The QR code scanner expects JSON-formatted data, so we stringify
-   * the object here. The scanner will parse this back to an object.
-   */
+	 * Converts member data object to JSON string
+	 *
+	 * The QR code scanner expects JSON-formatted data, so we stringify
+	 * the object here. The scanner will parse this back to an object.
+	 */
 	const memberInfoString = JSON.stringify(memberData);
 
 	// ============================================
@@ -84,13 +84,10 @@ export const Member_QR_Code = () => {
 	// ============================================
 
 	return (
-		<Card className="max-w-4xl mx-auto px-4 border-2 rounded-xl bg-black shadow-sm shadow-[0_0_20px_rgba(250,204,21,0.5)] text-card-foreground flex flex-col py-6">
-			<MemberQRCode
-				memberInfo={memberInfoString}
-				logoUrl="/iconography/ieeeucficon.png"
-			/>
+		<Card className="text-card-foreground mx-auto flex max-w-4xl flex-col rounded-xl border-2 bg-black px-4 py-6 shadow-[0_0_20px_rgba(250,204,21,0.5)] shadow-sm">
+			<MemberQRCode memberInfo={memberInfoString} logoUrl="/iconography/ieeeucficon.png" />
 		</Card>
-	// </div>
+		// </div>
 	);
 };
 

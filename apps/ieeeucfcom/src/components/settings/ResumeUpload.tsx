@@ -57,7 +57,9 @@ export function ResumeUpload() {
 
 	return (
 		<div className="mb-6">
-			<h2 className="text-2xl font-[heading-font] mb-4 border-b border-white/20 pb-2">RESUME</h2>
+			<h2 className="mb-4 border-b border-white/20 pb-2 font-[heading-font] text-2xl">
+				RESUME
+			</h2>
 
 			{hasResume ? (
 				<div className="flex flex-wrap items-center gap-3 text-white">
@@ -65,11 +67,13 @@ export function ResumeUpload() {
 						href={profile?.resumeURL ?? '#'}
 						target="_blank"
 						rel="noreferrer"
-						className="underline text-[var(--ieee-dark-yellow)]"
+						className="text-[var(--ieee-dark-yellow)] underline"
 					>
 						{profile?.resumeFileName ?? 'resume.pdf'}
 					</a>
-					{uploadedAt && <span className="text-sm text-white/60">uploaded {uploadedAt}</span>}
+					{uploadedAt && (
+						<span className="text-sm text-white/60">uploaded {uploadedAt}</span>
+					)}
 					<button
 						type="button"
 						onClick={() => inputRef.current?.click()}

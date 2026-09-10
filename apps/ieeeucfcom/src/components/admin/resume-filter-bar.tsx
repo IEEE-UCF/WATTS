@@ -50,7 +50,9 @@ export function ResumeFilterBar({
 	// Officers with a résumé who the current constraints don't already catch.
 	const extraOfficerCount = useMemo(() => {
 		const caught = new Set(
-			applyResumeSelection(withResume, { ...value, includeAllOfficers: false }).map((r) => r.memberId),
+			applyResumeSelection(withResume, { ...value, includeAllOfficers: false }).map(
+				(r) => r.memberId,
+			),
 		);
 		return withResume.filter((r) => r.officerStatus && !caught.has(r.memberId)).length;
 	}, [withResume, value]);
@@ -60,7 +62,9 @@ export function ResumeFilterBar({
 		const selected = new Set(applyResumeSelection(withResume, value).map((r) => r.memberId));
 		return withResume
 			.filter((r) => !selected.has(r.memberId))
-			.sort((a, b) => `${a.lastName}${a.firstName}`.localeCompare(`${b.lastName}${b.firstName}`));
+			.sort((a, b) =>
+				`${a.lastName}${a.firstName}`.localeCompare(`${b.lastName}${b.firstName}`),
+			);
 	}, [withResume, value]);
 
 	const byId = useMemo(() => new Map(allRows.map((r) => [r.memberId, r])), [allRows]);
@@ -78,7 +82,9 @@ export function ResumeFilterBar({
 			{/* cohort / timing */}
 			<div className="flex flex-wrap items-center gap-2">
 				<span className="text-xs tracking-wide text-gray-500 uppercase">Class of</span>
-				{years.length === 0 && <span className="text-xs text-gray-600">no résumés yet</span>}
+				{years.length === 0 && (
+					<span className="text-xs text-gray-600">no résumés yet</span>
+				)}
 				{years.map((y) => {
 					const on = value.gradYears.includes(y);
 					return (
@@ -121,10 +127,14 @@ export function ResumeFilterBar({
 					<input
 						type="checkbox"
 						checked={value.includeAllOfficers}
-						onChange={(e) => onChange({ ...value, includeAllOfficers: e.target.checked })}
+						onChange={(e) =>
+							onChange({ ...value, includeAllOfficers: e.target.checked })
+						}
 					/>
 					always include officers
-					{extraOfficerCount > 0 && <span className="text-xs text-gray-500">(+{extraOfficerCount})</span>}
+					{extraOfficerCount > 0 && (
+						<span className="text-xs text-gray-500">(+{extraOfficerCount})</span>
+					)}
 				</label>
 			</div>
 
@@ -135,7 +145,11 @@ export function ResumeFilterBar({
 					value=""
 					onChange={(e) => {
 						const id = e.target.value;
-						if (id) onChange({ ...value, includeMemberIds: [...value.includeMemberIds, id] });
+						if (id)
+							onChange({
+								...value,
+								includeMemberIds: [...value.includeMemberIds, id],
+							});
 					}}
 					className="rounded-md border border-gray-700 bg-gray-900 px-2 py-1 text-sm"
 				>
@@ -161,7 +175,9 @@ export function ResumeFilterBar({
 								onClick={() =>
 									onChange({
 										...value,
-										includeMemberIds: value.includeMemberIds.filter((v) => v !== id),
+										includeMemberIds: value.includeMemberIds.filter(
+											(v) => v !== id,
+										),
 									})
 								}
 								className="rounded-full px-1 text-gray-500 hover:bg-gray-800 hover:text-red-400"

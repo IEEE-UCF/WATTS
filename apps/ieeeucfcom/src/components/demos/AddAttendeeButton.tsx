@@ -15,11 +15,11 @@ export function AddAttendeeButton() {
 	});
 
 	return (
-		<div className="flex flex-col gap-3 mb-4 w-full max-w-sm">
+		<div className="mb-4 flex w-full max-w-sm flex-col gap-3">
 			<select
 				value={selectedEventId}
 				onChange={(e) => setSelectedEventId(e.target.value)}
-				className="px-3 py-2 rounded-md border border-gray-300 text-black text-sm"
+				className="rounded-md border border-gray-300 px-3 py-2 text-sm text-black"
 				disabled={eventsLoading}
 			>
 				<option value="" disabled>
@@ -36,12 +36,12 @@ export function AddAttendeeButton() {
 				value={discordId}
 				onChange={(e) => setDiscordId(e.target.value)}
 				placeholder="Discord ID"
-				className="px-3 py-2 rounded-md border border-gray-300 text-black text-sm"
+				className="rounded-md border border-gray-300 px-3 py-2 text-sm text-black"
 			/>
 			<button
 				onClick={() => addAttendee.mutate({ eventId: selectedEventId, discordId })}
 				disabled={addAttendee.isPending || !selectedEventId || !discordId}
-				className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+				className="rounded-lg bg-blue-600 px-6 py-3 font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
 			>
 				{addAttendee.isPending ? 'Adding...' : 'Add Test Attendee'}
 			</button>

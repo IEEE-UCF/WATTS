@@ -1,11 +1,11 @@
-import { Navbar } from "@/components/navbar";
-import { EventList } from "@/components/dashboard/event-list";
-import { Member_QR_Code } from "@/components/dashboard/member-qr-code";
+import { Navbar } from '@/components/navbar';
+import { EventList } from '@/components/dashboard/event-list';
+import { Member_QR_Code } from '@/components/dashboard/member-qr-code';
 import { Card, CardHeader, CardTitle } from '@watts/ui/card';
 
 export default function Dashboard() {
 	return (
-		<div className="flex flex-col max-w-screen overflow-hidden bg-black min-h-screen text-black">
+		<div className="flex min-h-screen max-w-screen flex-col overflow-hidden bg-black text-black">
 			{/* Navbar – match home/admin spacing */}
 			<div className="w-full px-5">
 				<Navbar />
@@ -21,10 +21,10 @@ export default function Dashboard() {
             </h2>
             <EventList />
           </section> */}
-					<Card className="flex-1 rounded-xl border border-gray-800 bg-[var(--ieee-black)]  p-4 shadow-lg shadow-black/40 lg:p-6">
+					<Card className="flex-1 rounded-xl border border-gray-800 bg-[var(--ieee-black)] p-4 shadow-lg shadow-black/40 lg:p-6">
 						<CardHeader>
 							<CardTitle className="mb-1 text-lg font-semibold text-gray-100 lg:text-xl">
-                Your Check-In QR
+								Your Check-In QR
 							</CardTitle>
 						</CardHeader>
 						<div className="flex justify-center">
@@ -35,7 +35,7 @@ export default function Dashboard() {
 					{/* Left Panel – Upcoming Events */}
 					<Card className="flex-1 rounded-xl border border-gray-800 bg-[--ieee-dark-grey] p-4 shadow-lg shadow-black/40 lg:p-6">
 						<CardTitle className="-mb-4 text-lg font-semibold text-gray-100 lg:text-xl">
-              Upcoming Events
+							Upcoming Events
 						</CardTitle>
 						<EventList />
 					</Card>

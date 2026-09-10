@@ -7,7 +7,11 @@ import { QREventScanner } from '@/components/admin/qr_event_scanner';
 import { getSessionRoles } from '@/lib/auth-guards';
 
 const ADMIN_TOOLS = [
-	{ href: '/admin/events', title: 'Events', desc: 'Create & edit events, categories, flyers, Google Calendar sync' },
+	{
+		href: '/admin/events',
+		title: 'Events',
+		desc: 'Create & edit events, categories, flyers, Google Calendar sync',
+	},
 	{ href: '/admin/members', title: 'Members', desc: 'Grant admin / officer status & roles' },
 	{ href: '/admin/photos', title: 'Event Photos', desc: 'Upload & manage photos per event' },
 	{ href: '/admin/resumes', title: 'Résumés', desc: 'Browse member résumés' },
@@ -19,7 +23,7 @@ export default async function Dashboard() {
 	if (!roles?.administrator) redirect('/dashboard');
 
 	return (
-		<div className="flex flex-col max-w-screen overflow-hidden bg-black min-h-screen text-black">
+		<div className="flex min-h-screen max-w-screen flex-col overflow-hidden bg-black text-black">
 			{/* Navbar – match home spacing */}
 			<div className="w-full px-5">
 				<Navbar />
@@ -28,7 +32,9 @@ export default async function Dashboard() {
 			{/* Dashboard Content */}
 			<main className="flex-1">
 				<div className="mx-auto max-w-6xl px-4 pt-6">
-					<h2 className="mb-3 text-lg font-semibold text-gray-100 lg:text-xl">Admin Tools</h2>
+					<h2 className="mb-3 text-lg font-semibold text-gray-100 lg:text-xl">
+						Admin Tools
+					</h2>
 					<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
 						{ADMIN_TOOLS.map((tool) => (
 							<Link
@@ -36,7 +42,9 @@ export default async function Dashboard() {
 								href={tool.href}
 								className="rounded-xl border border-gray-800 bg-gray-900/60 p-4 shadow-lg shadow-black/40 transition-colors hover:border-[var(--ieee-dark-yellow)] hover:bg-gray-900"
 							>
-								<div className="text-base font-semibold text-gray-100">{tool.title}</div>
+								<div className="text-base font-semibold text-gray-100">
+									{tool.title}
+								</div>
 								<div className="mt-1 text-sm text-gray-400">{tool.desc}</div>
 							</Link>
 						))}
@@ -73,7 +81,8 @@ export default async function Dashboard() {
 									Open event manager →
 								</Link>
 								<p className="mt-2 text-sm text-gray-400">
-									Create &amp; edit events, pick a category, upload a flyer. Syncs to Google Calendar.
+									Create &amp; edit events, pick a category, upload a flyer. Syncs
+									to Google Calendar.
 								</p>
 							</div>
 							<div className="border-t border-gray-800 pt-5">

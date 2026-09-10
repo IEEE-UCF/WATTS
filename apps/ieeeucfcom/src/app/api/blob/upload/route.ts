@@ -53,14 +53,18 @@ export async function POST(request: Request): Promise<Response> {
 					const parsed = intentSchema.parse(JSON.parse(clientPayload ?? '{}'));
 					const authorized = await authorizeUpload(db, session, parsed as UploadIntent);
 					if (authorized.key !== pathname) {
-						throw new UploadError('BAD_REQUEST', 'pathname does not match authorized key');
+						throw new UploadError(
+							'BAD_REQUEST',
+							'pathname does not match authorized key',
+						);
 					}
 					return {
 						allowedContentTypes: [authorized.contentType],
 						maximumSizeInBytes: authorized.maxBytes,
 						addRandomSuffix: false,
 						// resume + event-flyer are one deterministic key per owner, replaced in place.
-						allowOverwrite: authorized.kind === 'resume' || authorized.kind === 'event-flyer',
+						allowOverwrite:
+							authorized.kind === 'resume' || authorized.kind === 'event-flyer',
 						tokenPayload: JSON.stringify(authorized.tokenPayload),
 					};
 				},
@@ -71,7 +75,10 @@ export async function POST(request: Request): Promise<Response> {
 			return NextResponse.json(json);
 		} catch (err) {
 			if (err instanceof UploadError) {
-				return NextResponse.json({ error: err.message }, { status: uploadErrorHTTPStatus(err.code) });
+				return NextResponse.json(
+					{ error: err.message },
+					{ status: uploadErrorHTTPStatus(err.code) },
+				);
 			}
 			return NextResponse.json({ error: (err as Error).message }, { status: 400 });
 		}
@@ -99,10 +106,16 @@ export async function POST(request: Request): Promise<Response> {
 		});
 	} catch (err) {
 		if (err instanceof UploadError) {
-			return NextResponse.json({ error: err.message }, { status: uploadErrorHTTPStatus(err.code) });
+			return NextResponse.json(
+				{ error: err.message },
+				{ status: uploadErrorHTTPStatus(err.code) },
+			);
 		}
 		if (err instanceof z.ZodError) {
-			return NextResponse.json({ error: 'Invalid request', issues: err.issues }, { status: 400 });
+			return NextResponse.json(
+				{ error: 'Invalid request', issues: err.issues },
+				{ status: 400 },
+			);
 		}
 		return NextResponse.json({ error: (err as Error).message }, { status: 500 });
 	}

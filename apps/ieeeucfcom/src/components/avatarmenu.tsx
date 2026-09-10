@@ -24,7 +24,7 @@ const AvatarMenu: React.FC<AvatarMenuProps> = ({ image }) => {
 				<NavigationMenuItem>
 					<NavigationMenuTrigger>
 						<Image
-							className="object-cover rounded-full h-12 w-12 border border-white hover:scale-107 transition-all cursor-pointer"
+							className="h-12 w-12 cursor-pointer rounded-full border border-white object-cover transition-all hover:scale-107"
 							src={image}
 							alt="Profile"
 							width={2000}
@@ -33,12 +33,12 @@ const AvatarMenu: React.FC<AvatarMenuProps> = ({ image }) => {
 					</NavigationMenuTrigger>
 
 					<NavigationMenuContent>
-						<div className="grid w-fit gap-4 bg-[var(--ieee-dark-yellow)] rounded-md ">
+						<div className="grid w-fit gap-4 rounded-md bg-[var(--ieee-dark-yellow)]">
 							<div className="flex flex-col">
 								<NavigationMenuLink asChild>
 									<Link
 										href="/dashboard"
-										className="m-1 hover:bg-[var(--ieee-bright-yellow)] transition-all flex-row items-center gap-2 text-white font-[subheading-font]"
+										className="m-1 flex-row items-center gap-2 font-[subheading-font] text-white transition-all hover:bg-[var(--ieee-bright-yellow)]"
 									>
 										DASHBOARD
 									</Link>
@@ -47,7 +47,7 @@ const AvatarMenu: React.FC<AvatarMenuProps> = ({ image }) => {
 								<NavigationMenuLink asChild>
 									<Link
 										href="/settings"
-										className="m-1 hover:bg-[var(--ieee-bright-yellow)] transition-all flex-row items-center gap-2 text-white font-[subheading-font]"
+										className="m-1 flex-row items-center gap-2 font-[subheading-font] text-white transition-all hover:bg-[var(--ieee-bright-yellow)]"
 									>
 										SETTINGS
 									</Link>

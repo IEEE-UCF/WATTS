@@ -31,7 +31,7 @@ function Panel({
 			}`}
 		>
 			<div className="mb-3 flex items-center gap-2">
-				<h2 className="text-sm font-[heading-font] tracking-[0.14em] text-gray-100 uppercase">
+				<h2 className="font-[heading-font] text-sm tracking-[0.14em] text-gray-100 uppercase">
 					{title}
 				</h2>
 				{cap && (
@@ -52,7 +52,10 @@ function LinkCard({ href, label }: { href: string; label: string }) {
 			href={href}
 			className="inline-flex items-center gap-1 rounded-md border border-gray-700 px-3 py-2 text-sm text-gray-200 transition-colors hover:border-[var(--ieee-dark-yellow)] hover:text-[var(--ieee-dark-yellow)]"
 		>
-			{label} <span aria-hidden className="opacity-60">→</span>
+			{label}{' '}
+			<span aria-hidden className="opacity-60">
+				→
+			</span>
 		</Link>
 	);
 }
@@ -79,13 +82,18 @@ export function StaffHub() {
 			: `Helper · ${(auth?.permissions ?? []).join(', ') || 'no grants'}`;
 
 	const anyTool =
-		can('manage_events') || can('scan_attendance') || can('manage_event_photos') || can('review_resumes');
+		can('manage_events') ||
+		can('scan_attendance') ||
+		can('manage_event_photos') ||
+		can('review_resumes');
 
 	return (
 		<div className="text-gray-100">
 			<div className="mb-6 flex flex-wrap items-baseline gap-x-4 gap-y-1">
 				<span className="text-sm text-gray-500">
-					{auth?.member ? `${auth.member.firstName} ${auth.member.lastName}` : 'Signed in'}
+					{auth?.member
+						? `${auth.member.firstName} ${auth.member.lastName}`
+						: 'Signed in'}
 				</span>
 				<span className="rounded-full border border-gray-700 px-3 py-1 text-xs text-gray-300">
 					{scope}
@@ -94,8 +102,8 @@ export function StaffHub() {
 
 			{!anyTool && !isAdmin && (
 				<p className="rounded-lg border border-gray-800 bg-gray-900/60 p-4 text-sm text-gray-400">
-					You don&apos;t have any staff tools yet. An admin can grant you capabilities on the
-					Members screen.
+					You don&apos;t have any staff tools yet. An admin can grant you capabilities on
+					the Members screen.
 				</p>
 			)}
 
@@ -109,7 +117,8 @@ export function StaffHub() {
 				{can('manage_events') && (
 					<Panel title="Events" cap="manage_events">
 						<p className="mb-3 text-sm text-gray-400">
-							Create &amp; edit events, pick a category, upload a flyer, and sync to Google Calendar.
+							Create &amp; edit events, pick a category, upload a flyer, and sync to
+							Google Calendar.
 						</p>
 						<LinkCard href="/admin/events" label="Open event manager" />
 					</Panel>

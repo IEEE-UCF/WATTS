@@ -64,7 +64,10 @@ export function ResumeDashboard() {
 		const needle = q.trim().toLowerCase();
 		return (data ?? []).filter((r) => {
 			if (onlyWithResume && !r.hasResume) return false;
-			if (needle && !`${r.firstName} ${r.lastName} ${r.major}`.toLowerCase().includes(needle)) {
+			if (
+				needle &&
+				!`${r.firstName} ${r.lastName} ${r.major}`.toLowerCase().includes(needle)
+			) {
 				return false;
 			}
 			return true;
@@ -161,7 +164,9 @@ export function ResumeDashboard() {
 												)}
 											</td>
 											<td className="px-3 py-2 text-gray-400">{r.major}</td>
-											<td className="px-3 py-2 text-gray-400">{r.graduationYear}</td>
+											<td className="px-3 py-2 text-gray-400">
+												{r.graduationYear}
+											</td>
 											<td className="px-3 py-2">
 												{r.hasResume && r.resumeUrl ? (
 													<div className="flex items-center gap-3">
@@ -182,7 +187,9 @@ export function ResumeDashboard() {
 														</a>
 														{r.resumeUploadedAt && (
 															<span className="text-xs text-gray-500">
-																{new Date(r.resumeUploadedAt).toLocaleDateString()}
+																{new Date(
+																	r.resumeUploadedAt,
+																).toLocaleDateString()}
 															</span>
 														)}
 													</div>
@@ -195,7 +202,10 @@ export function ResumeDashboard() {
 								})}
 								{rows.length === 0 && (
 									<tr>
-										<td colSpan={4} className="px-3 py-6 text-center text-gray-500">
+										<td
+											colSpan={4}
+											className="px-3 py-6 text-center text-gray-500"
+										>
 											No matching members.
 										</td>
 									</tr>
@@ -208,9 +218,15 @@ export function ResumeDashboard() {
 
 			<div className="rounded-lg border border-gray-800 bg-gray-900/50 p-2">
 				{preview ? (
-					<iframe title="résumé preview" src={preview} className="h-[70vh] w-full rounded" />
+					<iframe
+						title="résumé preview"
+						src={preview}
+						className="h-[70vh] w-full rounded"
+					/>
 				) : (
-					<p className="p-6 text-sm text-gray-500">Select “preview” to view a résumé here.</p>
+					<p className="p-6 text-sm text-gray-500">
+						Select “preview” to view a résumé here.
+					</p>
 				)}
 			</div>
 		</div>

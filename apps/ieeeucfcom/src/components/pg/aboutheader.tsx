@@ -8,36 +8,36 @@ export default function AboutHeader() {
 
 	return (
 		<div className="">
-			<div className="absolute top-0 left-0 w-full h-full animated-background bg-gradient-to-r  justify-center place-self-center inset-0 items-center px-5 [background:radial-gradient(300%_125%_at_30%_0%,#0c0a09_10%,transparent_100%)] z-2"></div>
+			<div className="animated-background absolute inset-0 top-0 left-0 z-2 h-full w-full items-center justify-center place-self-center bg-gradient-to-r px-5 [background:radial-gradient(300%_125%_at_30%_0%,#0c0a09_10%,transparent_100%)]"></div>
 
-			<div className="flex flex-row my-10 p-40 justify-center absolute z-3 w-screen">
-				<div className="flex flex-col items-center justify-center self-center text-center gap-y-3 float">
-					<div className=" font-[heading-font] text-[var(--ieee-bright-yellow)] text-5xl sm:text-6xl">
+			<div className="absolute z-3 my-10 flex w-screen flex-row justify-center p-40">
+				<div className="float flex flex-col items-center justify-center gap-y-3 self-center text-center">
+					<div className="font-[heading-font] text-5xl text-[var(--ieee-bright-yellow)] sm:text-6xl">
 						WHAT IS IEEE?
 					</div>
 
-					<div className="text-white font-[body-font] text-xl lg:text-3xl flex flex-wrap max-w-screen px-3">
+					<div className="flex max-w-screen flex-wrap px-3 font-[body-font] text-xl text-white lg:text-3xl">
 						ieee • /aɪ ˈtɹɪp.əl iː/ • institute of electrical and electronics engineers
 					</div>
 
 					<div className="mt-[23vh]"></div>
 
-					<div className="relative group cursor-pointer max-w-screen">
-						<div className="absolute -inset-2 bg-gradient-to-r from-[var(--ieee-bright-yellow)] to-[var(--ieee-bright-yellow)] rounded-lg blur opacity-25 group-hover:opacity-100 transition duration-1000 group-hover:duration-200"></div>
+					<div className="group relative max-w-screen cursor-pointer">
+						<div className="absolute -inset-2 rounded-lg bg-gradient-to-r from-[var(--ieee-bright-yellow)] to-[var(--ieee-bright-yellow)] opacity-25 blur transition duration-1000 group-hover:opacity-100 group-hover:duration-200"></div>
 
-						<div className="group relative w-fit overflow-hidden rounded-2xl p-[4px] bg-transparent cursor-pointer transition-transform hover:scale-102">
-							<div className="animated-border pointer-events-none absolute inset-0 z-0 rounded-2xl bg-[conic-gradient(var(--ieee-bright-yellow)_20deg,transparent_120deg)] animate-spin-slow"></div>
+						<div className="group relative w-fit cursor-pointer overflow-hidden rounded-2xl bg-transparent p-[4px] transition-transform hover:scale-102">
+							<div className="animated-border animate-spin-slow pointer-events-none absolute inset-0 z-0 rounded-2xl bg-[conic-gradient(var(--ieee-bright-yellow)_20deg,transparent_120deg)]"></div>
 
 							<button
-								className="relative z-10 w-85 sm:w-120 md:w-170 lg:w-195 h-[280px] md:h-[235px] max-w-screen rounded-2xl backdrop-blur-sm p-5 justify-center items-center  bg-[#0c0a09] text-white cursor-pointer"
+								className="relative z-10 h-[280px] w-85 max-w-screen cursor-pointer items-center justify-center rounded-2xl bg-[#0c0a09] p-5 text-white backdrop-blur-sm sm:w-120 md:h-[235px] md:w-170 lg:w-195"
 								onClick={() => setIsFlipped(!isFlipped)}
 							>
 								{isFlipped ? (
 									<div>
-										<div className="font-[subheading-italic-font] text-[var(--ieee-bright-yellow)] text-xl sm:text-2xl">
+										<div className="font-[subheading-italic-font] text-xl text-[var(--ieee-bright-yellow)] sm:text-2xl">
 											We are the innovators of tomorrow.
 										</div>
-										<div className="font-[body-font] text-md sm:text-xl">
+										<div className="text-md font-[body-font] sm:text-xl">
 											Located at the University of Central Florida, our IEEE
 											student chapter is one of the largest in the nation and
 											boasts over 300 active members. We foster technical
@@ -52,10 +52,10 @@ export default function AboutHeader() {
 											Want to see our full story?
 										</div>
 										<div className="my-6"></div>
-										<div className="place-self-center w-fit hover:scale-110 transition-transform hover:text-[var(--ieee-bright-yellow)] text-2xl font-[heading-font]">
-											<div className="relative group cursor-pointer">
-												<div className="absolute -inset-1 bg-gradient-to-r from-[var(--ieee-bright-yellow)] to-[var(--ieee-bright-yellow)] rounded-lg blur opacity-25 group-hover:opacity-100 transition duration-1000 group-hover:duration-200"></div>
-												<div className="relative px-8 py-7 bg-[#0c0a09] ring-1 ring-gray-900/5 rounded-lg leading-none flex items-top justify-start space-x-6">
+										<div className="w-fit place-self-center font-[heading-font] text-2xl transition-transform hover:scale-110 hover:text-[var(--ieee-bright-yellow)]">
+											<div className="group relative cursor-pointer">
+												<div className="absolute -inset-1 rounded-lg bg-gradient-to-r from-[var(--ieee-bright-yellow)] to-[var(--ieee-bright-yellow)] opacity-25 blur transition duration-1000 group-hover:opacity-100 group-hover:duration-200"></div>
+												<div className="items-top relative flex justify-start space-x-6 rounded-lg bg-[#0c0a09] px-8 py-7 leading-none ring-1 ring-gray-900/5">
 													<div className="space-y-2">
 														<Link href="https://www.youtube.com/watch?v=JyjVBBVm0g4">
 															<p>WATCH VIDEO</p>
@@ -72,9 +72,9 @@ export default function AboutHeader() {
 				</div>
 			</div>
 
-			<div className="bg-black h-full w-full">
+			<div className="h-full w-full bg-black">
 				<Image
-					className="absolute h-full w-full object-cover object-center z-0 opacity-100"
+					className="absolute z-0 h-full w-full object-cover object-center opacity-100"
 					src="/southeastcon/secgroup.png"
 					alt="About Us Photo"
 					width={2000}

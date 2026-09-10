@@ -143,8 +143,8 @@ export function MembersManager() {
 						)}
 					</div>
 					<p className="mb-2 text-xs text-gray-400">
-						Capabilities officers may grant to regular members. Officers can never change
-						admin/officer roles, and can only act on members who are not staff.
+						Capabilities officers may grant to regular members. Officers can never
+						change admin/officer roles, and can only act on members who are not staff.
 					</p>
 					<div className="flex flex-wrap gap-4">
 						{delegableCaps.map((cap) => (
@@ -160,7 +160,9 @@ export function MembersManager() {
 							</label>
 						))}
 						{delegableCaps.length === 0 && (
-							<span className="text-xs text-gray-500">No delegable capabilities.</span>
+							<span className="text-xs text-gray-500">
+								No delegable capabilities.
+							</span>
 						)}
 					</div>
 				</div>
@@ -184,7 +186,11 @@ export function MembersManager() {
 					<option value="none">Members only</option>
 				</select>
 				<label className="flex items-center gap-2">
-					<input type="checkbox" checked={onlyActive} onChange={(e) => setOnlyActive(e.target.checked)} />
+					<input
+						type="checkbox"
+						checked={onlyActive}
+						onChange={(e) => setOnlyActive(e.target.checked)}
+					/>
 					active only
 				</label>
 				<span className="ml-auto text-gray-400">
@@ -217,11 +223,16 @@ export function MembersManager() {
 								const isSelf = m.id === myMemberId;
 								const st = status[m.id];
 								return (
-									<tr key={m.id} className={`border-t border-gray-800 ${m.active ? '' : 'opacity-50'}`}>
+									<tr
+										key={m.id}
+										className={`border-t border-gray-800 ${m.active ? '' : 'opacity-50'}`}
+									>
 										<td className="px-3 py-2 whitespace-nowrap">
 											{m.firstName} {m.lastName}
 											{isSelf && (
-												<span className="ml-1 text-xs text-[var(--ieee-dark-yellow)]">(you)</span>
+												<span className="ml-1 text-xs text-[var(--ieee-dark-yellow)]">
+													(you)
+												</span>
 											)}
 											{st && (
 												<div
@@ -233,13 +244,19 @@ export function MembersManager() {
 																: 'text-red-400'
 													}`}
 												>
-													{st === 'saving' ? 'saving…' : st === 'saved' ? 'saved ✓' : st}
+													{st === 'saving'
+														? 'saving…'
+														: st === 'saved'
+															? 'saved ✓'
+															: st}
 												</div>
 											)}
 										</td>
 										<td className="px-3 py-2 text-gray-400">
 											<div>{m.ucfEmail}</div>
-											{m.personalEmail && <div className="text-xs">{m.personalEmail}</div>}
+											{m.personalEmail && (
+												<div className="text-xs">{m.personalEmail}</div>
+											)}
 										</td>
 										<td className="px-3 py-2 text-gray-400">
 											<div className="max-w-[220px] truncate">{m.major}</div>
@@ -253,7 +270,11 @@ export function MembersManager() {
 													type="button"
 													disabled={isSelf || st === 'saving'}
 													onClick={() => runAdmin(m.id, !m.administrator)}
-													title={isSelf ? "You can't change your own admin access" : undefined}
+													title={
+														isSelf
+															? "You can't change your own admin access"
+															: undefined
+													}
 													className={`rounded px-2 py-1 text-xs font-semibold disabled:opacity-40 ${
 														m.administrator
 															? 'bg-[var(--ieee-dark-yellow)] text-black'
@@ -263,7 +284,9 @@ export function MembersManager() {
 													{m.administrator ? 'Admin' : 'Make admin'}
 												</button>
 											) : (
-												<span className="text-xs text-gray-400">{m.administrator ? 'Admin' : '—'}</span>
+												<span className="text-xs text-gray-400">
+													{m.administrator ? 'Admin' : '—'}
+												</span>
 											)}
 										</td>
 
@@ -275,7 +298,15 @@ export function MembersManager() {
 														type="button"
 														disabled={st === 'saving'}
 														onClick={() =>
-															runOfficer(m.id, !m.officerStatus, m.officerStatus ? null : asOfficerRole(m.officerRole ?? ''))
+															runOfficer(
+																m.id,
+																!m.officerStatus,
+																m.officerStatus
+																	? null
+																	: asOfficerRole(
+																			m.officerRole ?? '',
+																		),
+															)
 														}
 														className={`rounded px-2 py-1 text-xs font-semibold disabled:opacity-40 ${
 															m.officerStatus
@@ -283,12 +314,22 @@ export function MembersManager() {
 																: 'border border-gray-600 text-gray-300 hover:border-gray-400'
 														}`}
 													>
-														{m.officerStatus ? 'Officer' : 'Make officer'}
+														{m.officerStatus
+															? 'Officer'
+															: 'Make officer'}
 													</button>
 													<select
 														value={m.officerRole ?? ''}
-														disabled={!m.officerStatus || st === 'saving'}
-														onChange={(e) => runOfficer(m.id, true, asOfficerRole(e.target.value))}
+														disabled={
+															!m.officerStatus || st === 'saving'
+														}
+														onChange={(e) =>
+															runOfficer(
+																m.id,
+																true,
+																asOfficerRole(e.target.value),
+															)
+														}
 														className="rounded border border-gray-700 bg-gray-800 px-1 py-0.5 text-xs disabled:opacity-40"
 													>
 														<option value="">— role —</option>
@@ -311,7 +352,10 @@ export function MembersManager() {
 										{/* Capabilities — implied for admins/officers, else per-grant toggles */}
 										<td className="px-3 py-2">
 											{m.administrator || m.officerStatus ? (
-												<span className="text-xs text-gray-500">all (via {m.administrator ? 'admin' : 'officer'})</span>
+												<span className="text-xs text-gray-500">
+													all (via {m.administrator ? 'admin' : 'officer'}
+													)
+												</span>
 											) : (
 												<div className="flex max-w-[260px] flex-wrap gap-1">
 													{CAPABILITY_KEYS.map((cap) => {
@@ -321,8 +365,12 @@ export function MembersManager() {
 															<button
 																key={cap}
 																type="button"
-																disabled={st === 'saving' || !allowed}
-																onClick={() => runPermission(m.id, cap, !on)}
+																disabled={
+																	st === 'saving' || !allowed
+																}
+																onClick={() =>
+																	runPermission(m.id, cap, !on)
+																}
 																title={
 																	allowed
 																		? CAPABILITIES[cap].label
@@ -342,7 +390,9 @@ export function MembersManager() {
 											)}
 										</td>
 
-										<td className="px-3 py-2 text-gray-400">{m.duesPaid ? 'paid' : '—'}</td>
+										<td className="px-3 py-2 text-gray-400">
+											{m.duesPaid ? 'paid' : '—'}
+										</td>
 										<td className="px-3 py-2 text-gray-400">
 											{m.hasResume && m.resumeUrl ? (
 												<a
@@ -352,7 +402,9 @@ export function MembersManager() {
 													className="text-[var(--ieee-dark-yellow)] hover:underline"
 												>
 													{m.resumeUploadedAt
-														? new Date(m.resumeUploadedAt).toLocaleDateString()
+														? new Date(
+																m.resumeUploadedAt,
+															).toLocaleDateString()
 														: 'view'}
 												</a>
 											) : (
@@ -361,7 +413,9 @@ export function MembersManager() {
 										</td>
 										<td className="px-3 py-2">
 											<div className="flex max-w-[200px] flex-wrap gap-1">
-												{m.committees.length === 0 && <span className="text-gray-600">—</span>}
+												{m.committees.length === 0 && (
+													<span className="text-gray-600">—</span>
+												)}
 												{m.committees.map((c) => (
 													<span
 														key={c.id}
@@ -370,7 +424,11 @@ export function MembersManager() {
 																? 'bg-[var(--ieee-dark-yellow)] text-black'
 																: 'bg-gray-800 text-gray-300'
 														}`}
-														title={c.isChair ? `${c.title} (chair)` : c.title}
+														title={
+															c.isChair
+																? `${c.title} (chair)`
+																: c.title
+														}
 													>
 														{c.slug ?? c.title}
 														{c.isChair ? '★' : ''}
@@ -390,7 +448,10 @@ export function MembersManager() {
 							})}
 							{rows.length === 0 && (
 								<tr>
-									<td colSpan={10} className="px-3 py-6 text-center text-gray-500">
+									<td
+										colSpan={10}
+										className="px-3 py-6 text-center text-gray-500"
+									>
 										No matching members.
 									</td>
 								</tr>

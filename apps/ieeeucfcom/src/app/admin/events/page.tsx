@@ -15,13 +15,13 @@ export default async function AdminEventsPage() {
 				<Navbar />
 			</div>
 			<main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8">
-				<h1 className="mb-6 text-3xl font-[heading-font] text-[var(--ieee-dark-yellow)]">
+				<h1 className="mb-6 font-[heading-font] text-3xl text-[var(--ieee-dark-yellow)]">
 					EVENT MANAGEMENT
 				</h1>
 				<p className="mb-6 text-sm text-gray-400">
-					Events created here are the source of truth. Each one mirrors to the chapter Google
-					Calendar; tick <span className="text-gray-200">Global</span> to also publish a Discord
-					scheduled event.
+					Events created here are the source of truth. Each one mirrors to the chapter
+					Google Calendar; tick <span className="text-gray-200">Global</span> to also
+					publish a Discord scheduled event.
 				</p>
 				<EventManager />
 			</main>

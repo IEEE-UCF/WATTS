@@ -118,22 +118,22 @@ const MemberQRCode: React.FC<MemberQRCodeProps> = ({
 	}
 
 	if (error) {
-		return <div className="text-red-500 p-4">Error: {error}</div>;
+		return <div className="p-4 text-red-500">Error: {error}</div>;
 	}
 
 	// Render the QR code image
 	return (
 		<div className="flex flex-col items-center p-4">
-			<h3 className="text-lg font-semibold mb-2">Member QR Code</h3>
+			<h3 className="mb-2 text-lg font-semibold">Member QR Code</h3>
 			{qrCodeUrl && (
 				<img
 					src={qrCodeUrl}
 					alt="Member QR Code"
-					className="border rounded-lg shadow-md"
+					className="rounded-lg border shadow-md"
 					data-testid="qr-code-image"
 				/>
 			)}
-			<p className="text-sm text-gray-600 mt-2">Scan to access member info</p>
+			<p className="mt-2 text-sm text-gray-600">Scan to access member info</p>
 		</div>
 	);
 };

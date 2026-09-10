@@ -33,7 +33,8 @@ export async function middleware(request: NextRequest) {
 		!isOfficerAdminRoute &&
 		adminRoutes.some((route) => pathname.startsWith(route));
 
-	const needsAuthz = Boolean(capabilityRoute) || isAdminRoute || isStaffRoute || isOfficerAdminRoute;
+	const needsAuthz =
+		Boolean(capabilityRoute) || isAdminRoute || isStaffRoute || isOfficerAdminRoute;
 	if (!isProtectedRoute && !needsAuthz) {
 		return NextResponse.next();
 	}
@@ -105,5 +106,7 @@ export async function middleware(request: NextRequest) {
 export const config = {
 	// Skip Next internals, static assets, and /api (the middleware no-ops on API
 	// routes anyway, and this avoids re-invoking it for the /api/auth/session fetch).
-	matcher: ['/((?!api|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)'],
+	matcher: [
+		'/((?!api|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+	],
 };

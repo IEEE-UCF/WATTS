@@ -150,7 +150,8 @@ function EventForm({
 		else await create.mutateAsync(payload);
 	}
 
-	const field = 'w-full rounded-md border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-gray-100';
+	const field =
+		'w-full rounded-md border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-gray-100';
 
 	return (
 		<form
@@ -417,9 +418,15 @@ function LabelBar({ labels }: { labels: Label[] }) {
 						{labels.map((l) => (
 							<span
 								key={l.id}
-								title={l.googleLabelId ? 'Linked to a Google event label' : 'Not linked to Google'}
+								title={
+									l.googleLabelId
+										? 'Linked to a Google event label'
+										: 'Not linked to Google'
+								}
 								className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs ${
-									l.active ? 'border-gray-700 text-gray-200' : 'border-gray-800 text-gray-500 line-through'
+									l.active
+										? 'border-gray-700 text-gray-200'
+										: 'border-gray-800 text-gray-500 line-through'
 								}`}
 							>
 								<span
@@ -427,10 +434,14 @@ function LabelBar({ labels }: { labels: Label[] }) {
 									style={{ backgroundColor: l.hex ?? '#888' }}
 								/>
 								{l.name}
-								{l.googleLabelId && <span className="text-[10px] text-green-400">G</span>}
+								{l.googleLabelId && (
+									<span className="text-[10px] text-green-400">G</span>
+								)}
 								<button
 									type="button"
-									onClick={() => setActive.mutate({ id: l.id, active: !l.active })}
+									onClick={() =>
+										setActive.mutate({ id: l.id, active: !l.active })
+									}
 									className="text-gray-500 hover:text-gray-300"
 								>
 									{l.active ? '×' : '↺'}
@@ -478,7 +489,9 @@ function LabelBar({ labels }: { labels: Label[] }) {
 						>
 							Add
 						</button>
-						{create.error && <span className="text-red-400">{create.error.message}</span>}
+						{create.error && (
+							<span className="text-red-400">{create.error.message}</span>
+						)}
 					</form>
 				</div>
 			)}
@@ -558,7 +571,10 @@ export function EventManager() {
 		try {
 			const preview = await importGoogle.mutateAsync({ dryRun: true });
 			if (!preview.enabled) {
-				setBanner({ kind: 'err', text: 'Google Calendar is not connected (no service-account credentials).' });
+				setBanner({
+					kind: 'err',
+					text: 'Google Calendar is not connected (no service-account credentials).',
+				});
 				return;
 			}
 			if (preview.imported === 0) {
@@ -570,7 +586,10 @@ export function EventManager() {
 			}
 			setImportPreview(preview);
 		} catch (err) {
-			setBanner({ kind: 'err', text: err instanceof Error ? err.message : 'Import preview failed' });
+			setBanner({
+				kind: 'err',
+				text: err instanceof Error ? err.message : 'Import preview failed',
+			});
 		}
 	}
 
@@ -622,7 +641,10 @@ export function EventManager() {
 			invalidate();
 			setBanner({ kind: 'ok', text: 'Flyer uploaded.' });
 		} catch (err) {
-			setBanner({ kind: 'err', text: err instanceof Error ? err.message : 'Flyer upload failed' });
+			setBanner({
+				kind: 'err',
+				text: err instanceof Error ? err.message : 'Flyer upload failed',
+			});
 		} finally {
 			setFlyerBusy(null);
 		}
@@ -641,7 +663,11 @@ export function EventManager() {
 					}`}
 				>
 					<span>{banner.text}</span>
-					<button type="button" onClick={() => setBanner(null)} className="text-xs opacity-70 hover:opacity-100">
+					<button
+						type="button"
+						onClick={() => setBanner(null)}
+						className="text-xs opacity-70 hover:opacity-100"
+					>
 						dismiss
 					</button>
 				</div>
@@ -680,7 +706,9 @@ export function EventManager() {
 					<p className="mb-2 font-semibold text-gray-200">
 						Import {importPreview.imported} event(s) from Google Calendar?
 					</p>
-					<p className="mb-2 text-xs text-gray-400">{importPreview.skipped} already linked and will be left alone.</p>
+					<p className="mb-2 text-xs text-gray-400">
+						{importPreview.skipped} already linked and will be left alone.
+					</p>
 					<ul className="mb-3 max-h-40 overflow-y-auto text-xs text-gray-300">
 						{importPreview.results
 							.filter((r) => r.action === 'imported')
@@ -731,7 +759,7 @@ export function EventManager() {
 			) : (
 				<div className="overflow-x-auto rounded-lg border border-gray-800">
 					<table className="w-full text-left text-sm">
-						<thead className="bg-gray-900/60 text-xs uppercase text-gray-400">
+						<thead className="bg-gray-900/60 text-xs text-gray-400 uppercase">
 							<tr>
 								<th className="px-3 py-2">Event</th>
 								<th className="px-3 py-2">Start</th>
@@ -752,25 +780,29 @@ export function EventManager() {
 										<div className="font-medium">
 											{ev.title}
 											{!ev.active && (
-												<span className="ml-2 rounded bg-gray-800 px-1.5 py-0.5 text-[10px] uppercase text-gray-400">
+												<span className="ml-2 rounded bg-gray-800 px-1.5 py-0.5 text-[10px] text-gray-400 uppercase">
 													archived
 												</span>
 											)}
 											{ev.hidden && (
-												<span className="ml-2 rounded bg-gray-800 px-1.5 py-0.5 text-[10px] uppercase text-amber-400">
+												<span className="ml-2 rounded bg-gray-800 px-1.5 py-0.5 text-[10px] text-amber-400 uppercase">
 													hidden
 												</span>
 											)}
 										</div>
 										<div className="text-xs text-gray-500">{ev.location}</div>
 									</td>
-									<td className="px-3 py-2 text-xs text-gray-300">{ev.startTime}</td>
+									<td className="px-3 py-2 text-xs text-gray-300">
+										{ev.startTime}
+									</td>
 									<td className="px-3 py-2">
 										{ev.label ? (
 											<span className="inline-flex items-center gap-1 text-xs">
 												<span
 													className="h-2.5 w-2.5 rounded-full"
-													style={{ backgroundColor: ev.label.hex ?? '#888' }}
+													style={{
+														backgroundColor: ev.label.hex ?? '#888',
+													}}
 												/>
 												{ev.label.name}
 											</span>
@@ -810,7 +842,12 @@ export function EventManager() {
 											<button
 												type="button"
 												disabled={setHidden.isPending}
-												onClick={() => setHidden.mutate({ id: ev.id, data: { hidden: !ev.hidden } })}
+												onClick={() =>
+													setHidden.mutate({
+														id: ev.id,
+														data: { hidden: !ev.hidden },
+													})
+												}
 												className="text-blue-400 hover:underline disabled:opacity-50"
 											>
 												{ev.hidden ? 'unhide' : 'hide'}
@@ -836,7 +873,9 @@ export function EventManager() {
 											{ev.active ? (
 												<button
 													type="button"
-													onClick={() => setPendingDelete({ ev, mode: 'archive' })}
+													onClick={() =>
+														setPendingDelete({ ev, mode: 'archive' })
+													}
 													className="text-red-400 hover:underline"
 												>
 													delete
@@ -846,7 +885,9 @@ export function EventManager() {
 													<button
 														type="button"
 														disabled={restore.isPending}
-														onClick={() => restore.mutate({ id: ev.id })}
+														onClick={() =>
+															restore.mutate({ id: ev.id })
+														}
 														className="text-green-400 hover:underline disabled:opacity-50"
 													>
 														restore
@@ -869,8 +910,13 @@ export function EventManager() {
 							))}
 							{visible.length === 0 && (
 								<tr>
-									<td colSpan={7} className="px-3 py-6 text-center text-sm text-gray-500">
-										{sorted.length === 0 ? 'No events yet.' : 'No active events.'}
+									<td
+										colSpan={7}
+										className="px-3 py-6 text-center text-sm text-gray-500"
+									>
+										{sorted.length === 0
+											? 'No events yet.'
+											: 'No active events.'}
 									</td>
 								</tr>
 							)}
@@ -889,9 +935,11 @@ export function EventManager() {
 								</h3>
 								<p className="mb-5 text-sm text-gray-400">
 									It's removed from the website
-									{pendingDelete.ev.googleCalendarEventId ? ' and Google Calendar' : ''}, but kept
-									here with its attendee history. You can restore or permanently delete it from
-									“Show archived”.
+									{pendingDelete.ev.googleCalendarEventId
+										? ' and Google Calendar'
+										: ''}
+									, but kept here with its attendee history. You can restore or
+									permanently delete it from “Show archived”.
 								</p>
 								<div className="flex justify-end gap-3">
 									<button
@@ -917,11 +965,19 @@ export function EventManager() {
 									Permanently delete “{pendingDelete.ev.title}”?
 								</h3>
 								<p className="mb-3 text-sm text-gray-400">
-									This cannot be undone. It removes the event, its attendee records
-									{pendingDelete.ev.googleCalendarEventId ? ', and its Google Calendar entry' : ''}.
+									This cannot be undone. It removes the event, its attendee
+									records
+									{pendingDelete.ev.googleCalendarEventId
+										? ', and its Google Calendar entry'
+										: ''}
+									.
 								</p>
 								<label className="mb-1 block text-xs text-gray-400">
-									Type <span className="font-mono text-gray-200">{pendingDelete.ev.title}</span> to confirm
+									Type{' '}
+									<span className="font-mono text-gray-200">
+										{pendingDelete.ev.title}
+									</span>{' '}
+									to confirm
 								</label>
 								<input
 									autoFocus
@@ -941,7 +997,10 @@ export function EventManager() {
 									</button>
 									<button
 										type="button"
-										disabled={deleteBusy || purgeText.trim() !== pendingDelete.ev.title.trim()}
+										disabled={
+											deleteBusy ||
+											purgeText.trim() !== pendingDelete.ev.title.trim()
+										}
 										onClick={confirmDelete}
 										className="rounded-md bg-red-700 px-4 py-2 text-sm font-semibold text-white disabled:opacity-40"
 									>

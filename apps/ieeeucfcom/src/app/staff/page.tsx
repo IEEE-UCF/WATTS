@@ -23,7 +23,9 @@ export default async function StaffPage() {
 				<Navbar />
 			</div>
 			<main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8">
-				<h1 className="mb-6 text-3xl font-[heading-font] text-[var(--ieee-dark-yellow)]">STAFF</h1>
+				<h1 className="mb-6 font-[heading-font] text-3xl text-[var(--ieee-dark-yellow)]">
+					STAFF
+				</h1>
 				<StaffHub />
 			</main>
 		</div>

@@ -18,79 +18,79 @@ import Image from 'next/image';
 
 const Footer: React.FC = () => {
 	return (
-		<div className="bg-black w-full text-white flex flex-col items-center justify-center">
+		<div className="flex w-full flex-col items-center justify-center bg-black text-white">
 			<div className="bg-accent w-full"></div>
-			<div className="w-full h-fit"></div>
-			<div className="flex flex-col md:flex-row md:justify-between gap-y-6 md:gap-x-2 px-4 py-8 md:p-10 w-full max-w-screen-xl">
-				<div className="flex md:justify-start mb-4 md:mb-0 justify-center">
+			<div className="h-fit w-full"></div>
+			<div className="flex w-full max-w-screen-xl flex-col gap-y-6 px-4 py-8 md:flex-row md:justify-between md:gap-x-2 md:p-10">
+				<div className="mb-4 flex justify-center md:mb-0 md:justify-start">
 					<Image
-						className="h-24 w-24 md:h-40 md:w-40 object-cover"
+						className="h-24 w-24 object-cover md:h-40 md:w-40"
 						src="/iconography/ieeeucflogo.png"
 						alt="Events Photo"
 						width={2000}
 						height={2000}
 					/>
 				</div>
-				<div className="flex flex-col gap-y-1 w-full md:w-auto items-center md:items-start md:justify-center">
-					<div className="flex flex-wrap justify-center md:justify-start gap-x-3 gap-y-2 items-center text-xs md:text-sm">
+				<div className="flex w-full flex-col items-center gap-y-1 md:w-auto md:items-start md:justify-center">
+					<div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-2 text-xs md:justify-start md:text-sm">
 						<Link
 							href={'/'}
-							className="font-extralight text-white font-['Open Sans'] hover:text-[var(--ieee-bright-yellow)]"
+							className="font-['Open Sans'] font-extralight text-white hover:text-[var(--ieee-bright-yellow)]"
 						>
 							HOME
 						</Link>
-						<span className="text-xl font-[body-font] hidden md:inline">|</span>
+						<span className="hidden font-[body-font] text-xl md:inline">|</span>
 						<Link
 							href={'/about'}
-							className="font-extralight text-white font-['Open Sans'] hover:text-[var(--ieee-bright-yellow)]"
+							className="font-['Open Sans'] font-extralight text-white hover:text-[var(--ieee-bright-yellow)]"
 						>
 							ABOUT
 						</Link>
-						<span className="text-xl font-[body-font] hidden md:inline">|</span>
+						<span className="hidden font-[body-font] text-xl md:inline">|</span>
 						<Link
 							href={'/connect'}
-							className="font-extralight text-white font-['Open Sans'] hover:text-[var(--ieee-bright-yellow)]"
+							className="font-['Open Sans'] font-extralight text-white hover:text-[var(--ieee-bright-yellow)]"
 						>
 							CONTACT
 						</Link>
 					</div>
-					<div className="flex flex-wrap justify-center md:justify-start gap-x-3 gap-y-2 items-center text-xs md:text-sm">
+					<div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-2 text-xs md:justify-start md:text-sm">
 						<Link
 							href={'https://www.ieee.org/accessibility_statement.html'}
-							className="font-extralight text-white font-['Open Sans'] hover:text-[var(--ieee-bright-yellow)]"
+							className="font-['Open Sans'] font-extralight text-white hover:text-[var(--ieee-bright-yellow)]"
 						>
 							ACCESSIBILITY
 						</Link>
-						<span className="text-xl font-[body-font] hidden md:inline">|</span>
+						<span className="hidden font-[body-font] text-xl md:inline">|</span>
 						<Link
 							href={'https://www.ieee.org/nondiscrimination'}
-							className="font-extralight text-white font-['Open Sans'] hover:text-[var(--ieee-bright-yellow)]"
+							className="font-['Open Sans'] font-extralight text-white hover:text-[var(--ieee-bright-yellow)]"
 						>
 							NONDISCRIMINATION POLICY
 						</Link>
-						<span className="text-xl font-[body-font] hidden md:inline">|</span>
+						<span className="hidden font-[body-font] text-xl md:inline">|</span>
 						<Link
 							href={'http://www.ieee-ethics-reporting.org'}
-							className="font-extralight text-white font-['Open Sans'] hover:text-[var(--ieee-bright-yellow)]"
+							className="font-['Open Sans'] font-extralight text-white hover:text-[var(--ieee-bright-yellow)]"
 						>
 							IEEE ETHICS REPORTING
 						</Link>
-						<span className="text-xl font-[body-font] hidden md:inline">|</span>
+						<span className="hidden font-[body-font] text-xl md:inline">|</span>
 						<Link
 							href={'https://privacy.ieee.org/policies'}
-							className="font-extralight text-white font-['Open Sans'] hover:text-[var(--ieee-bright-yellow)]"
+							className="font-['Open Sans'] font-extralight text-white hover:text-[var(--ieee-bright-yellow)]"
 						>
 							IEEE PRIVACY POLICY
 						</Link>
-						<span className="text-xl font-[body-font] hidden md:inline">|</span>
+						<span className="hidden font-[body-font] text-xl md:inline">|</span>
 						<Link
 							href={'https://www.ieee.org/site_terms_conditions.html'}
-							className="font-extralight text-white font-['Open Sans'] hover:text-[var(--ieee-bright-yellow)]"
+							className="font-['Open Sans'] font-extralight text-white hover:text-[var(--ieee-bright-yellow)]"
 						>
 							TERMS & DISCLOSURES
 						</Link>
 					</div>
-					<div className="flex flex-col md:flex-row gap-y-2 gap-x-4 items-center text-xs md:text-base text-center md:text-left w-full">
+					<div className="flex w-full flex-col items-center gap-x-4 gap-y-2 text-center text-xs md:flex-row md:text-left md:text-base">
 						© Copyright 2026 IEEE – All rights reserved. A public charity, IEEE is the
 						world’s largest technical professional organization dedicated to advancing
 						technology for the benefit of humanity.

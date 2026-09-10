@@ -29,16 +29,16 @@ const TestPage = () => {
 
 	if (isLoading) {
 		return (
-			<div className="min-h-screen bg-black flex items-center justify-center">
-				<p className="text-white text-xl">Loading session data...</p>
+			<div className="flex min-h-screen items-center justify-center bg-black">
+				<p className="text-xl text-white">Loading session data...</p>
 			</div>
 		);
 	}
 
 	if (isError || !session?.user?.discordId) {
 		return (
-			<div className="min-h-screen bg-black flex items-center justify-center">
-				<p className="text-red-500 text-xl">
+			<div className="flex min-h-screen items-center justify-center bg-black">
+				<p className="text-xl text-red-500">
 					Error loading session or Discord ID not found.
 				</p>
 			</div>
@@ -84,16 +84,16 @@ const TestPage = () => {
 
 	return (
 		<div className="min-h-screen bg-gray-100 py-8">
-			<div className="max-w-4xl mx-auto px-4">
+			<div className="mx-auto max-w-4xl px-4">
 				{/* ========== PAGE HEADER ========== */}
-				<h1 className="text-3xl font-bold text-center mb-8">QR Code Testing</h1>
+				<h1 className="mb-8 text-center text-3xl font-bold">QR Code Testing</h1>
 
 				{/* ========== QR CODE EXAMPLES GRID ========== */}
 				{/*
 					Two-column grid on desktop, single column on mobile
 					Each card shows a different QR code configuration
 				*/}
-				<div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+				<div className="grid grid-cols-1 gap-8 md:grid-cols-2">
 					{/* ========== EXAMPLE 1: QR Code with Member Data ========== */}
 					{/*
 						This example demonstrates a standard QR code for member check-in
@@ -101,8 +101,8 @@ const TestPage = () => {
 						- Displays IEEE-UCF logo in the center
 						- Shows the encoded data below for reference
 					*/}
-					<div className="bg-white rounded-lg shadow-md p-6">
-						<h2 className="text-xl font-semibold mb-4">QR Code with IEEE-UCF Logo</h2>
+					<div className="rounded-lg bg-white p-6 shadow-md">
+						<h2 className="mb-4 text-xl font-semibold">QR Code with IEEE-UCF Logo</h2>
 
 						{/*
 							MemberQRCode Component
@@ -136,8 +136,8 @@ const TestPage = () => {
 						- Demonstrates error handling
 						- Useful for testing edge cases
 					*/}
-					<div className="bg-white rounded-lg shadow-md p-6">
-						<h2 className="text-xl font-semibold mb-4">QR Code with Icon</h2>
+					<div className="rounded-lg bg-white p-6 shadow-md">
+						<h2 className="mb-4 text-xl font-semibold">QR Code with Icon</h2>
 
 						{/*
 							MemberQRCode Component with empty data

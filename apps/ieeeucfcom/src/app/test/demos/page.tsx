@@ -22,20 +22,22 @@ export default async function Dashboard() {
 	const hasAccess = member?.officerStatus || member?.administrator;
 
 	return (
-		<div className="flex flex-col max-w-screen overflow-hidden bg-black min-h-screen">
+		<div className="flex min-h-screen max-w-screen flex-col overflow-hidden bg-black">
 			<div className="relative w-full">
-				<div className="absolute z-4 w-fit h-fit inset-0 px-5">
+				<div className="absolute inset-0 z-4 h-fit w-fit px-5">
 					<Navbar />
 				</div>
 			</div>
-			<div className="flex flex-col items-center justify-center h-screen">
+			<div className="flex h-screen flex-col items-center justify-center">
 				{hasAccess ? (
 					<>
 						<AddAttendeeButton />
 						<FormPopup />
 					</>
 				) : (
-					<p className="text-white text-lg">Officer or admin access required to use these features.</p>
+					<p className="text-lg text-white">
+						Officer or admin access required to use these features.
+					</p>
 				)}
 				<EventList />
 			</div>

@@ -60,7 +60,11 @@ export function EventPhotoManager() {
 				setRows((r) =>
 					r.map((row, i) =>
 						i === idx
-							? { ...row, status: 'error', message: err instanceof Error ? err.message : 'failed' }
+							? {
+									...row,
+									status: 'error',
+									message: err instanceof Error ? err.message : 'failed',
+								}
 							: row,
 					),
 				);
@@ -101,7 +105,8 @@ export function EventPhotoManager() {
 					{busy ? 'Uploading…' : 'Add photos'}
 				</button>
 				<span className="ml-3 text-xs text-gray-400">
-					JPEG / PNG / WebP. Resized to 1600px and stripped of location data before upload.
+					JPEG / PNG / WebP. Resized to 1600px and stripped of location data before
+					upload.
 				</span>
 				<input
 					ref={fileRef}
@@ -140,7 +145,10 @@ export function EventPhotoManager() {
 					</h3>
 					<div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
 						{(photos ?? []).map((p) => (
-							<div key={p.id} className="rounded-lg border border-gray-800 bg-gray-900/60 p-2">
+							<div
+								key={p.id}
+								className="rounded-lg border border-gray-800 bg-gray-900/60 p-2"
+							>
 								{/* eslint-disable-next-line @next/next/no-img-element */}
 								<img
 									src={p.webUrl}
@@ -152,7 +160,10 @@ export function EventPhotoManager() {
 									placeholder="Caption"
 									onBlur={(e) => {
 										if (e.target.value !== (p.caption ?? '')) {
-											updatePhoto.mutate({ id: p.id, caption: e.target.value || null });
+											updatePhoto.mutate({
+												id: p.id,
+												caption: e.target.value || null,
+											});
 										}
 									}}
 									className="mb-1 w-full rounded border border-gray-700 bg-gray-800 px-2 py-1 text-xs"
@@ -176,7 +187,8 @@ export function EventPhotoManager() {
 										onChange={(e) =>
 											updatePhoto.mutate({
 												id: p.id,
-												visibility: e.target.value as 'public' | 'members' | 'private',
+												visibility: e.target.value as
+													'public' | 'members' | 'private',
 											})
 										}
 										className="flex-1 rounded border border-gray-700 bg-gray-800 px-1 py-0.5"
@@ -192,7 +204,10 @@ export function EventPhotoManager() {
 											type="checkbox"
 											defaultChecked={p.featured}
 											onChange={(e) =>
-												updatePhoto.mutate({ id: p.id, featured: e.target.checked })
+												updatePhoto.mutate({
+													id: p.id,
+													featured: e.target.checked,
+												})
 											}
 										/>
 										featured
@@ -200,7 +215,8 @@ export function EventPhotoManager() {
 									<button
 										type="button"
 										onClick={() => {
-											if (confirm('Delete this photo?')) deletePhoto.mutate({ id: p.id });
+											if (confirm('Delete this photo?'))
+												deletePhoto.mutate({ id: p.id });
 										}}
 										className="text-red-400 hover:underline"
 									>

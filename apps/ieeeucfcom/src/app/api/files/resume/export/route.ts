@@ -131,7 +131,10 @@ export async function GET(request: Request): Promise<Response> {
 	const missing: string[] = [];
 	for (const entry of selected) {
 		try {
-			files.push({ entry, bytes: await storage.getBytes({ key: entry.resumeKey, bucket: 'private' }) });
+			files.push({
+				entry,
+				bytes: await storage.getBytes({ key: entry.resumeKey, bucket: 'private' }),
+			});
 		} catch {
 			missing.push(entry.path);
 		}
@@ -156,12 +159,17 @@ async function buildCount(
 	filter: ResumeExportFilter,
 ) {
 	const heads = await Promise.all(
-		selected.map((s) => storage.head({ key: s.resumeKey, bucket: 'private' }).catch(() => null)),
+		selected.map((s) =>
+			storage.head({ key: s.resumeKey, bucket: 'private' }).catch(() => null),
+		),
 	);
 
 	let totalBytes = 0;
 	let missing = 0;
-	const byYear: Record<string, { count: number; bytes: number; byMajor: Record<string, number> }> = {};
+	const byYear: Record<
+		string,
+		{ count: number; bytes: number; byMajor: Record<string, number> }
+	> = {};
 
 	selected.forEach((s, i) => {
 		const size = heads[i]?.size ?? 0;
@@ -220,7 +228,11 @@ function manifestCsv(entries: SelectedResume[]): string {
 	return [header, ...lines].join('\r\n') + '\r\n';
 }
 
-function summaryText(entries: SelectedResume[], missing: string[], filter: ResumeExportFilter): string {
+function summaryText(
+	entries: SelectedResume[],
+	missing: string[],
+	filter: ResumeExportFilter,
+): string {
 	const lines: string[] = [
 		'WATTS résumé export',
 		`generated: ${new Date().toISOString()}`,
@@ -269,7 +281,14 @@ function zipResponse(
 	for (const f of files) archive.append(f.bytes, { name: f.entry.path });
 
 	archive.append(manifestCsv(files.map((f) => f.entry)), { name: 'index.csv' });
-	archive.append(summaryText(files.map((f) => f.entry), missing, filter), { name: '_summary.txt' });
+	archive.append(
+		summaryText(
+			files.map((f) => f.entry),
+			missing,
+			filter,
+		),
+		{ name: '_summary.txt' },
+	);
 	if (missing.length > 0) {
 		archive.append(
 			`These résumés are in the database but their files were not found in storage:\n\n${missing.join(
@@ -411,9 +430,21 @@ function drawToc(
 
 	page().drawText('Contents', { x: 56, y, size: 20, font: bold });
 	y -= 22;
-	page().drawText(winAnsi(describeResumeFilter(filter)), { x: 56, y, size: 10, font, color: grey });
+	page().drawText(winAnsi(describeResumeFilter(filter)), {
+		x: 56,
+		y,
+		size: 10,
+		font,
+		color: grey,
+	});
 	y -= 14;
-	page().drawText(`${count} résumé${count === 1 ? '' : 's'}`, { x: 56, y, size: 10, font, color: grey });
+	page().drawText(`${count} résumé${count === 1 ? '' : 's'}`, {
+		x: 56,
+		y,
+		size: 10,
+		font,
+		color: grey,
+	});
 	y -= 22;
 
 	for (const line of lines) {

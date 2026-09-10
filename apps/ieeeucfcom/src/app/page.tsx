@@ -65,37 +65,37 @@ export default function Home() {
 
 	return (
 		<div>
-			<div className="flex flex-col max-w-screen overflow-x-hidden">
+			<div className="flex max-w-screen flex-col overflow-x-hidden">
 				<div className="relative w-full">
-					<div className="flex flex-col w-full relative 2xl:h-[140vh] h-[165vh] lg:h-[150vh] items-center [background:radial-gradient(125%_125%_at_50%_10%,#0c0a09_40%,#FFC72C_100%)]">
-						<div className="px-5 w-full">
+					<div className="relative flex h-[165vh] w-full flex-col items-center [background:radial-gradient(125%_125%_at_50%_10%,#0c0a09_40%,#FFC72C_100%)] lg:h-[150vh] 2xl:h-[140vh]">
+						<div className="w-full px-5">
 							<Navbar />
 
-							<div className="flex flex-row gap-x-[3vw] justify-center self-center flex-wrap md:my-30 lg:my-0 float">
-								<div className="flex flex-col items-start text-center xl:text-left justify-center self-center">
-									<div className="max-w-full my-8">
-										<div className="font-[display-font] text-[var(--ieee-bright-yellow)] text-7xl lg:text-8xl">
+							<div className="float flex flex-row flex-wrap justify-center gap-x-[3vw] self-center md:my-30 lg:my-0">
+								<div className="flex flex-col items-start justify-center self-center text-center xl:text-left">
+									<div className="my-8 max-w-full">
+										<div className="font-[display-font] text-7xl text-[var(--ieee-bright-yellow)] lg:text-8xl">
 											IEEE @ UCF
 										</div>
-										<div className="font-[subheading-font] text-white text-4xl lg:text-5xl">
+										<div className="font-[subheading-font] text-4xl text-white lg:text-5xl">
 											STUDENT CHAPTER
 										</div>
-										<div className="text-white font-[body-italic-font] text-sm md:text-xl lg:text-2xl my-3 flex flex-wrap w-fit">
-											<div className="typewriter flex flex-wrap whitespace-normal break-words">
+										<div className="my-3 flex w-fit flex-wrap font-[body-italic-font] text-sm text-white md:text-xl lg:text-2xl">
+											<div className="typewriter flex flex-wrap break-words whitespace-normal">
 												From circuits to embedded systems, we engineer the
 												future
 											</div>
 										</div>
 									</div>
 
-									<div className="relative group cursor-pointer self-center xl:self-start">
-										<div className="absolute -inset-1 bg-gradient-to-r from-[var(--ieee-bright-yellow)] to-[var(--ieee-bright-yellow)]  blur opacity-25 group-hover:opacity-100 transition duration-1000 group-hover:duration-200"></div>
+									<div className="group relative cursor-pointer self-center xl:self-start">
+										<div className="absolute -inset-1 bg-gradient-to-r from-[var(--ieee-bright-yellow)] to-[var(--ieee-bright-yellow)] opacity-25 blur transition duration-1000 group-hover:opacity-100 group-hover:duration-200"></div>
 
-										<div className="relative px-12 py-5 bg-[#0c0a09] ring-1 rounded-sm ring-gray-900/5 leading-none flex items-top justify-start space-x-6">
+										<div className="items-top relative flex justify-start space-x-6 rounded-sm bg-[#0c0a09] px-12 py-5 leading-none ring-1 ring-gray-900/5">
 											<div className="space-y-2">
 												<Link href="/about">
-													<p className="text-white text-xl font-[body-italic-font]">
-                            LEARN MORE!
+													<p className="font-[body-italic-font] text-xl text-white">
+														LEARN MORE!
 													</p>
 												</Link>
 											</div>
@@ -104,7 +104,7 @@ export default function Home() {
 								</div>
 								<div>
 									<Image
-										className="object-contain mt-10 h-60 w-auto lg:h-110 lg:w-9/12 place-self-center"
+										className="mt-10 h-60 w-auto place-self-center object-contain lg:h-110 lg:w-9/12"
 										src="/iconography/ieeeucfsymbol.png"
 										alt="IEEE UCF Logo"
 										width={3000}
@@ -113,7 +113,7 @@ export default function Home() {
 								</div>
 							</div>
 
-							<div className="absolute w-full left-0 particles-container">
+							<div className="particles-container absolute left-0 w-full">
 								<div className="particle"></div>
 								<div className="particle"></div>
 								<div className="particle"></div>
@@ -123,12 +123,12 @@ export default function Home() {
 							</div>
 						</div>
 					</div>
-					<div className="relative -translate-y-20 w-full overflow-hidden leading-none">
+					<div className="relative w-full -translate-y-20 overflow-hidden leading-none">
 						<svg
 							xmlns="http://www.w3.org/2000/svg"
 							viewBox="0 0 1200 120"
 							preserveAspectRatio="none"
-							className="w-full h-20"
+							className="h-20 w-full"
 						>
 							<defs>
 								<radialGradient id="bg-gradient" cx="40%" cy="120%" r="125%">
@@ -146,10 +146,10 @@ export default function Home() {
 					</div>
 				</div>
 
-				<div className="[background:radial-gradient(125%_125%_at_50%_10%,#3d3110_40%,#000000_100%)] -translate-y-20 ">
+				<div className="-translate-y-20 [background:radial-gradient(125%_125%_at_50%_10%,#3d3110_40%,#000000_100%)]">
 					<div
 						ref={carouselRef}
-						className="relative z-10 -translate-y-1/2 flex justify-center w-full"
+						className="relative z-10 flex w-full -translate-y-1/2 justify-center"
 					>
 						<Carousel
 							opts={{ align: 'center' }}
@@ -160,26 +160,26 @@ export default function Home() {
 								{carouselList.map((item, index) => (
 									<CarouselItem
 										key={index}
-										className="flex basis-xs md:basis-3/5 lg:basis-5/11 xl:basis-5/12 2xl:basis-1/3 justify-center items-center cursor-grab py-3"
+										className="flex basis-xs cursor-grab items-center justify-center py-3 md:basis-3/5 lg:basis-5/11 xl:basis-5/12 2xl:basis-1/3"
 									>
 										<div className="p-2">
-											<div className="cursor-grab group relative w-full overflow-hidden p-[3px] bg-transparent transition-transform hover:scale-102 rounded-sm">
+											<div className="group relative w-full cursor-grab overflow-hidden rounded-sm bg-transparent p-[3px] transition-transform hover:scale-102">
 												<div
-													className="animated-border absolute inset-0 p-20 bg-[conic-gradient(var(--ieee-bright-yellow)_20deg,transparent_120deg)] transition-all duration-300 animate-spin -z-10 rounded-sm"
+													className="animated-border absolute inset-0 -z-10 animate-spin rounded-sm bg-[conic-gradient(var(--ieee-bright-yellow)_20deg,transparent_120deg)] p-20 transition-all duration-300"
 													style={{ animationDuration: '6s' }}
 												/>
-												<Card className="relative z-10 p-0 rounded-sm border-none w-65 h-90 sm:w-70 sm:h-70 md:h-85 md:w-85 xl:w-90 xl:h-90 transition shadow-md overflow-hidden group">
-													<CardContent className="flex flex-col justify-end h-full w-full p-0 ">
+												<Card className="group relative z-10 h-90 w-65 overflow-hidden rounded-sm border-none p-0 shadow-md transition sm:h-70 sm:w-70 md:h-85 md:w-85 xl:h-90 xl:w-90">
+													<CardContent className="flex h-full w-full flex-col justify-end p-0">
 														<div className="relative h-full w-full">
 															<Image
 																src={item.photo}
 																alt="Photo"
 																fill
-																className="object-cover object-bottom rounded-none"
+																className="rounded-none object-cover object-bottom"
 																priority
 															/>
-															<div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
-															<span className="absolute w-full h-fit bottom-0 left-1/2 -translate-x-1/2 p-2 text-white text-lg font-[body-font] bg-black/60 ">
+															<div className="pointer-events-none absolute inset-0 bg-black/40 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+															<span className="absolute bottom-0 left-1/2 h-fit w-full -translate-x-1/2 bg-black/60 p-2 font-[body-font] text-lg text-white">
 																{item.feature}
 															</span>
 														</div>
@@ -194,12 +194,12 @@ export default function Home() {
 					</div>
 				</div>
 
-				<div className="relative -translate-y-40 w-full overflow-hidden leading-none">
+				<div className="relative w-full -translate-y-40 overflow-hidden leading-none">
 					<svg
 						xmlns="http://www.w3.org/2000/svg"
 						viewBox="0 0 1200 120"
 						preserveAspectRatio="none"
-						className="w-full h-20"
+						className="h-20 w-full"
 					>
 						<defs>
 							<radialGradient id="bg-gradient2" cx="40%" cy="110%" r="125%">
@@ -216,13 +216,13 @@ export default function Home() {
 					</svg>
 				</div>
 
-				<div className="flex flex-col w-full p-5 bg-[#0d0a03] -mt-40">
-					<div className="font-[heading-font] text-[var(--ieee-bright-yellow)] text-5xl lg:text-6xl text-center my-5">
+				<div className="-mt-40 flex w-full flex-col bg-[#0d0a03] p-5">
+					<div className="my-5 text-center font-[heading-font] text-5xl text-[var(--ieee-bright-yellow)] lg:text-6xl">
 						UPCOMING EVENTS
 					</div>
 
 					<div ref={eventsRef}>
-						<div className="p-1 sm:p-9 flex flex-row items-center flex-wrap">
+						<div className="flex flex-row flex-wrap items-center p-1 sm:p-9">
 							<Timer />
 						</div>
 					</div>
