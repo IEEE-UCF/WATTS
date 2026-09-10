@@ -26,8 +26,9 @@ export async function middleware(request: NextRequest) {
 	const officerAdminRoutes = ['/admin/members'];
 	const isOfficerAdminRoute = officerAdminRoutes.some((route) => pathname.startsWith(route));
 
-	// Admin-only routes (everything else under /admin, plus /test)
-	const adminRoutes = ['/admin', '/test'];
+	// Admin-only routes (everything else under /admin, plus /test and the /dev
+	// component gallery)
+	const adminRoutes = ['/admin', '/test', '/dev'];
 	const isAdminRoute =
 		!capabilityRoute &&
 		!isOfficerAdminRoute &&

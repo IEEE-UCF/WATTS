@@ -23,6 +23,13 @@ file is about how changes get from your machine into `main`.
   Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>
   ```
 
+## UI components
+
+- A new reusable component under `apps/ieeeucfcom/src/components/` (or a new
+  `@watts/ui` primitive) ships with a gallery entry: metadata in
+  `apps/ieeeucfcom/src/dev/registry/meta.ts` and a preview in `renders.tsx`. Run
+  `pnpm dev` and check `/dev` (admin-gated; dev-only). Keep the two files in sync.
+
 ## Pull requests
 
 - One logical change per PR. Split unrelated cleanup into its own PR.
