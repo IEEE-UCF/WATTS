@@ -7,21 +7,7 @@ import { cn } from './cn';
 import { Button } from './button';
 import { Sheet, SheetContent } from './sheet';
 import { TooltipProvider } from './tooltip';
-
-const useIsMobile = () => {
-	const [isMobile, setIsMobile] = React.useState(false);
-
-	React.useEffect(() => {
-		const checkIsMobile = () => {
-			setIsMobile(window.innerWidth < 768);
-		};
-		checkIsMobile();
-		window.addEventListener('resize', checkIsMobile);
-		return () => window.removeEventListener('resize', checkIsMobile);
-	}, []);
-
-	return isMobile;
-};
+import { useIsMobile } from './use-mobile';
 
 const SIDEBAR_COOKIE_NAME = 'sidebar:state';
 const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7;

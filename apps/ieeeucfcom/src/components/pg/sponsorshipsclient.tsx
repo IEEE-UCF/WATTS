@@ -1,9 +1,9 @@
 'use client';
 
 import Image from 'next/image';
-import { useEffect, useState } from 'react';
 import Autoplay from 'embla-carousel-autoplay';
 import { Carousel, CarouselContent, CarouselItem } from '@watts/ui/carousel';
+import { useIsMobile } from '@watts/ui/use-mobile';
 
 // ---------------------------------------------------------------------------
 // Hardcoded sponsor list — swap logos/names/URLs as needed
@@ -87,14 +87,7 @@ const GlowButton: React.FC<{ children: React.ReactNode }> = ({ children }) => (
 );
 
 export const PDFViewer: React.FC = () => {
-	const [isMobile, setIsMobile] = useState(false);
-
-	useEffect(() => {
-		const check = () => setIsMobile(window.innerWidth < 768);
-		check();
-		window.addEventListener('resize', check);
-		return () => window.removeEventListener('resize', check);
-	}, []);
+	const isMobile = useIsMobile();
 
 	// ── Mobile: card with open / download buttons ───────────────────────────
 	if (isMobile) {

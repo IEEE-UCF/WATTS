@@ -22,7 +22,8 @@
     "./separator": "./src/separator.tsx",
     "./sheet": "./src/sheet.tsx",
     "./sidebar": "./src/sidebar.tsx",
-    "./tooltip": "./src/tooltip.tsx"
+    "./tooltip": "./src/tooltip.tsx",
+    "./use-mobile": "./src/use-mobile.ts"
   },
   "dependencies": {
     "@radix-ui/react-accordion": "^1.2.12",
