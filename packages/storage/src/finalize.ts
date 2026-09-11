@@ -227,8 +227,8 @@ export async function authorizeUpload(
 	}
 
 	// event-photo
-	if (!session.user.administrator) {
-		throw new UploadError('FORBIDDEN', 'Administrator privileges required');
+	if (!hasCapability(session.user, 'manage_event_photos')) {
+		throw new UploadError('FORBIDDEN', 'The manage_event_photos capability is required');
 	}
 	if (!intent.eventId) {
 		throw new UploadError('BAD_REQUEST', 'eventId is required');
