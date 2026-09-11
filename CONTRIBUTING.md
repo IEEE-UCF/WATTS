@@ -29,6 +29,10 @@ file is about how changes get from your machine into `main`.
   `@watts/ui` primitive) ships with a gallery entry: metadata in
   `apps/ieeeucfcom/src/dev/registry/meta.ts` and a preview in `renders.tsx`. Run
   `pnpm dev` and check `/dev` (admin-gated; dev-only). Keep the two files in sync.
+- `pnpm gen:component <name> --shared|--app` scaffolds the file and both registry
+  entries for you. See
+  [`apps/ieeeucfcom/docs/styling/ADDING-COMPONENTS.md`](apps/ieeeucfcom/docs/styling/ADDING-COMPONENTS.md)
+  for where a new component should live and the duplication patterns to avoid.
 
 ## Pull requests
 
