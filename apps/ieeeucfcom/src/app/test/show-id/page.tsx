@@ -1,7 +1,7 @@
 'use client';
 import React from 'react';
 import { trpc } from '@/lib/trpc/client';
-import MemberQRCode from '@/components/pg/memberqrcodegen';
+import { MemberQRCode } from '@/components/qr/member-qr-code';
 // import { Navbar } from '@/components/navbar';
 
 const ShowIdPage = () => {
@@ -48,6 +48,8 @@ const ShowIdPage = () => {
 						<MemberQRCode
 							memberInfo={memberInfoString}
 							logoUrl="/iconography/ieeeucficon.png"
+							variant="plain"
+							errorCorrectionLevel="L"
 						/>
 						<div className="mt-4 text-sm text-gray-600">
 							<p>
@@ -63,6 +65,8 @@ const ShowIdPage = () => {
 							memberInfo=""
 							logoUrl="/iconography/ieeeucficon.png"
 							logoSize={40}
+							variant="plain"
+							errorCorrectionLevel="L"
 						/>
 						<div className="mt-4 text-sm text-gray-600">
 							<p>

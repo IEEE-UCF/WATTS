@@ -18,7 +18,7 @@
  */
 'use client';
 import React from 'react';
-import MemberQRCode from '@/components/pg/memberqrcode-gen';
+import { MemberQRCode } from '@/components/qr/member-qr-code';
 import { trpc } from '@/lib/trpc/client';
 
 const TestPage = () => {
@@ -26,6 +26,13 @@ const TestPage = () => {
 	// SAMPLE DATA
 	// ============================================
 	const { data: session, isLoading, isError } = trpc.auth.getSession.useQuery();
+	// MemberQRCode itself does no data fetching — fetch the profile here so we can
+	// still pass a personalized "{firstName}'s QR Code" title, matching the
+	// behavior the old pg/memberqrcode-gen.tsx had baked in.
+	const { data: memberProfile } = trpc.member.getMyProfile.useQuery(undefined, {
+		enabled: !!session?.user?.discordId,
+		retry: false,
+	});
 
 	if (isLoading) {
 		return (
@@ -119,6 +126,7 @@ const TestPage = () => {
 						<MemberQRCode
 							memberInfo={memberInfoString}
 							logoUrl="/iconography/ieeeucficon.png"
+							title={memberProfile?.firstName ?? 'Member'}
 						/>
 
 						{/* Display the raw data being encoded for debugging */}
@@ -156,6 +164,7 @@ const TestPage = () => {
 							memberInfo=""
 							logoUrl="/iconography/ieeeucficon.png"
 							logoSize={40}
+							title={memberProfile?.firstName ?? 'Member'}
 						/>
 
 						{/* Indicates this is intentionally blank for testing */}

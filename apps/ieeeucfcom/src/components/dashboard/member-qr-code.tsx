@@ -18,7 +18,7 @@
  */
 'use client';
 import React from 'react';
-import MemberQRCode from '@/components/pg/memberqrcode-gen';
+import { MemberQRCode } from '@/components/qr/member-qr-code';
 import { trpc } from '@/lib/trpc/client';
 import { Card } from '@watts/ui/card';
 
@@ -27,6 +27,13 @@ export const Member_QR_Code = () => {
 	// SAMPLE DATA
 	// ============================================
 	const { data: session, isLoading, isError } = trpc.auth.getSession.useQuery();
+	// MemberQRCode itself does no data fetching — fetch the profile here so we can
+	// still pass a personalized "{firstName}'s QR Code" title, matching the
+	// behavior the old pg/memberqrcode-gen.tsx had baked in.
+	const { data: memberProfile } = trpc.member.getMyProfile.useQuery(undefined, {
+		enabled: !!session?.user,
+		retry: false,
+	});
 
 	if (isLoading) {
 		return (
@@ -85,7 +92,11 @@ export const Member_QR_Code = () => {
 
 	return (
 		<Card className="mx-auto flex max-w-4xl flex-col rounded-xl border-2 bg-black px-4 py-6 text-card-foreground shadow-[0_0_20px_rgba(250,204,21,0.5)] shadow-sm">
-			<MemberQRCode memberInfo={memberInfoString} logoUrl="/iconography/ieeeucficon.png" />
+			<MemberQRCode
+				memberInfo={memberInfoString}
+				logoUrl="/iconography/ieeeucficon.png"
+				title={memberProfile?.firstName ?? 'Member'}
+			/>
 		</Card>
 		// </div>
 	);

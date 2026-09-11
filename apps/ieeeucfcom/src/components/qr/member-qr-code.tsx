@@ -1,20 +1,44 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import QRCode from 'qrcode';
+import { Card, CardTitle } from '@watts/ui/card';
 
-interface MemberQRCodeProps {
+/**
+ * Merged from two near-identical components that had drifted apart:
+ * pg/memberqrcode-gen.tsx (Card wrapper, error correction 'H', fetched its own
+ * profile via tRPC for the heading) and pg/memberqrcodegen.tsx (plain wrapper,
+ * error correction 'L', no data fetching). Both did byte-identical canvas/logo-
+ * overlay work — that part is kept verbatim below. The tRPC/session dependency
+ * is intentionally NOT in this component: a QR-rendering primitive shouldn't own
+ * data fetching, so callers that want a personalized heading pass `title`
+ * themselves (see components/dashboard/member-qr-code.tsx).
+ */
+interface MemberQrCodeProps {
 	memberInfo: string;
 	size?: number;
 	logoUrl?: string;
 	logoSize?: number;
+	/** QR error correction level. The two source components disagreed (H vs L) —
+	 * defaults to 'H' (better logo-overlay tolerance); pass 'L' to match the old
+	 * memberqrcodegen.tsx behavior. */
+	errorCorrectionLevel?: 'L' | 'M' | 'Q' | 'H';
+	/** 'card' = @watts/ui Card wrapper, dark text (was memberqrcode-gen.tsx).
+	 * 'plain' = bare div, light text (was memberqrcodegen.tsx). Default 'card'. */
+	variant?: 'card' | 'plain';
+	/** Personalized name for the 'card' variant's heading, e.g. "Dawn's QR Code".
+	 * Ignored by the 'plain' variant, which always reads "Member QR Code". */
+	title?: string;
 }
 
-const MemberQRCode: React.FC<MemberQRCodeProps> = ({
+export function MemberQRCode({
 	memberInfo,
 	size = 256,
 	logoUrl,
 	logoSize = Math.floor(size * 0.2), // Default to 20% of QR code size
-}) => {
+	errorCorrectionLevel = 'H',
+	variant = 'card',
+	title = 'Member',
+}: MemberQrCodeProps) {
 	const [qrCodeUrl, setQrCodeUrl] = useState<string>('');
 	const [loading, setLoading] = useState<boolean>(true);
 	const [error, setError] = useState<string>('');
@@ -27,7 +51,7 @@ const MemberQRCode: React.FC<MemberQRCodeProps> = ({
 			// Generate base QR code
 			const qrDataUrl = await QRCode.toDataURL(text, {
 				width: size,
-				errorCorrectionLevel: 'L',
+				errorCorrectionLevel,
 				margin: 2,
 			});
 
@@ -111,7 +135,7 @@ const MemberQRCode: React.FC<MemberQRCodeProps> = ({
 		if (memberInfo) {
 			generateQRCode(memberInfo);
 		}
-	}, [memberInfo, size, logoUrl, logoSize]);
+	}, [memberInfo, size, logoUrl, logoSize, errorCorrectionLevel]);
 
 	if (loading) {
 		return <div className="flex justify-center p-4">Generating QR Code...</div>;
@@ -121,21 +145,32 @@ const MemberQRCode: React.FC<MemberQRCodeProps> = ({
 		return <div className="p-4 text-red-500">Error: {error}</div>;
 	}
 
-	// Render the QR code image
-	return (
-		<div className="flex flex-col items-center p-4">
-			<h3 className="mb-2 text-lg font-semibold">Member QR Code</h3>
-			{qrCodeUrl && (
-				<img
-					src={qrCodeUrl}
-					alt="Member QR Code"
-					className="rounded-lg border shadow-md"
-					data-testid="qr-code-image"
-				/>
-			)}
-			<p className="mt-2 text-sm text-gray-600">Scan to access member info</p>
-		</div>
+	const qrImage = qrCodeUrl && (
+		<img
+			src={qrCodeUrl}
+			alt="Member QR Code"
+			className="rounded-lg border shadow-md"
+			data-testid="qr-code-image"
+		/>
 	);
-};
 
-export default MemberQRCode;
+	if (variant === 'plain') {
+		return (
+			<div className="flex flex-col items-center p-4">
+				<h3 className="mb-2 text-lg font-semibold">Member QR Code</h3>
+				{qrImage}
+				<p className="mt-2 text-sm text-gray-600">Scan to access member info</p>
+			</div>
+		);
+	}
+
+	return (
+		<Card>
+			<CardTitle className="font-[subheading-font] text-lg text-white">
+				{title}&apos;s QR Code
+			</CardTitle>
+			{qrImage}
+			<p className="mb-4 text-gray-300">Scan to access member info</p>
+		</Card>
+	);
+}
