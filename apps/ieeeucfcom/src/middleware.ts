@@ -28,7 +28,7 @@ export async function middleware(request: NextRequest) {
 
 	// Admin-only routes (everything else under /admin, plus /test and the /dev
 	// component gallery)
-	const adminRoutes = ['/admin', '/test', '/dev'];
+	const adminRoutes = ['/admin', '/test', '/dev', '/style-guide', '/component-showcase'];
 	const isAdminRoute =
 		!capabilityRoute &&
 		!isOfficerAdminRoute &&

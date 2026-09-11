@@ -219,7 +219,7 @@ export default function EventSidebar() {
 									}}
 								>
 									<div
-										className="pointer-events-none absolute inset-0 z-0 scale-95 animate-spin animated-border rounded-sm bg-[conic-gradient(var(--ieee-bright-yellow)_20deg,transparent_120deg)] opacity-0 transition-all duration-300 group-hover:scale-100 group-hover:opacity-100"
+										className="animated-border pointer-events-none absolute inset-0 z-0 scale-95 animate-spin rounded-sm bg-[conic-gradient(var(--ieee-bright-yellow)_20deg,transparent_120deg)] opacity-0 transition-all duration-300 group-hover:scale-100 group-hover:opacity-100"
 										style={{
 											animationPlayState: 'paused',
 											animationDuration: '6s',

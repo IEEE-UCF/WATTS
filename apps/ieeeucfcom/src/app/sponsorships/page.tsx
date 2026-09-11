@@ -29,10 +29,10 @@ export default function SponsorshipsPage() {
 					<Navbar />
 				</div>
 
-				<div className="absolute inset-0 top-0 left-0 z-2 h-full w-full animated-background items-center bg-gradient-to-r px-5 [background:radial-gradient(125%_125%_at_50%_10%,#0c0a09_5%,transparent_100%)]" />
+				<div className="animated-background absolute inset-0 top-0 left-0 z-2 h-full w-full items-center bg-gradient-to-r px-5 [background:radial-gradient(125%_125%_at_50%_10%,#0c0a09_5%,transparent_100%)]" />
 
 				<div className="absolute z-3 my-20 flex w-screen flex-row justify-center p-40">
-					<div className="flex float flex-col items-center justify-center gap-y-5 self-center text-center">
+					<div className="float flex flex-col items-center justify-center gap-y-5 self-center text-center">
 						<div className="font-[heading-font] text-5xl text-[var(--ieee-bright-yellow)] sm:text-6xl">
 							SPONSORSHIPS
 						</div>

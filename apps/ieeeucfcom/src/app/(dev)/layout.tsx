@@ -21,7 +21,7 @@ export default function DevLayout({ children }: { children: React.ReactNode }) {
 	return (
 		<div className="flex min-h-dvh bg-background text-foreground">
 			<aside className="w-64 shrink-0 overflow-y-auto border-r border-border p-4">
-				<Link href="/dev" className="block t-h5">
+				<Link href="/dev" className="t-h5 block">
 					Component gallery
 				</Link>
 				<p className="mt-1 text-xs text-muted-foreground">dev only · not in production</p>

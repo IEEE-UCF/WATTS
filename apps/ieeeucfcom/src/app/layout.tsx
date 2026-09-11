@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
 import './globals.css';
-import { openSans } from './fonts';
 import { Providers } from './providers';
 
 const siteUrl = process.env.NEXTAUTH_URL ?? 'https://ieeeucf.com';
@@ -21,7 +20,7 @@ export default function RootLayout({
 	children: React.ReactNode;
 }>) {
 	return (
-		<html lang="en" className={openSans.variable}>
+		<html lang="en" className="dark">
 			<body>
 				<Providers>{children}</Providers>
 			</body>

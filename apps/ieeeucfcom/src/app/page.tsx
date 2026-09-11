@@ -71,7 +71,7 @@ export default function Home() {
 						<div className="w-full px-5">
 							<Navbar />
 
-							<div className="flex float flex-row flex-wrap justify-center gap-x-[3vw] self-center md:my-30 lg:my-0">
+							<div className="float flex flex-row flex-wrap justify-center gap-x-[3vw] self-center md:my-30 lg:my-0">
 								<div className="flex flex-col items-start justify-center self-center text-center xl:text-left">
 									<div className="my-8 max-w-full">
 										<div className="font-[display-font] text-7xl text-[var(--ieee-bright-yellow)] lg:text-8xl">
@@ -165,7 +165,7 @@ export default function Home() {
 										<div className="p-2">
 											<div className="group relative w-full cursor-grab overflow-hidden rounded-sm bg-transparent p-[3px] transition-transform hover:scale-102">
 												<div
-													className="absolute inset-0 -z-10 animate-spin animated-border rounded-sm bg-[conic-gradient(var(--ieee-bright-yellow)_20deg,transparent_120deg)] p-20 transition-all duration-300"
+													className="animated-border absolute inset-0 -z-10 animate-spin rounded-sm bg-[conic-gradient(var(--ieee-bright-yellow)_20deg,transparent_120deg)] p-20 transition-all duration-300"
 													style={{ animationDuration: '6s' }}
 												/>
 												<Card className="group relative z-10 h-90 w-65 overflow-hidden rounded-sm border-none p-0 shadow-md transition sm:h-70 sm:w-70 md:h-85 md:w-85 xl:h-90 xl:w-90">
