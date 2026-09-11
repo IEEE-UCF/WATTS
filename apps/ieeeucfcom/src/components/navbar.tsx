@@ -65,19 +65,9 @@ const Navbar: React.FC = () => {
 						<Link
 							key={index}
 							href={route.href}
-							className={
-								route.title === 'CONNECT'
-									? 'group relative my-18 inline-flex h-fit w-fit items-center rounded-sm bg-[var(--ieee-dark-yellow)] py-1 font-[heading-font] text-base text-white transition sm:px-1 md:px-2 lg:px-4'
-									: 'inline-flex items-center font-[body-font] text-sm text-white transition hover:text-[var(--ieee-dark-yellow)] sm:px-1.5 md:px-3 lg:px-5'
-							}
+							className="inline-flex items-center font-[body-font] text-sm text-white transition hover:text-[var(--ieee-dark-yellow)] sm:px-1.5 md:px-3 lg:px-5"
 						>
-							{route.title === 'CONNECT' && (
-								<>
-									<div className="absolute inset-0 rounded-lg bg-gradient-to-r from-[var(--ieee-bright-yellow)] to-[var(--ieee-bright-yellow)] opacity-25 blur transition duration-1000 group-hover:opacity-100 group-hover:duration-200"></div>
-									<div className="relative rounded-lg p-2">{route.title}</div>
-								</>
-							)}
-							{route.title !== 'CONNECT' && route.title}
+							{route.title}
 						</Link>
 					))}
 

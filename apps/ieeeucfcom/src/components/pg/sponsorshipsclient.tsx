@@ -4,6 +4,7 @@ import Image from 'next/image';
 import Autoplay from 'embla-carousel-autoplay';
 import { Carousel, CarouselContent, CarouselItem } from '@watts/ui/carousel';
 import { useIsMobile } from '@watts/ui/use-mobile';
+import { GlowButton } from '@/components/ui/glow-button';
 
 // ---------------------------------------------------------------------------
 // Hardcoded sponsor list — swap logos/names/URLs as needed
@@ -76,16 +77,6 @@ export const SponsorsCarousel: React.FC = () => (
 // ---------------------------------------------------------------------------
 const PDF_PATH = '/sponsors/IEEE_UCF_Sponsorship_Packet_2026_to_2027.pdf';
 
-// Reusable glowing button shell
-const GlowButton: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-	<div className="group relative cursor-pointer">
-		<div className="absolute -inset-1 rounded-lg bg-gradient-to-r from-[var(--ieee-bright-yellow)] to-[var(--ieee-bright-yellow)] opacity-25 blur transition duration-1000 group-hover:opacity-100 group-hover:duration-200" />
-		<div className="relative flex items-center justify-center space-x-2 rounded-lg bg-[#0c0a09] px-7 py-3 leading-none ring-1 ring-gray-900/5">
-			{children}
-		</div>
-	</div>
-);
-
 export const PDFViewer: React.FC = () => {
 	const isMobile = useIsMobile();
 
@@ -122,7 +113,7 @@ export const PDFViewer: React.FC = () => {
 				</div>
 				<div className="flex w-full max-w-xs flex-row gap-4">
 					<a href={PDF_PATH} target="_blank" rel="noopener noreferrer" className="flex-1">
-						<GlowButton>
+						<GlowButton innerClassName="px-7 py-3">
 							<span className="font-[heading-font] text-sm text-white">OPEN PDF</span>
 						</GlowButton>
 					</a>
@@ -131,7 +122,7 @@ export const PDFViewer: React.FC = () => {
 						download="IEEE-UCF-Sponsorship-Packet-2026-2027.pdf"
 						className="flex-1"
 					>
-						<GlowButton>
+						<GlowButton innerClassName="px-7 py-3">
 							<span className="font-[heading-font] text-sm text-white">DOWNLOAD</span>
 						</GlowButton>
 					</a>
@@ -146,12 +137,12 @@ export const PDFViewer: React.FC = () => {
 			<iframe src={PDF_PATH} width="100%" height="700px" />
 			<div className="my-10 flex flex-row flex-wrap items-center gap-x-5 lg:gap-x-10">
 				<a href={PDF_PATH} download="IEEE-UCF-Sponsorship-Packet-2026-2027.pdf">
-					<GlowButton>
+					<GlowButton innerClassName="px-7 py-3">
 						<span className="text-sm font-bold text-white">DOWNLOAD</span>
 					</GlowButton>
 				</a>
 				<a href={PDF_PATH} target="_blank" rel="noopener noreferrer">
-					<GlowButton>
+					<GlowButton innerClassName="px-7 py-3">
 						<span className="text-sm font-bold text-white">OPEN IN NEW TAB</span>
 					</GlowButton>
 				</a>

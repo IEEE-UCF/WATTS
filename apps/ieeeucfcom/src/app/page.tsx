@@ -6,6 +6,7 @@ import { useEffect, useRef } from 'react';
 import { Navbar } from '@/components/navbar';
 import { Footer } from '@/components/footer';
 import { Timer } from '@/components/timer';
+import { GlowButton } from '@/components/ui/glow-button';
 
 import Autoplay from 'embla-carousel-autoplay';
 import { Carousel, CarouselContent, CarouselItem } from '@watts/ui/carousel';
@@ -88,19 +89,16 @@ export default function Home() {
 										</div>
 									</div>
 
-									<div className="group relative cursor-pointer self-center xl:self-start">
-										<div className="absolute -inset-1 bg-gradient-to-r from-[var(--ieee-bright-yellow)] to-[var(--ieee-bright-yellow)] opacity-25 blur transition duration-1000 group-hover:opacity-100 group-hover:duration-200"></div>
-
-										<div className="relative flex items-start justify-start space-x-6 rounded-sm bg-[#0c0a09] px-12 py-5 leading-none ring-1 ring-gray-900/5">
-											<div className="space-y-2">
-												<Link href="/about">
-													<p className="font-[body-italic-font] text-xl text-white">
-														LEARN MORE!
-													</p>
-												</Link>
-											</div>
-										</div>
-									</div>
+									<GlowButton
+										className="self-center xl:self-start"
+										innerClassName="justify-start rounded-sm px-12 py-5"
+									>
+										<Link href="/about">
+											<p className="font-[body-italic-font] text-xl text-white">
+												LEARN MORE!
+											</p>
+										</Link>
+									</GlowButton>
 								</div>
 								<div>
 									<Image

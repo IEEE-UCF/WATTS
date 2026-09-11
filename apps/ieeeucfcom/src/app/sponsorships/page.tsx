@@ -4,6 +4,7 @@ import { Navbar } from '@/components/navbar';
 import { Footer } from '@/components/footer';
 import { Metadata } from 'next';
 import { MailTo, SponsorsCarousel, PDFViewer } from '@/components/pg/sponsorshipsclient';
+import { GlowButton } from '@/components/ui/glow-button';
 
 const pageTitle = 'Sponsorships | IEEE UCF';
 const pageDescription =
@@ -41,20 +42,17 @@ export default function SponsorshipsPage() {
 							about supporting IEEE @ UCF, view the sponsorship package below or click
 							the button to send a direct email.
 						</div>
-						<div className="group relative cursor-pointer">
-							<div className="absolute -inset-1 rounded-lg bg-gradient-to-r from-[var(--ieee-bright-yellow)] to-[var(--ieee-bright-yellow)] opacity-25 blur transition duration-1000 group-hover:opacity-100 group-hover:duration-200" />
-							<div className="relative flex items-start justify-start space-x-6 rounded-lg bg-[#0c0a09] px-10 py-7 leading-none ring-1 ring-gray-900/5">
-								<div className="space-y-2 text-2xl font-bold text-white">
-									<MailTo
-										email="ieee@ucf.edu"
-										subject="Sponsorship Inquiry"
-										body="Hello IEEE at UCF,"
-									>
-										INQUIRE ABOUT SPONSORING
-									</MailTo>
-								</div>
+						<GlowButton innerClassName="justify-start px-10 py-7">
+							<div className="text-2xl font-bold text-white">
+								<MailTo
+									email="ieee@ucf.edu"
+									subject="Sponsorship Inquiry"
+									body="Hello IEEE at UCF,"
+								>
+									INQUIRE ABOUT SPONSORING
+								</MailTo>
 							</div>
-						</div>
+						</GlowButton>
 					</div>
 				</div>
 

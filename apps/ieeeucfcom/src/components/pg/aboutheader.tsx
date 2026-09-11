@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { GlowButton } from '@/components/ui/glow-button';
 
 export default function AboutHeader() {
 	const [isFlipped, setIsFlipped] = useState<boolean>(true);
@@ -53,16 +54,11 @@ export default function AboutHeader() {
 										</div>
 										<div className="my-6"></div>
 										<div className="w-fit place-self-center font-[heading-font] text-2xl transition-transform hover:scale-110 hover:text-[var(--ieee-bright-yellow)]">
-											<div className="group relative cursor-pointer">
-												<div className="absolute -inset-1 rounded-lg bg-gradient-to-r from-[var(--ieee-bright-yellow)] to-[var(--ieee-bright-yellow)] opacity-25 blur transition duration-1000 group-hover:opacity-100 group-hover:duration-200"></div>
-												<div className="relative flex items-start justify-start space-x-6 rounded-lg bg-[#0c0a09] px-8 py-7 leading-none ring-1 ring-gray-900/5">
-													<div className="space-y-2">
-														<Link href="https://www.youtube.com/watch?v=JyjVBBVm0g4">
-															<p>WATCH VIDEO</p>
-														</Link>
-													</div>
-												</div>
-											</div>
+											<GlowButton innerClassName="justify-start px-8 py-7">
+												<Link href="https://www.youtube.com/watch?v=JyjVBBVm0g4">
+													<p>WATCH VIDEO</p>
+												</Link>
+											</GlowButton>
 										</div>
 									</div>
 								)}
