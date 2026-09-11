@@ -13,7 +13,7 @@
     "@watts/config": "workspace:*",
     "@watts/db": "workspace:*",
     "drizzle-orm": "0.45.2",
-    "postgres": "3.4.8"
+    "postgres": "3.4.9"
   },
   "devDependencies": {
     "@watts/eslint-config": "workspace:*",
