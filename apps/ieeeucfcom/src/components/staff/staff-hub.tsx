@@ -5,6 +5,7 @@ import { trpc } from '@/lib/trpc/client';
 import { hasCapability, CAPABILITIES, type Capability } from '@watts/permissions';
 import { Card } from '@watts/ui/card';
 import { QREventScanner } from '@/components/admin/qr_event_scanner';
+import { CommitteesProjectsPanel } from '@/components/staff/committees-projects-panel';
 
 function CapTag({ cap }: { cap: Capability }) {
 	return (
@@ -66,10 +67,9 @@ function LinkCard({ href, label }: { href: string; label: string }) {
 export function StaffHub() {
 	const { data: auth, isLoading } = trpc.auth.getAuthStatus.useQuery();
 
-	if (isLoading) {
-		return <p className="text-sm text-muted-foreground">Loading…</p>;
-	}
-
+	// All hooks below must run every render — including while auth is still loading — or
+	// the conditional `enabled` flags change which hooks fire between renders and React
+	// throws "change in the order of Hooks." `can()` just returns false until auth resolves.
 	const subject = {
 		administrator: auth?.isAdmin,
 		officerStatus: auth?.isOfficer,
@@ -77,6 +77,30 @@ export function StaffHub() {
 	};
 	const can = (c: Capability) => hasCapability(subject, c);
 	const isAdmin = Boolean(auth?.isAdmin);
+
+	const checkIns = trpc.event.todaysCheckIns.useQuery(undefined, {
+		enabled: can('scan_attendance'),
+	});
+	const alerts = trpc.event.roomReservationAlerts.useQuery(undefined, {
+		enabled: can('manage_events'),
+	});
+	const pendingPhotos = trpc.event.pendingVisibilityCount.useQuery(undefined, {
+		enabled: can('manage_event_photos'),
+	});
+	const resumes = trpc.officer.listResumes.useQuery(undefined, {
+		enabled: can('review_resumes'),
+	});
+	const resumesThisWeek = (resumes.data ?? []).filter(
+		(r) =>
+			r.hasResume &&
+			r.resumeUploadedAt &&
+			Date.now() - new Date(r.resumeUploadedAt).getTime() < 7 * 86400000,
+	).length;
+	const totalCheckIns = (checkIns.data ?? []).reduce((sum, e) => sum + e.count, 0);
+
+	if (isLoading) {
+		return <p className="text-sm text-muted-foreground">Loading…</p>;
+	}
 
 	const scope = isAdmin
 		? 'Administrator — full access'
@@ -113,6 +137,19 @@ export function StaffHub() {
 			<div className="grid gap-4 lg:grid-cols-2">
 				{can('scan_attendance') && (
 					<Panel title="Check-in" cap="scan_attendance" wide>
+						<p className="mb-3 text-sm text-muted-foreground">
+							<span className="font-mono text-foreground">{totalCheckIns}</span>{' '}
+							checked in today
+							{(checkIns.data?.length ?? 0) > 0 && (
+								<span className="text-muted-foreground-dim">
+									{' '}
+									·{' '}
+									{checkIns
+										.data!.map((e) => `${e.eventTitle} (${e.count})`)
+										.join(', ')}
+								</span>
+							)}
+						</p>
 						<QREventScanner />
 					</Panel>
 				)}
@@ -124,13 +161,49 @@ export function StaffHub() {
 							Google Calendar.
 						</p>
 						<LinkCard href="/admin/events" label="Open event manager" />
+
+						<div className="mt-4 border-t border-border pt-3">
+							<h3 className="mb-2 text-xs font-semibold tracking-wide text-muted-foreground-dim uppercase">
+								Room reservations needing attention
+							</h3>
+							{(alerts.data ?? []).length === 0 ? (
+								<p className="text-xs text-muted-foreground-dim">
+									Nothing outstanding.
+								</p>
+							) : (
+								<ul className="flex flex-col gap-1.5">
+									{alerts.data!.map((a) => (
+										<li
+											key={a.eventId}
+											className="flex items-center justify-between gap-2 text-xs"
+										>
+											<span className="text-foreground">{a.eventTitle}</span>
+											<span className="flex items-center gap-1.5">
+												{a.isNewSinceAnnounced && (
+													<span className="rounded-full bg-ieee-dark-yellow px-1.5 py-0.5 font-mono text-[9px] text-black">
+														new
+													</span>
+												)}
+												<span className="text-muted-foreground-dim capitalize">
+													{a.status}
+												</span>
+											</span>
+										</li>
+									))}
+								</ul>
+							)}
+						</div>
 					</Panel>
 				)}
 
 				{can('manage_event_photos') && (
 					<Panel title="Event Photos" cap="manage_event_photos">
 						<p className="mb-3 text-sm text-muted-foreground">
-							Upload and manage photos per event, set captions, tags, and visibility.
+							Upload and manage photos per event, set captions, tags, and visibility.{' '}
+							<span className="font-mono text-foreground">
+								{pendingPhotos.data ?? 0}
+							</span>{' '}
+							still on default (private) visibility.
 						</p>
 						<LinkCard href="/admin/photos" label="Open photo manager" />
 					</Panel>
@@ -139,9 +212,22 @@ export function StaffHub() {
 				{can('review_resumes') && (
 					<Panel title="Résumés" cap="review_resumes">
 						<p className="mb-3 text-sm text-muted-foreground">
-							Browse member résumés with inline preview and filters.
+							Browse member résumés with inline preview and filters — not a review
+							queue, just what&apos;s on file.{' '}
+							<span className="font-mono text-foreground">
+								{(resumes.data ?? []).filter((r) => r.hasResume).length}
+							</span>{' '}
+							on file,{' '}
+							<span className="font-mono text-foreground">{resumesThisWeek}</span>{' '}
+							uploaded this week.
 						</p>
-						<LinkCard href="/admin/resumes" label="Open résumé review" />
+						<LinkCard href="/admin/resumes" label="Open résumés" />
+					</Panel>
+				)}
+
+				{(isAdmin || auth?.isOfficer) && (
+					<Panel title="Committees & Projects">
+						<CommitteesProjectsPanel />
 					</Panel>
 				)}
 

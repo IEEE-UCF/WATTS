@@ -20,6 +20,8 @@ import {
 	syncEventToGoogle,
 	importEventsFromGoogle,
 	checkInMember,
+	getTodaysCheckIns,
+	getRoomReservationAlerts,
 } from '@watts/core/events';
 import { listLabels } from '@watts/core/event-labels';
 import { mapDomainError, mapUploadError } from '../map-domain-error';
@@ -121,6 +123,23 @@ export const eventRouter = createTRPCRouter({
 		} catch (error) {
 			mapDomainError(error);
 		}
+	}),
+
+	// Staff Hub's Event Ops panel.
+	todaysCheckIns: scanAttendance.query(async ({ ctx }) => getTodaysCheckIns(ctx.db)),
+
+	// Staff Hub's Event Ops panel + the admin overview's "reservations needing attention"
+	// KPI — the web-side read of the same alert apps/dbot's discordEventSync.ts posts to
+	// Discord.
+	roomReservationAlerts: manageEvents.query(async ({ ctx }) => getRoomReservationAlerts(ctx.db)),
+
+	// Staff Hub's Photo Management panel + the admin overview's "photos still private" KPI.
+	pendingVisibilityCount: managePhotos.query(async ({ ctx }) => {
+		const [row] = await ctx.db
+			.select({ count: sql<number>`count(*)` })
+			.from(EventPhotos)
+			.where(eq(EventPhotos.visibility, 'private'));
+		return Number(row?.count ?? 0);
 	}),
 
 	getById: publicProcedure

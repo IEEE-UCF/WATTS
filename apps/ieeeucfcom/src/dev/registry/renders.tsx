@@ -62,6 +62,13 @@ import { EventManager } from '@/components/admin/event-manager';
 import { MembersManager } from '@/components/admin/members-manager';
 import { ResumeDashboard } from '@/components/admin/resume-dashboard';
 import { DashboardShellView } from '@/components/shell/dashboard-shell';
+import { MembershipStatus } from '@/components/dashboard/membership-status';
+import { CommitteesProjects } from '@/components/dashboard/committees-projects';
+import { AttendanceSummary } from '@/components/dashboard/attendance-summary';
+import { ResumeStatus } from '@/components/dashboard/resume-status';
+import { OnboardingChecklist } from '@/components/dashboard/onboarding-checklist';
+import { AdminOverview } from '@/components/admin/overview';
+import { CommitteesProjectsPanel } from '@/components/staff/committees-projects-panel';
 
 type Render = ComponentType<Record<string, unknown>>;
 
@@ -276,6 +283,85 @@ export const renders: Record<string, Render> = {
 		<TogglePill selected={Boolean(p.selected)} tone={p.tone as never} size={p.size as never}>
 			{(p.children as string) || 'Toggle'}
 		</TogglePill>
+	),
+	'dashboard/membership-status': (p) => (
+		<div className="max-w-xs">
+			<MembershipStatus
+				duesPaid={Boolean(p.duesPaid)}
+				officerStatus={Boolean(p.officerStatus)}
+				officerRole={(p.officerRole as string) || null}
+				memberSince={(p.memberSince as string) || 'Aug 2024'}
+			/>
+		</div>
+	),
+	'dashboard/committees-projects': () => (
+		<div className="max-w-md">
+			<CommitteesProjects
+				committees={[{ title: 'Corporate Relations', isChair: false }]}
+				projects={[{ title: 'Micromouse', isLead: true }]}
+			/>
+		</div>
+	),
+	'dashboard/attendance-summary': () => {
+		const now = Date.now();
+		return (
+			<div className="max-w-xs">
+				<AttendanceSummary
+					attendance={[
+						{
+							eventId: '1',
+							title: 'GBM 1',
+							startTime: '',
+							attendedAt: new Date(now - 5 * 86400000),
+						},
+						{
+							eventId: '2',
+							title: 'GBM 2',
+							startTime: '',
+							attendedAt: new Date(now - 40 * 86400000),
+						},
+						{
+							eventId: '3',
+							title: 'GBM 3',
+							startTime: '',
+							attendedAt: new Date(now - 41 * 86400000),
+						},
+						{
+							eventId: '4',
+							title: 'GBM 4',
+							startTime: '',
+							attendedAt: new Date(now - 95 * 86400000),
+						},
+					]}
+				/>
+			</div>
+		);
+	},
+	'dashboard/resume-status': (p) => (
+		<div className="max-w-xs">
+			<ResumeStatus resumeUploadedAt={p.uploaded ? new Date() : null} />
+		</div>
+	),
+	'dashboard/onboarding-checklist': (p) => (
+		<div className="max-w-md">
+			<OnboardingChecklist
+				discordId={p.discordLinked ? 'x' : null}
+				ieeeMembershipNumber={p.ieeeNumber ? '12345' : null}
+				knightConnectLinked={Boolean(p.knightConnect)}
+				resumeUploadedAt={p.resume ? new Date() : null}
+				biography={p.personalDetails ? 'bio' : null}
+				linkedinURL={null}
+				githubURL={null}
+				websiteURL={null}
+				hasOrg={Boolean(p.hasOrg)}
+			/>
+		</div>
+	),
+	'admin/overview': () => <AdminOverview />,
+	'staff/committees-projects-panel': () => (
+		<div className="max-w-lg">
+			<CommitteesProjectsPanel />
+		</div>
 	),
 	'layout/dashboard-shell': (p) => (
 		<DashboardShellView

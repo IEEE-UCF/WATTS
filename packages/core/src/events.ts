@@ -1,4 +1,4 @@
-import { and, asc, eq } from 'drizzle-orm';
+import { and, asc, eq, gte } from 'drizzle-orm';
 import type { WattsDb } from '@watts/db';
 import { Events, EventAttendees, EventLabels, Members, RoomReservations } from '@watts/db/schema';
 import { DomainError } from './errors';
@@ -59,6 +59,51 @@ export async function listAllEvents(db: WattsDb) {
 		.leftJoin(RoomReservations, eq(RoomReservations.eventId, Events.id))
 		.orderBy(asc(Events.startTime));
 	return rows.map(({ event, roomReservation }) => ({ ...event, roomReservation }));
+}
+
+/**
+ * How many members checked into each event today, for the Staff Hub's Event Ops panel.
+ * "Today" is a UTC day boundary — close enough for a staff convenience count, not worth
+ * pulling in a timezone library here for the few hours of skew around midnight Eastern.
+ */
+export async function getTodaysCheckIns(db: WattsDb) {
+	const todayStart = new Date();
+	todayStart.setUTCHours(0, 0, 0, 0);
+
+	const rows = await db
+		.select({ eventId: Events.id, eventTitle: Events.title, timestamp: EventAttendees.timestamp })
+		.from(EventAttendees)
+		.innerJoin(Events, eq(Events.id, EventAttendees.eventId))
+		.where(gte(EventAttendees.timestamp, todayStart));
+
+	const byEvent = new Map<string, { eventId: string; eventTitle: string; count: number }>();
+	for (const row of rows) {
+		const existing = byEvent.get(row.eventId);
+		if (existing) existing.count += 1;
+		else byEvent.set(row.eventId, { eventId: row.eventId, eventTitle: row.eventTitle, count: 1 });
+	}
+	return [...byEvent.values()];
+}
+
+/**
+ * Upcoming, active events whose room reservation isn't confirmed yet — the web-side read of
+ * the same alert the bot's discordEventSync.ts already posts to Discord.
+ * `isNewSinceAnnounced` mirrors that reconciler's own comparison (status !== lastAnnouncedStatus)
+ * so staff can tell "still waiting" apart from "changed since anyone last saw it."
+ */
+export async function getRoomReservationAlerts(db: WattsDb) {
+	const events = await listActiveEvents(db);
+	const now = Date.now();
+	return events
+		.filter((e) => new Date(e.startTime).getTime() >= now)
+		.filter((e) => e.roomReservation && e.roomReservation.status !== 'confirmed')
+		.map((e) => ({
+			eventId: e.id,
+			eventTitle: e.title,
+			startTime: e.startTime,
+			status: e.roomReservation!.status,
+			isNewSinceAnnounced: e.roomReservation!.status !== e.roomReservation!.lastAnnouncedStatus,
+		}));
 }
 
 export async function getEventById(db: WattsDb, id: string) {

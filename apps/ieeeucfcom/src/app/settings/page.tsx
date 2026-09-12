@@ -87,6 +87,9 @@ export default function SettingsPage() {
 				linkedinURL: (formData.get('linkedin_url') as string) || undefined,
 				githubURL: (formData.get('github_url') as string) || undefined,
 				websiteURL: (formData.get('website_url') as string) || undefined,
+				ieeeMembershipNumber:
+					(formData.get('ieee_membership_number') as string) || undefined,
+				knightConnectLinked: formData.get('knight_connect_linked') === 'on',
 			});
 		} catch {
 			// onError above handles the message
@@ -278,6 +281,39 @@ export default function SettingsPage() {
 											required
 										/>
 									</Field>
+								</FieldGroup>
+							</div>
+
+							{/* Involvement */}
+							<div className="mb-6">
+								<h2 className="mb-4 border-b border-white/20 pb-2 font-heading text-2xl">
+									INVOLVEMENT
+								</h2>
+								<FieldGroup className="space-y-4">
+									<Field>
+										<FieldLabel htmlFor="ieee_membership_number">
+											IEEE Membership Number
+										</FieldLabel>
+										<Input
+											id="ieee_membership_number"
+											name="ieee_membership_number"
+											defaultValue={memberProfile.ieeeMembershipNumber ?? ''}
+											placeholder="National IEEE member number (optional)"
+										/>
+									</Field>
+									<label
+										htmlFor="knight_connect_linked"
+										className="flex items-center gap-2 text-sm text-white"
+									>
+										<input
+											id="knight_connect_linked"
+											name="knight_connect_linked"
+											type="checkbox"
+											defaultChecked={memberProfile.knightConnectLinked}
+											className="h-4 w-4 rounded border-white/20 bg-white/10"
+										/>
+										I&apos;m connected on KnightConnect
+									</label>
 								</FieldGroup>
 							</div>
 

@@ -6,6 +6,7 @@
   "type": "module",
   "exports": {
     "./awards": "./src/awards.ts",
+    "./committees": "./src/committees.ts",
     "./errors": "./src/errors.ts",
     "./event-labels": "./src/event-labels.ts",
     "./events": "./src/events.ts",

@@ -4,7 +4,7 @@
 // following the /admin/events pattern (list + edit modal). See project-cms-todo
 // memory note for context on why this surfaced.
 import { z } from 'zod';
-import { publicProcedure, adminProcedure, createTRPCRouter } from '../trpc';
+import { publicProcedure, adminProcedure, officerProcedure, createTRPCRouter } from '../trpc';
 import {
 	listActiveProjects,
 	getProjectById,
@@ -12,6 +12,10 @@ import {
 	createProject,
 	updateProject,
 	deleteProject,
+	listProjectMembers,
+	addProjectMember,
+	removeProjectMember,
+	setProjectLead,
 } from '@watts/core/projects';
 import { mapDomainError } from '../map-domain-error';
 
@@ -85,6 +89,42 @@ export const projectRouter = createTRPCRouter({
 			try {
 				await deleteProject(ctx.db, input.id);
 				return { success: true };
+			} catch (error) {
+				mapDomainError(error);
+			}
+		}),
+
+	// Rough Staff Committees & Projects panel — membership assignment, not the full CMS.
+	listMembers: officerProcedure
+		.input(z.object({ projectId: z.string().uuid() }))
+		.query(async ({ ctx, input }) => listProjectMembers(ctx.db, input.projectId)),
+
+	addMember: officerProcedure
+		.input(z.object({ projectId: z.string().uuid(), memberId: z.string().uuid() }))
+		.mutation(async ({ ctx, input }) => {
+			try {
+				return await addProjectMember(ctx.db, input.projectId, input.memberId);
+			} catch (error) {
+				mapDomainError(error);
+			}
+		}),
+
+	removeMember: officerProcedure
+		.input(z.object({ projectId: z.string().uuid(), memberId: z.string().uuid() }))
+		.mutation(async ({ ctx, input }) => {
+			try {
+				await removeProjectMember(ctx.db, input.projectId, input.memberId);
+				return { success: true };
+			} catch (error) {
+				mapDomainError(error);
+			}
+		}),
+
+	setLead: officerProcedure
+		.input(z.object({ projectId: z.string().uuid(), memberId: z.string().uuid(), isLead: z.boolean() }))
+		.mutation(async ({ ctx, input }) => {
+			try {
+				return await setProjectLead(ctx.db, input.projectId, input.memberId, input.isLead);
 			} catch (error) {
 				mapDomainError(error);
 			}

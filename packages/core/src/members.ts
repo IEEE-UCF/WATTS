@@ -1,4 +1,4 @@
-import { and, desc, eq, gt, inArray, isNotNull, isNull, or } from 'drizzle-orm';
+import { and, desc, eq, gt, inArray, isNotNull, isNull, or, sql } from 'drizzle-orm';
 import type { WattsDb } from '@watts/db';
 import {
 	Members,
@@ -353,6 +353,8 @@ export interface UpdateMemberProfileInput {
 	linkedinURL?: string;
 	githubURL?: string;
 	websiteURL?: string;
+	ieeeMembershipNumber?: string;
+	knightConnectLinked?: boolean;
 }
 
 /** Patch the signed-in member's own profile. Throws NOT_FOUND if absent. */
@@ -534,18 +536,61 @@ export type WhoisResult =
 	/** a name search that matched more than one active member */
 	| { status: 'ambiguous'; query: string; names: string[] };
 
-async function hydrateWhois(db: WattsDb, member: WhoisMember): Promise<WhoisProfile> {
-	const committees = await db
+/** Committees a member belongs to, with their chair status on each. */
+export function getMemberCommittees(db: WattsDb, memberId: string) {
+	return db
 		.select({ title: Committees.title, isChair: CommitteeMembers.isChair })
 		.from(CommitteeMembers)
 		.innerJoin(Committees, eq(Committees.id, CommitteeMembers.committeeId))
-		.where(eq(CommitteeMembers.memberId, member.id));
+		.where(eq(CommitteeMembers.memberId, memberId));
+}
 
-	const projects = await db
+/** Projects a member belongs to, with their lead status on each. */
+export function getMemberProjects(db: WattsDb, memberId: string) {
+	return db
 		.select({ title: Projects.title, isLead: ProjectMembers.isLead })
 		.from(ProjectMembers)
 		.innerJoin(Projects, eq(Projects.id, ProjectMembers.projectId))
-		.where(eq(ProjectMembers.memberId, member.id));
+		.where(eq(ProjectMembers.memberId, memberId));
+}
+
+/**
+ * Every event a member has checked into, most recent first. Small per-member volume —
+ * callers bucket/summarize client-side rather than aggregating in SQL.
+ */
+export function getMemberAttendance(db: WattsDb, memberId: string) {
+	return db
+		.select({
+			eventId: Events.id,
+			title: Events.title,
+			startTime: Events.startTime,
+			attendedAt: EventAttendees.timestamp,
+		})
+		.from(EventAttendees)
+		.innerJoin(Events, eq(Events.id, EventAttendees.eventId))
+		.where(eq(EventAttendees.memberId, memberId))
+		.orderBy(desc(EventAttendees.timestamp), desc(Events.startTime));
+}
+
+/** Chapter-wide member counts for the admin overview — active members, dues paid, officers. */
+export async function getOrgMemberStats(db: WattsDb) {
+	const [row] = await db
+		.select({
+			total: sql<number>`count(*) filter (where ${Members.active})`,
+			duesPaid: sql<number>`count(*) filter (where ${Members.active} and ${Members.duesPaid})`,
+			officers: sql<number>`count(*) filter (where ${Members.active} and ${Members.officerStatus})`,
+		})
+		.from(Members);
+	return {
+		total: Number(row?.total ?? 0),
+		duesPaid: Number(row?.duesPaid ?? 0),
+		officers: Number(row?.officers ?? 0),
+	};
+}
+
+async function hydrateWhois(db: WattsDb, member: WhoisMember): Promise<WhoisProfile> {
+	const committees = await getMemberCommittees(db, member.id);
+	const projects = await getMemberProjects(db, member.id);
 
 	const [lastEvent] = await db
 		.select({
