@@ -8,7 +8,6 @@ interface EventFormData {
 	title: string;
 	location: string;
 	hostType: HostType;
-	hostId: string;
 	startTime: string;
 	endTime: string;
 	requiresDues: boolean;
@@ -35,7 +34,6 @@ export const FormPopup: React.FC = () => {
 		title: '',
 		location: '',
 		hostType: '',
-		hostId: '',
 		startTime: '',
 		endTime: '',
 		requiresDues: false,
@@ -57,7 +55,6 @@ export const FormPopup: React.FC = () => {
 				title: '',
 				location: '',
 				hostType: '',
-				hostId: '',
 				startTime: '',
 				endTime: '',
 				requiresDues: false,
@@ -83,7 +80,6 @@ export const FormPopup: React.FC = () => {
 			title: 'Demo Event - Test Insertion',
 			location: 'Virtual / Online',
 			hostType: 'committee',
-			hostId: '',
 			startTime: formatDateTimeLocal(tomorrow.toISOString()),
 			endTime: formatDateTimeLocal(dayAfter.toISOString()),
 			requiresDues: false,
@@ -116,8 +112,6 @@ export const FormPopup: React.FC = () => {
 			location: formData.location,
 			startTime: new Date(formData.startTime).toISOString(),
 			endTime: formData.endTime ? new Date(formData.endTime).toISOString() : undefined,
-			committeeId:
-				formData.hostType === 'committee' && formData.hostId ? formData.hostId : undefined,
 			flyerUrl: formData.flyerUrl || undefined,
 			rsvpLink: formData.rsvpLink || undefined,
 			requiresDues: formData.requiresDues,
@@ -352,7 +346,7 @@ export const FormPopup: React.FC = () => {
 								<button
 									type="button"
 									onClick={loadDemoData}
-									className="mr-30 rounded-md bg-indigo-600 px-4 py-2 text-white"
+									className="mr-3 rounded-md bg-indigo-600 px-4 py-2 text-white"
 								>
 									Load Demo Data
 								</button>

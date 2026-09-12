@@ -107,12 +107,38 @@ limitation as the Table-primitive step).
 
 ---
 
-## Step 4 — Shared form-field primitives (not started)
+## Step 4 — Shared form-field primitives (scope reduced — see below)
 
-Adopt `@watts/ui/input`/`label` in `event-manager.tsx`'s `EventForm` and
-`dashboard/newEventForm.tsx`'s `FormPopup` in place of their independent
-hand-rolled field markup. The two forms stay separate components with their
-current, different field sets — this is not a merge. Two real bugs fixed
-along the way: `FormPopup`'s dead unused `hostId` state (tracked but never
-rendered as a field), and a `mr-30` Tailwind typo (7.5rem gap, almost
-certainly meant `mr-3`).
+**Original plan:** adopt `@watts/ui/input`/`label` in both `EventForm` and
+`FormPopup` in place of their independent hand-rolled field markup.
+
+**What actually happened, and why the scope changed:** checking the two
+forms' field className strings side by side —
+
+- `event-manager.tsx`'s shared `field` constant:
+  `'w-full rounded-md border border-input bg-card px-3 py-2 text-sm text-foreground'`
+- `newEventForm.tsx`'s per-field string (repeated 8x):
+  `'mt-1 block w-full rounded-md border border-input bg-card px-3 py-2 text-foreground shadow-sm sm:text-sm'`
+
+— these have already genuinely diverged (`mt-1 block` + `shadow-sm
+sm:text-sm` vs. plain `text-sm`), not just duplicated identically. Forcing
+one shared implementation (whether a new constant or `@watts/ui/input`,
+which has its own different defaults again — `bg-transparent`/`dark:bg-input/30`,
+fixed `h-9`) means picking a winner and changing at least one form's actual
+rendered pixels. That's a real design decision, not a structural
+de-duplication, and it's outside what "structure only, same look" was
+scoped to authorize silently. Left both forms' field markup as-is.
+
+**What did land — two real bugs fixed:**
+- `FormPopup`'s `hostId` state was tracked (initialized, reset, read in
+  `handleSubmit`) but never rendered as an actual input field anywhere in
+  the JSX. Since it was always `''`, the `committeeId` computed from it
+  (`formData.hostType === 'committee' && formData.hostId ? formData.hostId
+  : undefined`) was *always* `undefined` — meaning selecting "Committee" as
+  the host type from this form has never actually attached a committee to
+  the created event. Removed the dead state and the always-`undefined`
+  `committeeId` field entirely (confirmed optional in the
+  `event.create` schema) — zero behavior change, since that code path
+  never fired a real value in the first place.
+- A `mr-30` Tailwind typo (7.5rem gap) on the "Load Demo Data" button ->
+  `mr-3`, matching the small gap the adjacent Close/Submit buttons use.
