@@ -90,8 +90,8 @@ function fromEvent(ev: AdminEvent): FormState {
 		requiresDues: ev.requiresDues,
 		rsvpLink: ev.rsvpLink ?? '',
 		slug: ev.slug ?? '',
-		needsRoomReservation: false,
-		manuallyGivenRoom: false,
+		needsRoomReservation: ev.roomReservation !== null,
+		manuallyGivenRoom: ev.roomReservation?.isManualOverride ?? false,
 		pingCreatorOnUpdate: ev.pingCreatorOnUpdate ?? false,
 	};
 }
@@ -327,7 +327,7 @@ function EventForm({
 					/>
 					Needs SU Room Reservation
 				</label>
-				<label className="flex items-center gap-2 text-indigo-300">
+				<label className="flex items-center gap-2 text-gray-400">
 					<input
 						id="manuallyGivenRoom"
 						type="checkbox"
