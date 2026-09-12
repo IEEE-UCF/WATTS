@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation';
 import { getSessionRoles } from '@/lib/auth-guards';
+import { DashboardShell } from '@/components/shell/dashboard-shell';
 
 // Server-side gate for every /admin/* route — the authoritative backstop, not just
 // src/middleware.ts. Common floor: signed in + (administrator OR officer). Each page
@@ -14,5 +15,5 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 	if (!session) redirect('/auth/signin?callbackUrl=/admin');
 	if (!roles?.administrator && !roles?.officerStatus) redirect('/dashboard');
 
-	return <>{children}</>;
+	return <DashboardShell>{children}</DashboardShell>;
 }

@@ -190,6 +190,33 @@ export const entriesMeta: EntryMeta[] = [
 		controls: [{ name: 'image', type: 'text', default: '' }],
 	},
 	{
+		slug: 'layout/dashboard-shell',
+		name: 'DashboardShell',
+		group: 'layout',
+		status: 'ok',
+		source: '@/components/shell/dashboard-shell',
+		notes: 'Shared sidebar + topbar for /dashboard, /staff and every /admin/* page — replaces each page mounting its own Navbar. Renders full-viewport (fixed sidebar), like the real thing. This preview passes mock auth via DashboardShellView; the real DashboardShell wraps it with a live auth.getAuthStatus query.',
+		controls: [
+			{ name: 'isAdmin', type: 'boolean', default: true },
+			{ name: 'isOfficer', type: 'boolean', default: true },
+			{
+				name: 'pathname',
+				type: 'select',
+				options: [
+					'/dashboard',
+					'/settings',
+					'/staff',
+					'/admin/dashboard',
+					'/admin/members',
+					'/admin/events',
+					'/admin/photos',
+					'/admin/resumes',
+				],
+				default: '/admin/events',
+			},
+		],
+	},
+	{
 		slug: 'marketing/signin-block',
 		name: 'Signinblock',
 		group: 'marketing',

@@ -130,8 +130,10 @@ export const FormPopup: React.FC = () => {
 				Create Event
 			</button>
 			{isOpen && (
-				<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-					<div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-lg border border-border bg-card p-8 text-foreground">
+				// Slide-over drawer, not a centered dialog — keeps the event list in place
+				// behind it instead of swapping the whole screen for the form.
+				<div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm">
+					<div className="absolute inset-y-0 right-0 h-full w-full max-w-lg overflow-y-auto border-l border-border bg-card p-8 text-foreground shadow-2xl shadow-black/60">
 						<h2 className="mb-4 text-2xl">Create Event</h2>
 						<form onSubmit={handleSubmit}>
 							<div className="mb-4">

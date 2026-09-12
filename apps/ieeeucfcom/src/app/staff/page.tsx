@@ -1,8 +1,8 @@
 import { redirect } from 'next/navigation';
 import { getSessionRoles } from '@/lib/auth-guards';
 import { hasStaffCapability } from '@watts/permissions';
-import { Navbar } from '@/components/navbar';
 import { StaffHub } from '@/components/staff/staff-hub';
+import { DashboardShell } from '@/components/shell/dashboard-shell';
 
 // /staff — reachable by admins, officers, or anyone with a granted staff capability.
 // src/middleware.ts is the fast gate; this is the authoritative backstop so an
@@ -18,14 +18,11 @@ export default async function StaffPage() {
 	}
 
 	return (
-		<div className="flex min-h-screen flex-col bg-black">
-			<div className="w-full px-5">
-				<Navbar />
-			</div>
-			<main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8">
+		<DashboardShell>
+			<div className="mx-auto w-full max-w-6xl">
 				<h1 className="mb-6 font-heading text-3xl text-ieee-dark-yellow">STAFF</h1>
 				<StaffHub />
-			</main>
-		</div>
+			</div>
+		</DashboardShell>
 	);
 }

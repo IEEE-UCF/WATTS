@@ -59,6 +59,7 @@ import { TogglePill } from '@/components/ui/toggle-pill';
 import { EventManager } from '@/components/admin/event-manager';
 import { MembersManager } from '@/components/admin/members-manager';
 import { ResumeDashboard } from '@/components/admin/resume-dashboard';
+import { DashboardShellView } from '@/components/shell/dashboard-shell';
 
 type Render = ComponentType<Record<string, unknown>>;
 
@@ -263,5 +264,22 @@ export const renders: Record<string, Render> = {
 		<TogglePill selected={Boolean(p.selected)} tone={p.tone as never} size={p.size as never}>
 			{(p.children as string) || 'Toggle'}
 		</TogglePill>
+	),
+	'layout/dashboard-shell': (p) => (
+		<DashboardShellView
+			pathname={(p.pathname as string) || '/admin/events'}
+			auth={{
+				isMember: true,
+				isOfficer: Boolean(p.isOfficer ?? true),
+				isAdmin: Boolean(p.isAdmin ?? true),
+				hasStaffAccess: true,
+				permissions: ['manage_events', 'manage_event_photos', 'review_resumes'],
+				discordAvatar: 'https://cdn.discordapp.com/embed/avatars/1.png',
+			}}
+		>
+			<div className="rounded-lg border border-dashed border-border p-6 text-sm text-muted-foreground">
+				Routed page content renders here.
+			</div>
+		</DashboardShellView>
 	),
 };

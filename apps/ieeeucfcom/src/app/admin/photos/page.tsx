@@ -1,5 +1,4 @@
 import { redirect } from 'next/navigation';
-import { Navbar } from '@/components/navbar';
 import { EventPhotoManager } from '@/components/admin/event-photo-manager';
 import { getSessionRoles } from '@/lib/auth-guards';
 import { hasCapability } from '@watts/permissions';
@@ -10,14 +9,9 @@ export default async function AdminPhotosPage() {
 	if (!hasCapability(roles, 'manage_event_photos')) redirect('/dashboard');
 
 	return (
-		<div className="flex min-h-screen flex-col bg-black">
-			<div className="w-full px-5">
-				<Navbar />
-			</div>
-			<main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8">
-				<h1 className="mb-6 font-heading text-3xl text-ieee-dark-yellow">EVENT PHOTOS</h1>
-				<EventPhotoManager />
-			</main>
+		<div className="mx-auto w-full max-w-6xl">
+			<h1 className="mb-6 font-heading text-3xl text-ieee-dark-yellow">EVENT PHOTOS</h1>
+			<EventPhotoManager />
 		</div>
 	);
 }
