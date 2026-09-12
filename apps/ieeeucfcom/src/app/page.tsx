@@ -75,7 +75,7 @@ export default function Home() {
 							<div className="float flex flex-row flex-wrap justify-center gap-x-[3vw] self-center md:my-30 lg:my-0">
 								<div className="flex flex-col items-start justify-center self-center text-center xl:text-left">
 									<div className="my-8 max-w-full">
-										<div className="font-[display-font] text-7xl text-[var(--ieee-bright-yellow)] lg:text-8xl">
+										<div className="font-[display-font] text-7xl text-ieee-bright-yellow lg:text-8xl">
 											IEEE @ UCF
 										</div>
 										<div className="font-[subheading-font] text-4xl text-white lg:text-5xl">
@@ -215,7 +215,7 @@ export default function Home() {
 				</div>
 
 				<div className="-mt-40 flex w-full flex-col bg-[#0d0a03] p-5">
-					<div className="my-5 text-center font-[heading-font] text-5xl text-[var(--ieee-bright-yellow)] lg:text-6xl">
+					<div className="my-5 text-center font-[heading-font] text-5xl text-ieee-bright-yellow lg:text-6xl">
 						UPCOMING EVENTS
 					</div>
 

@@ -50,7 +50,7 @@ function LinkCard({ href, label }: { href: string; label: string }) {
 	return (
 		<Link
 			href={href}
-			className="inline-flex items-center gap-1 rounded-md border border-gray-700 px-3 py-2 text-sm text-gray-200 transition-colors hover:border-[var(--ieee-dark-yellow)] hover:text-[var(--ieee-dark-yellow)]"
+			className="inline-flex items-center gap-1 rounded-md border border-gray-700 px-3 py-2 text-sm text-gray-200 transition-colors hover:border-ieee-dark-yellow hover:text-ieee-dark-yellow"
 		>
 			{label}{' '}
 			<span aria-hidden className="opacity-60">

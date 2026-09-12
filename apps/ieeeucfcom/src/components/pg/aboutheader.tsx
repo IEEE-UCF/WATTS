@@ -13,7 +13,7 @@ export default function AboutHeader() {
 
 			<div className="absolute z-3 my-10 flex w-screen flex-row justify-center p-40">
 				<div className="float flex flex-col items-center justify-center gap-y-3 self-center text-center">
-					<div className="font-[heading-font] text-5xl text-[var(--ieee-bright-yellow)] sm:text-6xl">
+					<div className="font-[heading-font] text-5xl text-ieee-bright-yellow sm:text-6xl">
 						WHAT IS IEEE?
 					</div>
 
@@ -24,7 +24,7 @@ export default function AboutHeader() {
 					<div className="mt-[23vh]"></div>
 
 					<div className="group relative max-w-screen cursor-pointer">
-						<div className="absolute -inset-2 rounded-lg bg-gradient-to-r from-[var(--ieee-bright-yellow)] to-[var(--ieee-bright-yellow)] opacity-25 blur transition duration-1000 group-hover:opacity-100 group-hover:duration-200"></div>
+						<div className="absolute -inset-2 rounded-lg bg-gradient-to-r from-ieee-bright-yellow to-ieee-bright-yellow opacity-25 blur transition duration-1000 group-hover:opacity-100 group-hover:duration-200"></div>
 
 						<div className="group relative w-fit cursor-pointer overflow-hidden rounded-2xl bg-transparent p-[4px] transition-transform hover:scale-102">
 							<div className="animated-border pointer-events-none absolute inset-0 z-0 rounded-2xl bg-[conic-gradient(var(--ieee-bright-yellow)_20deg,transparent_120deg)]"></div>
@@ -35,7 +35,7 @@ export default function AboutHeader() {
 							>
 								{isFlipped ? (
 									<div>
-										<div className="font-[subheading-italic-font] text-xl text-[var(--ieee-bright-yellow)] sm:text-2xl">
+										<div className="font-[subheading-italic-font] text-xl text-ieee-bright-yellow sm:text-2xl">
 											We are the innovators of tomorrow.
 										</div>
 										<div className="font-[body-font] text-base sm:text-xl">
@@ -53,7 +53,7 @@ export default function AboutHeader() {
 											Want to see our full story?
 										</div>
 										<div className="my-6"></div>
-										<div className="w-fit place-self-center font-[heading-font] text-2xl transition-transform hover:scale-110 hover:text-[var(--ieee-bright-yellow)]">
+										<div className="w-fit place-self-center font-[heading-font] text-2xl transition-transform hover:scale-110 hover:text-ieee-bright-yellow">
 											<GlowButton innerClassName="justify-start px-8 py-7">
 												<Link href="https://www.youtube.com/watch?v=JyjVBBVm0g4">
 													<p>WATCH VIDEO</p>

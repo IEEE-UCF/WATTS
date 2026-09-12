@@ -42,7 +42,7 @@ export default function AboutIEEE() {
 							),
 						).map(([category, awardsInCategory], index) => (
 							<div key={index} className="mb-5">
-								<div className="mb-2 font-[subheading-font] text-2xl text-[var(--ieee-bright-yellow)]">
+								<div className="mb-2 font-[subheading-font] text-2xl text-ieee-bright-yellow">
 									{category}
 								</div>
 								{awardsInCategory.map((award, awardIndex) => (
@@ -68,7 +68,7 @@ export default function AboutIEEE() {
 						TECHNICAL DEVELOPMENT
 					</AccordionTrigger>
 					<AccordionContent>
-						<div className="py-2 font-[subheading-italic-font] text-lg text-[var(--ieee-bright-yellow)]">
+						<div className="py-2 font-[subheading-italic-font] text-lg text-ieee-bright-yellow">
 							Workshops and projects are premier opportunities for IEEE @ UCF members
 							to advance their technical knowledge and experience.
 						</div>
@@ -108,7 +108,7 @@ export default function AboutIEEE() {
 						SOUTHEASTCON
 					</AccordionTrigger>
 					<AccordionContent>
-						<div className="py-2 font-[subheading-italic-font] text-lg text-[var(--ieee-bright-yellow)]">
+						<div className="py-2 font-[subheading-italic-font] text-lg text-ieee-bright-yellow">
 							IEEE @ UCF is an annual participant at SoutheastCon, the most
 							influential IEEE Region 3 conference.
 						</div>
@@ -155,7 +155,7 @@ export default function AboutIEEE() {
 						COMMUNITY SERVICE
 					</AccordionTrigger>
 					<AccordionContent>
-						<div className="py-2 font-[subheading-italic-font] text-lg text-[var(--ieee-bright-yellow)]">
+						<div className="py-2 font-[subheading-italic-font] text-lg text-ieee-bright-yellow">
 							Community involvement is a core value for IEEE @ UCF.
 						</div>
 						<div className="py-2 font-[body-font] text-lg text-white">
@@ -190,7 +190,7 @@ export default function AboutIEEE() {
 						SOCIAL EVENTS
 					</AccordionTrigger>
 					<AccordionContent>
-						<div className="py-2 font-[subheading-italic-font] text-lg text-[var(--ieee-bright-yellow)]">
+						<div className="py-2 font-[subheading-italic-font] text-lg text-ieee-bright-yellow">
 							A highlight of IEEE @ UCF is the fun, connection-building social events.
 						</div>
 						<div className="py-2 font-[body-font] text-lg text-white">
@@ -225,7 +225,7 @@ export default function AboutIEEE() {
 						PROFESSIONAL DEVELOPMENT
 					</AccordionTrigger>
 					<AccordionContent>
-						<div className="py-2 font-[subheading-italic-font] text-lg text-[var(--ieee-bright-yellow)]">
+						<div className="py-2 font-[subheading-italic-font] text-lg text-ieee-bright-yellow">
 							Supporting members' career advancement is critical for IEEE @ UCF.
 						</div>
 						<div className="py-2 font-[body-font] text-lg text-white">
@@ -261,7 +261,7 @@ export default function AboutIEEE() {
 						ALUMNI AND MEMBER NETWORK
 					</AccordionTrigger>
 					<AccordionContent>
-						<div className="py-2 font-[subheading-italic-font] text-lg text-[var(--ieee-bright-yellow)]">
+						<div className="py-2 font-[subheading-italic-font] text-lg text-ieee-bright-yellow">
 							IEEE @ UCF has an extensive network of engineering professionals at
 							notable companies.
 						</div>

@@ -123,7 +123,7 @@ export function ResumeExportPresetBar({
 						type="button"
 						onClick={() => onApply(p.filter)}
 						title={describeResumeFilter(p.filter)}
-						className="text-gray-200 hover:text-[var(--ieee-dark-yellow)]"
+						className="text-gray-200 hover:text-ieee-dark-yellow"
 					>
 						{p.name}
 					</button>
@@ -141,7 +141,7 @@ export function ResumeExportPresetBar({
 			<button
 				type="button"
 				onClick={onSaveCurrent}
-				className="rounded-full border border-dashed border-gray-600 px-3 py-1 text-xs text-gray-400 hover:border-[var(--ieee-dark-yellow)] hover:text-[var(--ieee-dark-yellow)]"
+				className="rounded-full border border-dashed border-gray-600 px-3 py-1 text-xs text-gray-400 hover:border-ieee-dark-yellow hover:text-ieee-dark-yellow"
 			>
 				+ Save current
 			</button>

@@ -92,7 +92,7 @@ export default function EventSidebar() {
 					</div>
 					<div className="text-center font-[body-font] text-xl text-white lg:text-left lg:text-2xl">
 						Experience IEEE @ UCF&rsquo;s exciting lineup of events this
-						<span className="font-[subheading-font] text-[var(--ieee-bright-yellow)]">
+						<span className="font-[subheading-font] text-ieee-bright-yellow">
 							{' '}
 							{currentMonth}{' '}
 						</span>
@@ -107,7 +107,7 @@ export default function EventSidebar() {
 					>
 						{currentEvent ? (
 							<div className="group relative h-fit">
-								<div className="absolute -inset-1 rounded-sm bg-gradient-to-r from-[var(--ieee-bright-yellow)] to-[var(--ieee-bright-yellow)] opacity-50 blur"></div>
+								<div className="absolute -inset-1 rounded-sm bg-gradient-to-r from-ieee-bright-yellow to-ieee-bright-yellow opacity-50 blur"></div>
 								<div className="relative flex h-full items-start justify-start space-x-6 rounded-sm bg-[#0c0a09] leading-none ring-1 ring-gray-900/5">
 									<div className="flex h-full w-[70vw] flex-row gap-x-10 rounded-sm p-10 xl:w-full">
 										<Image
@@ -155,7 +155,7 @@ export default function EventSidebar() {
 								>
 									<X size={24} />
 								</Button>
-								<div className="absolute -inset-1 rounded-sm bg-gradient-to-r from-[var(--ieee-bright-yellow)] to-[var(--ieee-bright-yellow)] opacity-50 blur"></div>
+								<div className="absolute -inset-1 rounded-sm bg-gradient-to-r from-ieee-bright-yellow to-ieee-bright-yellow opacity-50 blur"></div>
 								<div className="relative flex h-full items-start justify-start space-x-6 rounded-sm bg-[#0c0a09] leading-none ring-1 ring-gray-900/5">
 									<div className="flex h-full flex-col gap-6 rounded-sm p-6 lg:flex-row lg:gap-x-10 lg:p-10">
 										<Image
@@ -227,7 +227,7 @@ export default function EventSidebar() {
 									/>
 									<button
 										onClick={() => handleEventSelect(item)}
-										className="relative z-10 flex w-full cursor-pointer flex-row rounded-sm bg-black text-white hover:text-[var(--ieee-bright-yellow)]"
+										className="relative z-10 flex w-full cursor-pointer flex-row rounded-sm bg-black text-white hover:text-ieee-bright-yellow"
 									>
 										<div className="m-5 flex flex-col justify-center">
 											<div className="flex flex-col justify-between">

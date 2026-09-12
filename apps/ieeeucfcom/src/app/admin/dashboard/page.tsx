@@ -40,7 +40,7 @@ export default async function Dashboard() {
 							<Link
 								key={tool.href}
 								href={tool.href}
-								className="rounded-xl border border-gray-800 bg-gray-900/60 p-4 shadow-lg shadow-black/40 transition-colors hover:border-[var(--ieee-dark-yellow)] hover:bg-gray-900"
+								className="rounded-xl border border-gray-800 bg-gray-900/60 p-4 shadow-lg shadow-black/40 transition-colors hover:border-ieee-dark-yellow hover:bg-gray-900"
 							>
 								<div className="text-base font-semibold text-gray-100">
 									{tool.title}
@@ -76,7 +76,7 @@ export default async function Dashboard() {
 								</h2>
 								<Link
 									href="/admin/events"
-									className="inline-block rounded-md bg-[var(--ieee-dark-yellow)] px-4 py-2 text-sm font-semibold text-black"
+									className="inline-block rounded-md bg-ieee-dark-yellow px-4 py-2 text-sm font-semibold text-black"
 								>
 									Open event manager →
 								</Link>

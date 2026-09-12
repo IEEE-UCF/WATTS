@@ -96,7 +96,7 @@ export default function RegisterPage() {
 	);
 
 	return (
-		<div className="flex min-h-screen items-center justify-center bg-[var(--ieee-dark-grey)]">
+		<div className="flex min-h-screen items-center justify-center bg-ieee-dark-grey">
 			<div className="relative w-full max-w-lg justify-center rounded-lg border bg-black p-5 shadow-lg sm:h-[90vh] lg:m-10">
 				<div className="pointer-events-none absolute inset-0 rounded-lg bg-black opacity-70 blur-3xl" />
 				<div className="relative z-10 max-h-full overflow-y-auto">
@@ -123,13 +123,13 @@ export default function RegisterPage() {
 								{!session?.user ? (
 									<div className="flex flex-col items-center justify-center">
 										<div className="group relative cursor-pointer">
-											<div className="absolute -inset-1 rounded-md bg-gradient-to-r from-[var(--ieee-bright-yellow)] to-[var(--ieee-bright-yellow)] opacity-25 blur-md transition duration-1000 group-hover:opacity-100 group-hover:duration-200"></div>
+											<div className="absolute -inset-1 rounded-md bg-gradient-to-r from-ieee-bright-yellow to-ieee-bright-yellow opacity-25 blur-md transition duration-1000 group-hover:opacity-100 group-hover:duration-200"></div>
 
 											<Button
 												variant="outline"
 												type="button"
 												onClick={handleDiscordSignIn}
-												className="relative z-10 flex items-center justify-center gap-2 rounded-md border-none bg-[var(--ieee-dark-yellow)] px-14 py-10 font-[heading-font] text-white transition-transform hover:scale-105 hover:cursor-pointer"
+												className="relative z-10 flex items-center justify-center gap-2 rounded-md border-none bg-ieee-dark-yellow px-14 py-10 font-[heading-font] text-white transition-transform hover:scale-105 hover:cursor-pointer"
 											>
 												<svg
 													className="h-5 w-5"
@@ -147,7 +147,7 @@ export default function RegisterPage() {
 									</div>
 								) : (
 									<>
-										<div className="mb-6 flex items-center rounded bg-[var(--ieee-dark-yellow)] p-4">
+										<div className="mb-6 flex items-center rounded bg-ieee-dark-yellow p-4">
 											{session.user.image && (
 												<img
 													src={session.user.image}
@@ -347,14 +347,14 @@ export default function RegisterPage() {
 										<div className="mt-6 flex gap-4">
 											<Button
 												type="submit"
-												className="flex-1 cursor-pointer bg-[var(--ieee-dark-yellow)] transition-all hover:scale-105 hover:bg-[var(--ieee-bright-yellow)]"
+												className="flex-1 cursor-pointer bg-ieee-dark-yellow transition-all hover:scale-105 hover:bg-ieee-bright-yellow"
 												disabled={isSubmitting}
 											>
 												{isSubmitting ? 'Submitting...' : 'Submit'}
 											</Button>
 											<Button
 												type="button"
-												className="flex-1 cursor-pointer bg-[var(--ieee-dark-grey)] transition-all hover:scale-105 hover:opacity-80"
+												className="flex-1 cursor-pointer bg-ieee-dark-grey transition-all hover:scale-105 hover:opacity-80"
 												onClick={() => router.push('/')}
 											>
 												Cancel

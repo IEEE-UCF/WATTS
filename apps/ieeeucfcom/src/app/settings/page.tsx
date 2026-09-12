@@ -116,18 +116,18 @@ export default function SettingsPage() {
 								<FieldSet>
 									{/* Header */}
 									<div className="mb-6 flex items-center justify-between">
-										<h1 className="font-[heading-font] text-5xl text-[var(--ieee-dark-yellow)]">
+										<h1 className="font-[heading-font] text-5xl text-ieee-dark-yellow">
 											SETTINGS
 										</h1>
 									</div>
 
 									{error && (
-										<div className="mb-4 rounded bg-[var(--ieee-dark-grey)] p-3 text-white">
+										<div className="mb-4 rounded bg-ieee-dark-grey p-3 text-white">
 											{error}
 										</div>
 									)}
 									{success && (
-										<div className="mb-4 rounded bg-[var(--ieee-dark-yellow)] p-3 text-white">
+										<div className="mb-4 rounded bg-ieee-dark-yellow p-3 text-white">
 											{success}
 										</div>
 									)}
@@ -137,7 +137,7 @@ export default function SettingsPage() {
 										<h2 className="mb-4 border-b border-white/20 pb-2 font-[heading-font] text-2xl text-white">
 											MEMBERSHIP INFORMATION
 										</h2>
-										<div className="grid grid-cols-1 gap-4 text-[var(--ieee-dark-yellow)] md:grid-cols-2">
+										<div className="grid grid-cols-1 gap-4 text-ieee-dark-yellow md:grid-cols-2">
 											<div>
 												<p className="font-[heading-font] text-sm">
 													Officer Status
@@ -174,7 +174,7 @@ export default function SettingsPage() {
 									</div>
 
 									{/* Linked Discord */}
-									<div className="flex flex-row items-center gap-2 font-[heading-font] text-sm text-[var(--ieee-dark-yellow)]">
+									<div className="flex flex-row items-center gap-2 font-[heading-font] text-sm text-ieee-dark-yellow">
 										<svg
 											className="h-5 w-5"
 											fill="currentColor"
@@ -184,7 +184,7 @@ export default function SettingsPage() {
 										</svg>
 										Linked Discord Account
 									</div>
-									<div className="mb-6 flex items-center rounded bg-[var(--ieee-dark-yellow)] p-4">
+									<div className="mb-6 flex items-center rounded bg-ieee-dark-yellow p-4">
 										{session?.user?.image && (
 											<img
 												src={session.user.image}
@@ -329,7 +329,7 @@ export default function SettingsPage() {
 												name="biography"
 												defaultValue={memberProfile.biography || ''}
 												placeholder="Write a paragraph about your professional background, technical experience, and skills..."
-												className="min-h-[120px] w-full rounded-md border border-white/20 bg-white/10 p-3 text-white placeholder:text-white/50 focus:ring-2 focus:ring-[var(--ieee-bright-yellow)] focus:outline-none"
+												className="min-h-[120px] w-full rounded-md border border-white/20 bg-white/10 p-3 text-white placeholder:text-white/50 focus:ring-2 focus:ring-ieee-bright-yellow focus:outline-none"
 											/>
 										</Field>
 									</div>
@@ -386,14 +386,14 @@ export default function SettingsPage() {
 									<div className="mt-8 flex w-full gap-4 self-center md:w-1/2">
 										<Button
 											type="submit"
-											className="flex-1 cursor-pointer bg-[var(--ieee-dark-yellow)] py-6 font-[heading-font] text-base transition-all hover:scale-102 hover:bg-[var(--ieee-bright-yellow)]"
+											className="flex-1 cursor-pointer bg-ieee-dark-yellow py-6 font-[heading-font] text-base transition-all hover:scale-102 hover:bg-ieee-bright-yellow"
 											disabled={isSubmitting}
 										>
 											{isSubmitting ? 'SAVING CHANGES...' : 'SAVE CHANGES'}
 										</Button>
 										<Button
 											type="button"
-											className="flex-1 cursor-pointer bg-[var(--ieee-dark-grey)] py-6 font-[heading-font] text-lg transition-all hover:scale-102 hover:opacity-80"
+											className="flex-1 cursor-pointer bg-ieee-dark-grey py-6 font-[heading-font] text-lg transition-all hover:scale-102 hover:opacity-80"
 											onClick={handleCancel}
 										>
 											CANCEL

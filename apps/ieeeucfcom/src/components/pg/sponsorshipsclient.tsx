@@ -38,7 +38,7 @@ export const MailTo: React.FC<MailToProps> = ({ email, subject = '', body = '', 
 // ---------------------------------------------------------------------------
 export const SponsorsCarousel: React.FC = () => (
 	<div className="w-full py-14">
-		<div className="mb-12 text-center font-[heading-font] text-3xl text-[var(--ieee-bright-yellow)]">
+		<div className="mb-12 text-center font-[heading-font] text-3xl text-ieee-bright-yellow">
 			OUR SPONSORS
 		</div>
 		<Carousel
@@ -58,10 +58,10 @@ export const SponsorsCarousel: React.FC = () => (
 									className="object-contain"
 								/>
 							</div>
-							<span className="text-center font-[body-font] text-base text-gray-400 transition-colors group-hover:text-[var(--ieee-bright-yellow)]">
+							<span className="text-center font-[body-font] text-base text-gray-400 transition-colors group-hover:text-ieee-bright-yellow">
 								{sponsor.name}
 							</span>
-							<span className="rounded-full border border-[var(--ieee-bright-yellow)] px-3 py-1 font-[heading-font] text-xs tracking-widest text-[var(--ieee-bright-yellow)] uppercase opacity-70 transition-opacity group-hover:opacity-100">
+							<span className="rounded-full border border-ieee-bright-yellow px-3 py-1 font-[heading-font] text-xs tracking-widest text-ieee-bright-yellow uppercase opacity-70 transition-opacity group-hover:opacity-100">
 								{sponsor.tier}
 							</span>
 						</div>
@@ -85,7 +85,7 @@ export const PDFViewer: React.FC = () => {
 		return (
 			<div className="flex flex-col items-center gap-6 rounded-xl border border-white/10 bg-[#111] px-4 py-10">
 				<svg
-					className="h-14 w-14 text-[var(--ieee-bright-yellow)]"
+					className="h-14 w-14 text-ieee-bright-yellow"
 					fill="none"
 					stroke="currentColor"
 					viewBox="0 0 24 24"

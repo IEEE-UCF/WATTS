@@ -677,7 +677,7 @@ export function EventManager() {
 				<button
 					type="button"
 					onClick={openCreate}
-					className="rounded-md bg-[var(--ieee-dark-yellow)] px-4 py-2 text-sm font-semibold text-black"
+					className="rounded-md bg-ieee-dark-yellow px-4 py-2 text-sm font-semibold text-black"
 				>
 					+ New event
 				</button>

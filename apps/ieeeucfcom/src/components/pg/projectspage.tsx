@@ -75,7 +75,7 @@ export default function ProjectsPage() {
 					<div className="animated-background absolute inset-0 top-0 left-0 z-2 h-full w-full items-center bg-gradient-to-r px-5 [background:radial-gradient(125%_125%_at_50%_10%,#0c0a09_5%,transparent_100%)]"></div>
 					<div className="absolute z-3 my-30 flex w-screen flex-row justify-center p-40 px-10 md:px-20 lg:justify-end lg:px-40">
 						<div className="flex w-full flex-col items-center gap-y-5 text-center lg:items-start lg:text-left">
-							<div className="font-[heading-font] text-5xl text-[var(--ieee-bright-yellow)] sm:text-6xl">
+							<div className="font-[heading-font] text-5xl text-ieee-bright-yellow sm:text-6xl">
 								PROJECTS
 							</div>
 							<div className="w-full font-[body-font] text-xl text-white lg:w-3/4 lg:text-2xl">
@@ -148,7 +148,7 @@ export default function ProjectsPage() {
 								className="flex h-fit w-full flex-col p-3 opacity-0 transition hover:scale-102 md:basis-1/2 lg:basis-1/3"
 							>
 								<div className="group relative cursor-pointer transition-transform hover:scale-102">
-									<div className="absolute -inset-0.5 rounded-sm bg-gradient-to-r from-[var(--ieee-bright-yellow)] to-[var(--ieee-bright-yellow)] opacity-25 blur transition duration-300 group-hover:opacity-100 group-hover:duration-200"></div>
+									<div className="absolute -inset-0.5 rounded-sm bg-gradient-to-r from-ieee-bright-yellow to-ieee-bright-yellow opacity-25 blur transition duration-300 group-hover:opacity-100 group-hover:duration-200"></div>
 									<Card className="relative h-fit border-0 bg-black">
 										<CardContent>
 											<Image
@@ -173,13 +173,13 @@ export default function ProjectsPage() {
 												{visibleSkills.map((skill, idx) => (
 													<div
 														key={idx}
-														className={`w-fit rounded-sm px-3 py-1 text-sm text-white ${skill.type === 'hw' ? 'bg-[var(--ieee-light-grey)]' : 'bg-[var(--ieee-grey)]'}`}
+														className={`w-fit rounded-sm px-3 py-1 text-sm text-white ${skill.type === 'hw' ? 'bg-ieee-light-grey' : 'bg-ieee-grey'}`}
 													>
 														{skill.label}
 													</div>
 												))}
 												{remaining > 0 && (
-													<div className="w-fit rounded-sm bg-[var(--ieee-dark-grey)] px-3 py-1 font-[subheading-font] text-sm text-white">
+													<div className="w-fit rounded-sm bg-ieee-dark-grey px-3 py-1 font-[subheading-font] text-sm text-white">
 														+{remaining} more
 													</div>
 												)}
@@ -204,7 +204,7 @@ export default function ProjectsPage() {
 				<div className="fixed inset-0 z-[200] flex items-center justify-center">
 					<div className="flex h-full w-full max-w-[95vw] flex-col overflow-y-auto rounded-sm bg-black p-4 sm:max-w-md">
 						<div className="mb-4 flex items-center justify-between">
-							<div className="text-xl text-[var(--ieee-bright-yellow)]">
+							<div className="text-xl text-ieee-bright-yellow">
 								{selectedProject.title?.toUpperCase()}
 							</div>
 							<Button
@@ -229,14 +229,14 @@ export default function ProjectsPage() {
 						</div>
 						<div className="flex-1 space-y-4 overflow-auto">
 							<div>
-								<div className="mb-2 text-lg font-semibold text-[var(--ieee-bright-yellow)]">
+								<div className="mb-2 text-lg font-semibold text-ieee-bright-yellow">
 									Overview
 								</div>
 								<div className="text-white">{selectedProject.overview}</div>
 							</div>
 							{selectedProject.lead && (
 								<div>
-									<div className="mb-2 text-lg font-semibold text-[var(--ieee-bright-yellow)]">
+									<div className="mb-2 text-lg font-semibold text-ieee-bright-yellow">
 										Project Lead
 									</div>
 									<div className="text-white">{selectedProject.lead}</div>
@@ -249,7 +249,7 @@ export default function ProjectsPage() {
 										parseSkills(selectedProject.hardwareInfo).map((item, i) => (
 											<div
 												key={i}
-												className="rounded-sm bg-[var(--ieee-light-grey)] px-3 py-1 text-sm"
+												className="rounded-sm bg-ieee-light-grey px-3 py-1 text-sm"
 											>
 												{item}
 											</div>
@@ -266,7 +266,7 @@ export default function ProjectsPage() {
 										parseSkills(selectedProject.softwareInfo).map((item, i) => (
 											<div
 												key={i}
-												className="rounded-sm bg-[var(--ieee-grey)] px-3 py-1 text-sm"
+												className="rounded-sm bg-ieee-grey px-3 py-1 text-sm"
 											>
 												{item}
 											</div>

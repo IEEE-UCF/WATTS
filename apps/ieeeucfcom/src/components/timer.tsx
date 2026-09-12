@@ -128,7 +128,7 @@ const Timer: React.FC = () => {
 								</span>
 								<Link
 									href="/admin/events"
-									className="rounded border border-[var(--ieee-bright-yellow)] px-3 py-1 font-[heading-font] text-xs text-[var(--ieee-bright-yellow)] transition-all hover:bg-[var(--ieee-bright-yellow)] hover:text-black"
+									className="rounded border border-ieee-bright-yellow px-3 py-1 font-[heading-font] text-xs text-ieee-bright-yellow transition-all hover:bg-ieee-bright-yellow hover:text-black"
 								>
 									MANAGE IN EVENTS
 								</Link>
@@ -151,7 +151,7 @@ const Timer: React.FC = () => {
 										</span>
 										<button
 											onClick={() => setIsEditing(true)}
-											className="cursor-pointer rounded border border-[var(--ieee-bright-yellow)] px-3 py-1 font-[heading-font] text-xs text-[var(--ieee-bright-yellow)] transition-all hover:bg-[var(--ieee-bright-yellow)] hover:text-black"
+											className="cursor-pointer rounded border border-ieee-bright-yellow px-3 py-1 font-[heading-font] text-xs text-ieee-bright-yellow transition-all hover:bg-ieee-bright-yellow hover:text-black"
 										>
 											EDIT DATE
 										</button>
@@ -167,12 +167,12 @@ const Timer: React.FC = () => {
 											type="datetime-local"
 											value={inputValue}
 											onChange={(e) => setInputValue(e.target.value)}
-											className="rounded border border-white/30 bg-black px-3 py-2 font-[body-font] text-sm text-white focus:border-[var(--ieee-bright-yellow)] focus:outline-none"
+											className="rounded border border-white/30 bg-black px-3 py-2 font-[body-font] text-sm text-white focus:border-ieee-bright-yellow focus:outline-none"
 										/>
 										<div className="flex gap-2">
 											<button
 												onClick={handleSave}
-												className="cursor-pointer rounded bg-[var(--ieee-bright-yellow)] px-3 py-2 font-[heading-font] text-xs text-black transition-all hover:opacity-90"
+												className="cursor-pointer rounded bg-ieee-bright-yellow px-3 py-2 font-[heading-font] text-xs text-black transition-all hover:opacity-90"
 											>
 												SAVE
 											</button>

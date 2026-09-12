@@ -112,14 +112,14 @@ export function ResumeDashboard() {
 								<a
 									href={`/api/files/resume/export${exportQuery}`}
 									download
-									className="rounded-md border border-[var(--ieee-dark-yellow)] px-3 py-2 text-sm text-[var(--ieee-dark-yellow)] hover:bg-[var(--ieee-dark-yellow)]/10"
+									className="rounded-md border border-ieee-dark-yellow px-3 py-2 text-sm text-ieee-dark-yellow hover:bg-ieee-dark-yellow/10"
 								>
 									Export {selectedCount} · .zip
 								</a>
 								<a
 									href={`/api/files/resume/export${exportPdfQuery}`}
 									download
-									className="rounded-md border border-gray-700 px-3 py-2 text-sm text-gray-200 hover:border-[var(--ieee-dark-yellow)] hover:text-[var(--ieee-dark-yellow)]"
+									className="rounded-md border border-gray-700 px-3 py-2 text-sm text-gray-200 hover:border-ieee-dark-yellow hover:text-ieee-dark-yellow"
 								>
 									one PDF
 								</a>
@@ -173,7 +173,7 @@ export function ResumeDashboard() {
 														<button
 															type="button"
 															onClick={() => setPreview(r.resumeUrl!)}
-															className="text-[var(--ieee-dark-yellow)] hover:underline"
+															className="text-ieee-dark-yellow hover:underline"
 														>
 															preview
 														</button>

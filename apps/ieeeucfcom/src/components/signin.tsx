@@ -4,7 +4,7 @@ import { signIn } from 'next-auth/react';
 export default function Signinblock() {
 	return (
 		<div className="group relative self-center">
-			<div className="absolute -inset-1 bg-gradient-to-r from-[var(--ieee-bright-yellow)] to-[var(--ieee-bright-yellow)] opacity-100 blur transition duration-1000"></div>
+			<div className="absolute -inset-1 bg-gradient-to-r from-ieee-bright-yellow to-ieee-bright-yellow opacity-100 blur transition duration-1000"></div>
 
 			<div className="relative flex flex-col items-center space-y-6 rounded-sm bg-[#0c0a09] px-10 py-12 text-center leading-none ring-1 ring-gray-900/5">
 				<h1 className="font-[heading-font] text-3xl text-white">IEEE UCF</h1>
@@ -24,7 +24,7 @@ export default function Signinblock() {
 						Don&apos;t have an account?
 					</div>
 					<a
-						className="font-[heading-font] text-lg text-white transition-all hover:scale-102 hover:text-[var(--ieee-dark-yellow)]"
+						className="font-[heading-font] text-lg text-white transition-all hover:scale-102 hover:text-ieee-dark-yellow"
 						href="/auth/register"
 					>
 						REGISTER

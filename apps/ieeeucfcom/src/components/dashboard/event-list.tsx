@@ -41,8 +41,8 @@ export const EventList = () => {
 								onClick={() => setTab(t)}
 								className={`rounded-md px-3 py-1 font-[body-font] text-sm capitalize transition-colors ${
 									tab === t
-										? 'bg-[var(--ieee-bright-yellow)] text-black'
-										: 'border border-[var(--ieee-grey)] text-[var(--ieee-white)] hover:border-[var(--ieee-bright-yellow)]'
+										? 'bg-ieee-bright-yellow text-black'
+										: 'border border-ieee-grey text-ieee-white hover:border-ieee-bright-yellow'
 								}`}
 							>
 								{t} ({t === 'upcoming' ? upcoming.length : past.length})
@@ -51,21 +51,19 @@ export const EventList = () => {
 					</div>
 
 					<ScrollArea
-						className={`${list.length > 3 ? 'h-80' : ''} rounded-md border-[var(--ieee-grey)]`}
+						className={`${list.length > 3 ? 'h-80' : ''} rounded-md border-ieee-grey`}
 					>
 						{isLoading ? (
-							<p className="p-4 text-center text-[var(--ieee-white)]">
-								Loading events...
-							</p>
+							<p className="p-4 text-center text-ieee-white">Loading events...</p>
 						) : list.length === 0 ? (
-							<p className="p-4 text-center text-[var(--ieee-white)]">
+							<p className="p-4 text-center text-ieee-white">
 								{tab === 'upcoming' ? 'No upcoming events.' : 'No past events.'}
 							</p>
 						) : (
 							list.map((event) => (
 								<Card
 									key={event.id}
-									className={`mb-4 rounded-md border-[var(--ieee-grey)] ${
+									className={`mb-4 rounded-md border-ieee-grey ${
 										tab === 'past' ? 'opacity-70' : ''
 									}`}
 								>
@@ -73,9 +71,7 @@ export const EventList = () => {
 										<h3 className="text-xl font-semibold text-white">
 											{event.title}
 										</h3>
-										<p className="text-[var(--ieee-light-grey)]">
-											{event.location}
-										</p>
+										<p className="text-ieee-light-grey">{event.location}</p>
 										<p className="text-gray-600">{event.startTime}</p>
 									</div>
 								</Card>

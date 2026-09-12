@@ -230,7 +230,7 @@ export function MembersManager() {
 										<td className="px-3 py-2 whitespace-nowrap">
 											{m.firstName} {m.lastName}
 											{isSelf && (
-												<span className="ml-1 text-xs text-[var(--ieee-dark-yellow)]">
+												<span className="ml-1 text-xs text-ieee-dark-yellow">
 													(you)
 												</span>
 											)}
@@ -277,7 +277,7 @@ export function MembersManager() {
 													}
 													className={`rounded px-2 py-1 text-xs font-semibold disabled:opacity-40 ${
 														m.administrator
-															? 'bg-[var(--ieee-dark-yellow)] text-black'
+															? 'bg-ieee-dark-yellow text-black'
 															: 'border border-gray-600 text-gray-300 hover:border-gray-400'
 													}`}
 												>
@@ -399,7 +399,7 @@ export function MembersManager() {
 													href={m.resumeUrl}
 													target="_blank"
 													rel="noreferrer"
-													className="text-[var(--ieee-dark-yellow)] hover:underline"
+													className="text-ieee-dark-yellow hover:underline"
 												>
 													{m.resumeUploadedAt
 														? new Date(
@@ -421,7 +421,7 @@ export function MembersManager() {
 														key={c.id}
 														className={`rounded px-1.5 py-0.5 text-xs ${
 															c.isChair
-																? 'bg-[var(--ieee-dark-yellow)] text-black'
+																? 'bg-ieee-dark-yellow text-black'
 																: 'bg-gray-800 text-gray-300'
 														}`}
 														title={

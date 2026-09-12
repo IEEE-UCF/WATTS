@@ -94,7 +94,7 @@ export function ResumeFilterBar({
 							onClick={() => toggleYear(y)}
 							className={`rounded-full border px-3 py-1 text-xs ${
 								on
-									? 'border-[var(--ieee-dark-yellow)] bg-[var(--ieee-dark-yellow)]/15 text-[var(--ieee-dark-yellow)]'
+									? 'border-ieee-dark-yellow bg-ieee-dark-yellow/15 text-ieee-dark-yellow'
 									: 'border-gray-700 text-gray-300 hover:border-gray-500'
 							}`}
 						>

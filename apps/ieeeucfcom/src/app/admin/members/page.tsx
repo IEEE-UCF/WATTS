@@ -12,9 +12,7 @@ export default function AdminMembersPage() {
 				<Navbar />
 			</div>
 			<main className="mx-auto w-full max-w-7xl flex-1 px-4 py-8">
-				<h1 className="mb-2 font-[heading-font] text-3xl text-[var(--ieee-dark-yellow)]">
-					MEMBERS
-				</h1>
+				<h1 className="mb-2 font-[heading-font] text-3xl text-ieee-dark-yellow">MEMBERS</h1>
 				<p className="mb-6 text-sm text-gray-400">
 					View the member roster with role, capability, résumé, and committee status.
 					Admins can grant or revoke <strong>administrator</strong> /{' '}
