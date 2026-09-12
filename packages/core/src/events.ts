@@ -24,6 +24,11 @@ export interface CreateEventInput {
 	/** IANA tz, e.g. "America/New_York". Defaults to Eastern. */
 	timeZone?: string;
 	allDay?: boolean;
+	needsRoomReservation?: boolean;
+	/** Skips tracking flow and locks room reservation as manually confirmed */
+	manuallyGivenRoom?: boolean;
+	/** Whether the creator wants to be pinged via Discord when this event updates */
+	pingCreatorOnUpdate?: boolean;
 }
 
 export type UpdateEventInput = Partial<CreateEventInput>;
@@ -81,8 +86,20 @@ export async function createEvent(
 			timeZone: input.timeZone ?? 'America/New_York',
 			allDay: input.allDay ?? false,
 			createdByUserId: opts.createdByUserId ?? null,
+			pingCreatorOnUpdate: input.pingCreatorOnUpdate ?? false,
 		})
 		.returning();
+
+	if (input.needsRoomReservation) {
+		const { RoomReservations } = await import('@watts/db/schema');
+		await db.insert(RoomReservations).values({
+			eventId: event.id,
+			status: input.manuallyGivenRoom ? 'confirmed' : 'unsubmitted',
+			room: input.manuallyGivenRoom ? input.location : null,
+			isManualOverride: input.manuallyGivenRoom ? true : false,
+			lastAnnouncedStatus: input.manuallyGivenRoom ? 'confirmed' : 'unsubmitted',
+		});
+	}
 
 	const synced = await syncEventToGoogle(db, event.id);
 	return { event: synced ?? event };
@@ -105,9 +122,35 @@ export async function updateEvent(db: WattsDb, id: string, data: UpdateEventInpu
 	if (data.hidden !== undefined) patch.hidden = data.hidden;
 	if (data.timeZone !== undefined) patch.timeZone = data.timeZone;
 	if (data.allDay !== undefined) patch.allDay = data.allDay;
+	if (data.pingCreatorOnUpdate !== undefined) patch.pingCreatorOnUpdate = data.pingCreatorOnUpdate;
 
 	const [event] = await db.update(Events).set(patch).where(eq(Events.id, id)).returning();
 	if (!event) throw new DomainError('NOT_FOUND', 'Event not found');
+
+	if (data.needsRoomReservation || data.manuallyGivenRoom !== undefined) {
+		const { RoomReservations } = await import('@watts/db/schema');
+		const existing = await db.select().from(RoomReservations).where(eq(RoomReservations.eventId, id)).limit(1);
+		
+		if (existing.length > 0) {
+			const overrides: any = {};
+			if (data.manuallyGivenRoom !== undefined) {
+				overrides.status = data.manuallyGivenRoom ? 'confirmed' : existing[0].status;
+				overrides.isManualOverride = data.manuallyGivenRoom ? true : false;
+				overrides.room = data.manuallyGivenRoom ? (data.location ?? existing[0].room) : existing[0].room;
+			}
+			if (Object.keys(overrides).length > 0) {
+				await db.update(RoomReservations).set(overrides).where(eq(RoomReservations.eventId, id));
+			}
+		} else if (data.needsRoomReservation || data.manuallyGivenRoom) {
+			await db.insert(RoomReservations).values({
+				eventId: id,
+				status: data.manuallyGivenRoom ? 'confirmed' : 'unsubmitted',
+				room: data.manuallyGivenRoom ? (data.location ?? null) : null,
+				isManualOverride: data.manuallyGivenRoom ? true : false,
+				lastAnnouncedStatus: data.manuallyGivenRoom ? 'confirmed' : 'unsubmitted'
+			});
+		}
+	}
 
 	const synced = await syncEventToGoogle(db, event.id);
 	return { event: synced ?? event };

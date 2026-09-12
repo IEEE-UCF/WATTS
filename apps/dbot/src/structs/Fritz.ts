@@ -1,6 +1,6 @@
 import { Client, Collection, REST, Routes, EmbedBuilder } from 'discord.js';
 import { glob } from 'glob';
-import { pathToFileURL } from 'url';
+import { pathToFileURL, fileURLToPath } from 'url';
 import path from 'path';
 import config from '../config.ts';
 import logger from '../modules/helpers/Logger.ts';
@@ -144,11 +144,8 @@ class Fritz extends Client {
 		this.permissionCache.sweep(cached => cached.expiresAt <= now);
 	}
 
-	/**
-	 * Get the directory of the main module
-	 */
 	get directory(): string {
-		return path.dirname(new URL(import.meta.url).pathname);
+		return path.dirname(fileURLToPath(import.meta.url));
 	}
 
 	/**

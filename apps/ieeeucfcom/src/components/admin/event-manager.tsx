@@ -49,6 +49,9 @@ interface FormState {
 	requiresDues: boolean;
 	rsvpLink: string;
 	slug: string;
+	needsRoomReservation: boolean;
+	manuallyGivenRoom: boolean;
+	pingCreatorOnUpdate: boolean;
 }
 
 function emptyForm(): FormState {
@@ -66,6 +69,9 @@ function emptyForm(): FormState {
 		requiresDues: false,
 		rsvpLink: '',
 		slug: '',
+		needsRoomReservation: false,
+		manuallyGivenRoom: false,
+		pingCreatorOnUpdate: false,
 	};
 }
 
@@ -84,6 +90,9 @@ function fromEvent(ev: AdminEvent): FormState {
 		requiresDues: ev.requiresDues,
 		rsvpLink: ev.rsvpLink ?? '',
 		slug: ev.slug ?? '',
+		needsRoomReservation: false,
+		manuallyGivenRoom: false,
+		pingCreatorOnUpdate: ev.pingCreatorOnUpdate ?? false,
 	};
 }
 
@@ -133,6 +142,9 @@ function EventForm({
 			requiresDues: form.requiresDues,
 			rsvpLink: form.rsvpLink || undefined,
 			slug: form.slug || undefined,
+			needsRoomReservation: form.needsRoomReservation,
+			manuallyGivenRoom: form.manuallyGivenRoom,
+			pingCreatorOnUpdate: form.pingCreatorOnUpdate,
 		};
 		if (editing) await update.mutateAsync({ id: editing.id, data: payload });
 		else await create.mutateAsync(payload);
@@ -289,12 +301,39 @@ function EventForm({
 				</label>
 				<label className="flex items-center gap-2">
 					<input
+						id="pingCreatorOnUpdate"
+						type="checkbox"
+						checked={form.pingCreatorOnUpdate}
+						onChange={(e) => set('pingCreatorOnUpdate', e.target.checked)}
+					/>
+					Ping Creator on Discord for updates
+				</label>
+				<label className="flex items-center gap-2">
+					<input
 						id="requiresDues"
 						type="checkbox"
 						checked={form.requiresDues}
 						onChange={(e) => set('requiresDues', e.target.checked)}
 					/>
 					Requires dues
+				</label>
+				<label className="flex items-center gap-2">
+					<input
+						id="needsRoomReservation"
+						type="checkbox"
+						checked={form.needsRoomReservation}
+						onChange={(e) => set('needsRoomReservation', e.target.checked)}
+					/>
+					Needs SU Room Reservation
+				</label>
+				<label className="flex items-center gap-2 text-indigo-300">
+					<input
+						id="manuallyGivenRoom"
+						type="checkbox"
+						checked={form.manuallyGivenRoom}
+						onChange={(e) => set('manuallyGivenRoom', e.target.checked)}
+					/>
+					Room is already confirmed (Skip Tracking)
 				</label>
 			</div>
 

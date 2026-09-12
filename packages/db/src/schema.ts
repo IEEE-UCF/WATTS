@@ -370,6 +370,7 @@ export const Events = pgTable("events", {
 	syncStatus: varchar("sync_status", { length: 16 }).default('pending').notNull(),
 	lastSyncedAt: timestamp("last_synced_at", { withTimezone: true, mode: 'string' }),
 	createdByUserId: uuid("created_by_user_id"),
+	pingCreatorOnUpdate: boolean("ping_creator_on_update").default(false).notNull(),
 }, (table) => [
 	index("events_idx_committee_id").using("btree", table.committeeId.asc().nullsLast().op("uuid_ops")),
 	index("events_idx_created_at").using("btree", table.createdAt.asc().nullsLast().op("timestamptz_ops")),
@@ -410,6 +411,29 @@ export const EventAttendees = pgTable('event_attendees', {
 	index('event_attendees_idx_event_id').on(table.eventId),
 	index('event_attendees_idx_member_id').on(table.memberId),
 	unique('event_attendee_unique').on(table.eventId, table.memberId),
+]);
+
+export const roomReservationStatusEnum = pgEnum('room_reservation_status_enum', [
+	'unsubmitted',
+	'pending',
+	'confirmed',
+	'rejected'
+]);
+
+export const RoomReservations = pgTable('room_reservations', {
+	id: uuid('id').primaryKey().defaultRandom(),
+	eventId: uuid('event_id').notNull().references(() => Events.id, { onDelete: 'cascade' }),
+	status: roomReservationStatusEnum('status').notNull().default('unsubmitted'),
+	room: varchar('room', { length: 255 }),
+	reservationNumber: varchar('reservation_number', { length: 64 }),
+	isManualOverride: boolean('is_manual_override').notNull().default(false),
+	lastAnnouncedStatus: roomReservationStatusEnum('last_announced_status'),
+	lastAnnouncedRoom: varchar('last_announced_room', { length: 255 }),
+	confirmedAt: timestamp('confirmed_at', { withTimezone: true, mode: 'string' }),
+	createdAt: timestamp('created_at', { withTimezone: true, mode: 'string' }).notNull().defaultNow(),
+	updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'string' }).notNull().defaultNow().$onUpdate(() => sql`now()`),
+}, (table) => [
+	index('room_reservations_idx_event_id').on(table.eventId),
 ]);
 
 // Projects
@@ -637,6 +661,13 @@ export const EventPhotosRelations = relations(EventPhotos, ({ one }) => ({
 	}),
 }));
 
+export const RoomReservationsRelations = relations(RoomReservations, ({ one }) => ({
+	event: one(Events, {
+		fields: [RoomReservations.eventId],
+		references: [Events.id],
+	}),
+}));
+
 // Infer Types
 export type Member = typeof Members.$inferSelect;
 export type NewMember = typeof Members.$inferInsert;
@@ -668,3 +699,5 @@ export type AppSetting = typeof AppSettings.$inferSelect;
 export type NewAppSetting = typeof AppSettings.$inferInsert;
 export type UploadEvent = typeof UploadEvents.$inferSelect;
 export type NewUploadEvent = typeof UploadEvents.$inferInsert;
+export type RoomReservation = typeof RoomReservations.$inferSelect;
+export type NewRoomReservation = typeof RoomReservations.$inferInsert;

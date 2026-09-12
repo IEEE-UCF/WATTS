@@ -34,6 +34,7 @@ interface Config {
 			discordEventSync: {
 				enabled: boolean;
 				intervalMinutes: number;
+				pingEventCreators: boolean;
 			};
 			eventReminders: {
 				enabled: boolean;
@@ -93,6 +94,7 @@ const config: Config = {
 			discordEventSync: {
 				enabled: process.env.DISCORD_EVENT_SYNC_ENABLED === 'true',
 				intervalMinutes: Number(process.env.DISCORD_EVENT_SYNC_INTERVAL_MINS) || 15,
+				pingEventCreators: process.env.PING_EVENT_CREATORS === 'true',
 			},
 			eventReminders: {
 				enabled: process.env.EVENT_REMINDERS_ENABLED !== 'false',
