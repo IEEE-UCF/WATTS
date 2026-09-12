@@ -1,35 +1,18 @@
-/**
- * QR Code Test Page
- *
- * This page is used to test and demonstrate the MemberQRCode component.
- * It shows different examples of QR codes with various configurations:
- * - QR code with member data and IEEE-UCF logo
- * - QR code with blank data (error testing)
- *
- * Purpose:
- * - Visual testing of QR code generation
- * - Testing different data formats (JSON member info)
- * - Verifying logo overlay functionality
- * - Quick reference for developers on how to use the component
- *
- * Usage:
- * Navigate to /test-qr to view examples
- * Scan the QR codes with /scan-qr page to test the full flow
- */
 'use client';
 import React from 'react';
 import { MemberQRCode } from '@/components/qr/member-qr-code';
 import { trpc } from '@/lib/trpc/client';
-import { Card } from '@watts/ui/card';
 
+/**
+ * The member's check-in pass — styled like an event badge (ribbon header, name,
+ * viewfinder-framed code) rather than a bare QR image dropped in a generic card.
+ * The QR itself is still rendered by components/qr/member-qr-code.tsx ('bare'
+ * variant, no chrome of its own); everything below is presentation only.
+ */
 export const Member_QR_Code = () => {
-	// ============================================
-	// SAMPLE DATA
-	// ============================================
 	const { data: session, isLoading, isError } = trpc.auth.getSession.useQuery();
-	// MemberQRCode itself does no data fetching — fetch the profile here so we can
-	// still pass a personalized "{firstName}'s QR Code" title, matching the
-	// behavior the old pg/memberqrcode-gen.tsx had baked in.
+	// The QR primitive does no data fetching of its own — fetch the profile here so
+	// the badge can show a real name and major instead of a generic label.
 	const { data: memberProfile } = trpc.member.getMyProfile.useQuery(undefined, {
 		enabled: !!session?.user,
 		retry: false,
@@ -37,69 +20,74 @@ export const Member_QR_Code = () => {
 
 	if (isLoading) {
 		return (
-			<div className="flex min-h-screen items-center justify-center bg-black">
-				<p className="text-xl text-white">Loading session data...</p>
-			</div>
+			<BadgeShell>
+				<p className="p-6 text-center text-sm text-muted-foreground">Loading your pass…</p>
+			</BadgeShell>
 		);
 	}
 
 	if (isError || !session?.user?.discordId) {
 		return (
-			<div className="flex min-h-screen items-center justify-center bg-black">
-				<p className="text-xl text-red-500">
-					Error loading session or Discord ID not found.
+			<BadgeShell>
+				<p className="p-6 text-center text-sm text-red-400">
+					Couldn&apos;t load your check-in pass — try refreshing.
 				</p>
-			</div>
+			</BadgeShell>
 		);
 	}
 
-	/**
-	 * Sample member data object
-	 *
-	 * This represents the structure of member information that will be
-	 * encoded in the QR code. The data is converted to JSON string format.
-	 *
-	 * Structure:
-	 * - id: Unique member identifier (required)
-	 * - name: Member's full name (optional)
-	 * - email: Member's email address (optional)
-	 * - membershipType: Type of membership (optional)
-	 * - chapter: IEEE chapter name (optional)
-	 *
-	 * Note: Only uncommented fields will be included in the QR code
-	 */
-	const memberData = {
-		// id: "99688747573981184", // Required: Unique member ID
-		id: session.user.discordId,
-		// Add other member details as needed
-		// name: "John Doe",
-		// email: "john.doe@email.com",
-		// membershipType: "Student",
-		// chapter: "UCF",
-	};
+	// Only the Discord id goes in the code itself; name/major below are display-only.
+	const memberInfoString = JSON.stringify({ id: session.user.discordId });
 
-	/**
-	 * Converts member data object to JSON string
-	 *
-	 * The QR code scanner expects JSON-formatted data, so we stringify
-	 * the object here. The scanner will parse this back to an object.
-	 */
-	const memberInfoString = JSON.stringify(memberData);
+	const fullName = memberProfile
+		? `${memberProfile.firstName} ${memberProfile.lastName}`.trim()
+		: (session.user.name ?? 'Member');
 
-	// ============================================
-	// RENDER / UI
-	// ============================================
+	const subtitle = memberProfile?.major
+		? memberProfile.graduationYear
+			? `${memberProfile.major} · Class of ${memberProfile.graduationYear}`
+			: memberProfile.major
+		: 'IEEE @ UCF Member';
 
 	return (
-		<Card className="mx-auto flex max-w-4xl flex-col rounded-xl border-2 bg-black px-4 py-6 text-card-foreground shadow-[0_0_20px_rgba(250,204,21,0.5)] shadow-sm">
-			<MemberQRCode
-				memberInfo={memberInfoString}
-				logoUrl="/iconography/ieeeucficon.png"
-				title={memberProfile?.firstName ?? 'Member'}
-			/>
-		</Card>
-		// </div>
+		<BadgeShell>
+			<div className="flex items-center justify-between bg-ieee-dark-yellow px-5 py-2">
+				<span className="font-heading text-[11px] tracking-[0.2em] text-black">
+					IEEE @ UCF
+				</span>
+				<span className="font-heading text-[11px] tracking-[0.2em] text-black">
+					{memberProfile?.officerStatus ? 'OFFICER PASS' : 'MEMBER PASS'}
+				</span>
+			</div>
+
+			<div className="flex flex-col items-center gap-5 px-6 py-6">
+				<div className="text-center">
+					<div className="font-subheading text-xl text-white">{fullName}</div>
+					<div className="text-sm text-muted-foreground">{subtitle}</div>
+				</div>
+
+				<div className="relative p-3">
+					<span className="absolute top-0 left-0 h-5 w-5 border-t-2 border-l-2 border-ieee-dark-yellow" />
+					<span className="absolute top-0 right-0 h-5 w-5 border-t-2 border-r-2 border-ieee-dark-yellow" />
+					<span className="absolute bottom-0 left-0 h-5 w-5 border-b-2 border-l-2 border-ieee-dark-yellow" />
+					<span className="absolute right-0 bottom-0 h-5 w-5 border-r-2 border-b-2 border-ieee-dark-yellow" />
+					<MemberQRCode
+						memberInfo={memberInfoString}
+						logoUrl="/iconography/ieeeucficon.png"
+						variant="bare"
+					/>
+				</div>
+
+				<p className="text-xs text-muted-foreground-dim">Show this at check-in</p>
+			</div>
+		</BadgeShell>
 	);
 };
 
-// export default Member_QR_Code;
+function BadgeShell({ children }: { children: React.ReactNode }) {
+	return (
+		<div className="flex w-full flex-col overflow-hidden rounded-2xl border border-border bg-ieee-near-black shadow-[0_0_24px_rgba(250,204,21,0.35)]">
+			{children}
+		</div>
+	);
+}

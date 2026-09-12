@@ -23,8 +23,11 @@ interface MemberQrCodeProps {
 	 * memberqrcodegen.tsx behavior. */
 	errorCorrectionLevel?: 'L' | 'M' | 'Q' | 'H';
 	/** 'card' = @watts/ui Card wrapper, dark text (was memberqrcode-gen.tsx).
-	 * 'plain' = bare div, light text (was memberqrcodegen.tsx). Default 'card'. */
-	variant?: 'card' | 'plain';
+	 * 'plain' = bare div, light text (was memberqrcodegen.tsx).
+	 * 'bare' = just the <img>, no heading/caption/wrapper — for callers that build
+	 * their own chrome around the code (see components/dashboard/member-qr-code.tsx).
+	 * Default 'card'. */
+	variant?: 'card' | 'plain' | 'bare';
 	/** Personalized name for the 'card' variant's heading, e.g. "Dawn's QR Code".
 	 * Ignored by the 'plain' variant, which always reads "Member QR Code". */
 	title?: string;
@@ -157,6 +160,10 @@ export function MemberQRCode({
 			data-testid="qr-code-image"
 		/>
 	);
+
+	if (variant === 'bare') {
+		return qrImage || null;
+	}
 
 	if (variant === 'plain') {
 		return (

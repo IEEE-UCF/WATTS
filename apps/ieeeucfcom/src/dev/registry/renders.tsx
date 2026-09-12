@@ -53,6 +53,8 @@ import { Timer } from '@/components/timer';
 import { Calendar } from '@/components/calendar';
 import { StaffHub } from '@/components/staff/staff-hub';
 import { EventList } from '@/components/dashboard/event-list';
+import { EventShowcase } from '@/components/dashboard/event-showcase';
+import { Member_QR_Code } from '@/components/dashboard/member-qr-code';
 import AboutIEEE from '@/components/pg/aboutieee';
 import AboutHeader from '@/components/pg/aboutheader';
 import { TogglePill } from '@/components/ui/toggle-pill';
@@ -257,6 +259,16 @@ export const renders: Record<string, Render> = {
 	'marketing/about-header': () => <AboutHeader />,
 	'staff/staff-hub': () => <StaffHub />,
 	'dashboard/event-list': () => <EventList />,
+	'dashboard/event-showcase': () => (
+		<div className="max-w-md">
+			<EventShowcase />
+		</div>
+	),
+	'dashboard/member-qr-code': () => (
+		<div className="max-w-xs">
+			<Member_QR_Code />
+		</div>
+	),
 	'admin/event-manager': () => <EventManager />,
 	'admin/members-manager': () => <MembersManager />,
 	'admin/resume-dashboard': () => <ResumeDashboard />,
