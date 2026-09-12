@@ -1,3 +1,8 @@
+// TODO(cms): create/update/delete below have no admin UI caller yet — the
+// only way to manage /projects content today is seed fixtures or raw DB
+// access. Needs an /admin/projects page (apps/ieeeucfcom/src/app/admin/),
+// following the /admin/events pattern (list + edit modal). See project-cms-todo
+// memory note for context on why this surfaced.
 import { z } from 'zod';
 import { publicProcedure, adminProcedure, createTRPCRouter } from '../trpc';
 import {
