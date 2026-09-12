@@ -300,11 +300,9 @@ export class DiscordEventSync {
 						.setImage(spacerUrl);
 
 					// If we have a user who created the event and they have a Discord ID, ping them!
-					// Fallback for testing: if no user is found, we ping the hardcoded dev ID
 					let content = '';
-					if (event.pingCreatorOnUpdate) {
-						const pingId = user?.discordId ?? '99688747573981184';
-						content = `<@${pingId}>`;
+					if (event.pingCreatorOnUpdate && user?.discordId) {
+						content = `<@${user.discordId}>`;
 					}
 
 					await channel.send({ content: content || undefined, embeds: [embed] });
@@ -375,9 +373,8 @@ export class DiscordEventSync {
 					const statusFlag = reservation.status === 'unsubmitted' ? ' ⚠️ *(Unsubmitted)*' : (reservation.status === 'rejected' ? ' ❌ *(Rejected)*' : '');
 
 					let pingTag = '';
-					if (event.pingCreatorOnUpdate && (reservation.status === 'unsubmitted' || reservation.status === 'rejected')) {
-						const discordId = user?.discordId ?? '99688747573981184';
-						pingTag = ` - <@${discordId}>`;
+					if (event.pingCreatorOnUpdate && user?.discordId && (reservation.status === 'unsubmitted' || reservation.status === 'rejected')) {
+						pingTag = ` - <@${user.discordId}>`;
 					}
 					grouped[monthYear].push(`• \`${month}/${day}\` ${roomStr} ➔ **${event.title}**${statusFlag}${pingTag}`);
 				}
