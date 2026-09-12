@@ -46,6 +46,7 @@ import { StaffHub } from '@/components/staff/staff-hub';
 import { EventList } from '@/components/dashboard/event-list';
 import AboutIEEE from '@/components/pg/aboutieee';
 import AboutHeader from '@/components/pg/aboutheader';
+import { TogglePill } from '@/components/ui/toggle-pill';
 
 type Render = ComponentType<Record<string, unknown>>;
 
@@ -219,4 +220,9 @@ export const renders: Record<string, Render> = {
 	'marketing/about-header': () => <AboutHeader />,
 	'staff/staff-hub': () => <StaffHub />,
 	'dashboard/event-list': () => <EventList />,
+	'admin/toggle-pill': (p) => (
+		<TogglePill selected={Boolean(p.selected)} tone={p.tone as never} size={p.size as never}>
+			{(p.children as string) || 'Toggle'}
+		</TogglePill>
+	),
 };

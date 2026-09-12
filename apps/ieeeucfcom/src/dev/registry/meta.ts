@@ -238,6 +238,25 @@ export const entriesMeta: EntryMeta[] = [
 		source: '@/components/dashboard/event-list',
 		notes: 'Imported by /dashboard, /admin/dashboard and /test/demos. Needs event.getAll.',
 	},
+	{
+		slug: 'admin/toggle-pill',
+		name: 'TogglePill',
+		group: 'admin',
+		status: 'ok',
+		source: '@/components/ui/toggle-pill',
+		notes: 'Consolidates 5 previously independent toggle-button implementations across members-manager, resume-filter-bar, and event-manager (dashboard consolidation pass).',
+		controls: [
+			{ name: 'children', type: 'text', default: 'Toggle' },
+			{ name: 'selected', type: 'boolean', default: false },
+			{
+				name: 'tone',
+				type: 'select',
+				options: ['brand', 'brand-outline', 'info', 'success'],
+				default: 'brand',
+			},
+			{ name: 'size', type: 'select', options: ['sm', 'xs', 'pill'], default: 'sm' },
+		],
+	},
 ];
 
 export function getMeta(slug: string): EntryMeta | undefined {

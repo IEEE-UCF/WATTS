@@ -5,6 +5,7 @@ import { useSession } from 'next-auth/react';
 import { trpc } from '@/lib/trpc/client';
 import { officerRoleEnum } from '@watts/db/schema';
 import { CAPABILITIES, CAPABILITY_KEYS, type Capability } from '@watts/permissions';
+import { TogglePill } from '@/components/ui/toggle-pill';
 
 type RoleFilter = 'all' | 'admin' | 'officer' | 'none';
 type OfficerRole = (typeof officerRoleEnum.enumValues)[number];
@@ -266,8 +267,8 @@ export function MembersManager() {
 										{/* Admin */}
 										<td className="px-3 py-2">
 											{isAdmin ? (
-												<button
-													type="button"
+												<TogglePill
+													selected={m.administrator}
 													disabled={isSelf || st === 'saving'}
 													onClick={() => runAdmin(m.id, !m.administrator)}
 													title={
@@ -275,14 +276,9 @@ export function MembersManager() {
 															? "You can't change your own admin access"
 															: undefined
 													}
-													className={`rounded px-2 py-1 text-xs font-semibold disabled:opacity-40 ${
-														m.administrator
-															? 'bg-ieee-dark-yellow text-black'
-															: 'border border-border text-muted-foreground hover:border-foreground'
-													}`}
 												>
 													{m.administrator ? 'Admin' : 'Make admin'}
-												</button>
+												</TogglePill>
 											) : (
 												<span className="text-xs text-muted-foreground">
 													{m.administrator ? 'Admin' : '—'}
@@ -294,8 +290,9 @@ export function MembersManager() {
 										<td className="px-3 py-2">
 											{isAdmin ? (
 												<div className="flex items-center gap-2">
-													<button
-														type="button"
+													<TogglePill
+														selected={m.officerStatus}
+														tone="info"
 														disabled={st === 'saving'}
 														onClick={() =>
 															runOfficer(
@@ -308,16 +305,11 @@ export function MembersManager() {
 																		),
 															)
 														}
-														className={`rounded px-2 py-1 text-xs font-semibold disabled:opacity-40 ${
-															m.officerStatus
-																? 'bg-blue-600 text-white'
-																: 'border border-border text-muted-foreground hover:border-foreground'
-														}`}
 													>
 														{m.officerStatus
 															? 'Officer'
 															: 'Make officer'}
-													</button>
+													</TogglePill>
 													<select
 														value={m.officerRole ?? ''}
 														disabled={
@@ -362,9 +354,11 @@ export function MembersManager() {
 														const on = m.permissions.includes(cap);
 														const allowed = canToggleCap(cap);
 														return (
-															<button
+															<TogglePill
 																key={cap}
-																type="button"
+																selected={on}
+																tone="success"
+																size="xs"
 																disabled={
 																	st === 'saving' || !allowed
 																}
@@ -376,14 +370,9 @@ export function MembersManager() {
 																		? CAPABILITIES[cap].label
 																		: `${CAPABILITIES[cap].label} — only an admin can grant this`
 																}
-																className={`rounded px-1.5 py-0.5 text-xs disabled:opacity-40 ${
-																	on
-																		? 'bg-green-700 text-white'
-																		: 'border border-border text-muted-foreground hover:border-foreground'
-																}`}
 															>
 																{cap}
-															</button>
+															</TogglePill>
 														);
 													})}
 												</div>

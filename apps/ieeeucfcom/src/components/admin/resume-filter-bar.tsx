@@ -8,6 +8,7 @@ import {
 	isEmptyResumeFilter,
 	EMPTY_RESUME_FILTER,
 } from '@/lib/resume-export/filters';
+import { TogglePill } from '@/components/ui/toggle-pill';
 
 export interface FilterBarRow {
 	memberId: string;
@@ -90,18 +91,15 @@ export function ResumeFilterBar({
 				{years.map((y) => {
 					const on = value.gradYears.includes(y);
 					return (
-						<button
+						<TogglePill
 							key={y}
-							type="button"
+							selected={on}
+							tone="brand-outline"
+							size="pill"
 							onClick={() => toggleYear(y)}
-							className={`rounded-full border px-3 py-1 text-xs ${
-								on
-									? 'border-ieee-dark-yellow bg-ieee-dark-yellow/15 text-ieee-dark-yellow'
-									: 'border-input text-muted-foreground hover:border-foreground'
-							}`}
 						>
 							{y}
-						</button>
+						</TogglePill>
 					);
 				})}
 				{value.gradYears.length > 0 && (
