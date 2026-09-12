@@ -15,6 +15,9 @@ interface EventFormData {
 	description: string;
 	flyerUrl: string;
 	rsvpLink: string;
+	needsRoomReservation: boolean;
+	manuallyGivenRoom: boolean;
+	pingCreatorOnUpdate: boolean;
 }
 
 const formatDateTimeLocal = (isoString: string | null | undefined): string => {
@@ -39,6 +42,9 @@ export const FormPopup: React.FC = () => {
 		description: '',
 		flyerUrl: '',
 		rsvpLink: '',
+		needsRoomReservation: false,
+		manuallyGivenRoom: false,
+		pingCreatorOnUpdate: false,
 	});
 
 	const utils = trpc.useUtils();
@@ -51,6 +57,8 @@ export const FormPopup: React.FC = () => {
 				title: '', location: '', hostType: '', hostId: '',
 				startTime: '', endTime: '', requiresDues: false,
 				description: '', flyerUrl: '', rsvpLink: '',
+				needsRoomReservation: false, manuallyGivenRoom: false,
+				pingCreatorOnUpdate: false,
 			});
 		},
 		onError: (err) => {
@@ -74,6 +82,9 @@ export const FormPopup: React.FC = () => {
 			description: 'This is a test event created for database insertion testing.',
 			flyerUrl: '',
 			rsvpLink: '',
+			needsRoomReservation: false,
+			manuallyGivenRoom: false,
+			pingCreatorOnUpdate: false,
 		});
 	};
 
@@ -82,7 +93,7 @@ export const FormPopup: React.FC = () => {
 	) => {
 		const { name, value, type } = e.target;
 		const key = name as keyof EventFormData;
-		if (key === 'requiresDues' && type === 'checkbox') {
+		if (type === 'checkbox') {
 			setFormData((prev) => ({ ...prev, [key]: (e.target as HTMLInputElement).checked }));
 		} else {
 			setFormData((prev) => ({ ...prev, [key]: value }));
@@ -101,6 +112,9 @@ export const FormPopup: React.FC = () => {
 			flyerUrl: formData.flyerUrl || undefined,
 			rsvpLink: formData.rsvpLink || undefined,
 			requiresDues: formData.requiresDues,
+			needsRoomReservation: formData.needsRoomReservation,
+			manuallyGivenRoom: formData.manuallyGivenRoom,
+			pingCreatorOnUpdate: formData.pingCreatorOnUpdate,
 		});
 	};
 
@@ -156,8 +170,22 @@ export const FormPopup: React.FC = () => {
 								<input type="text" name="rsvpLink" id="rsvpLink" value={formData.rsvpLink} onChange={handleChange} className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm sm:text-sm" />
 							</div>
 							<div className="flex items-center mb-4">
+								<input type="checkbox" name="needsRoomReservation" id="needsRoomReservation" checked={formData.needsRoomReservation} onChange={handleChange} className="h-4 w-4 text-indigo-600 border-gray-300 rounded" />
+								<label htmlFor="needsRoomReservation" className="ml-2 block text-sm text-gray-900">Needs SU Room Reservation</label>
+							</div>
+							{formData.needsRoomReservation && (
+								<div className="flex items-center mb-4 ml-6">
+									<input type="checkbox" name="manuallyGivenRoom" id="manuallyGivenRoom" checked={formData.manuallyGivenRoom} onChange={handleChange} className="h-4 w-4 text-indigo-600 border-gray-300 rounded" />
+									<label htmlFor="manuallyGivenRoom" className="ml-2 block text-sm text-gray-900">Room is already confirmed (Skip Tracking)</label>
+								</div>
+							)}
+							<div className="flex items-center mb-4">
 								<input type="checkbox" name="requiresDues" id="requiresDues" checked={formData.requiresDues} onChange={handleChange} className="h-4 w-4 text-indigo-600 border-gray-300 rounded" />
 								<label htmlFor="requiresDues" className="ml-2 block text-sm text-gray-900">Requires Dues</label>
+							</div>
+							<div className="flex items-center mb-4">
+								<input type="checkbox" name="pingCreatorOnUpdate" id="pingCreatorOnUpdate" checked={formData.pingCreatorOnUpdate} onChange={handleChange} className="h-4 w-4 text-indigo-600 border-gray-300 rounded" />
+								<label htmlFor="pingCreatorOnUpdate" className="ml-2 block text-sm text-gray-900">Ping Creator on Discord for updates</label>
 							</div>
 							{createEvent.isError && (
 								<p className="text-red-600 text-sm mb-4">{createEvent.error.message}</p>

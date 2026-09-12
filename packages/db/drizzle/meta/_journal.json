@@ -57,6 +57,13 @@
       "when": 1788993623839,
       "tag": "0007_sloppy_lockheed",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1789173817118,
+      "tag": "0008_room-reservation-updates",
+      "breakpoints": true
     }
   ]
 }

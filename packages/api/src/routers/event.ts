@@ -96,6 +96,9 @@ const eventCreateSchema = z.object({
 	hidden: z.boolean().optional(),
 	timeZone: z.string().max(64).optional(),
 	allDay: z.boolean().optional(),
+	needsRoomReservation: z.boolean().optional(),
+	manuallyGivenRoom: z.boolean().optional(),
+	pingCreatorOnUpdate: z.boolean().optional(),
 });
 
 const eventUpdateSchema = eventCreateSchema.partial();
