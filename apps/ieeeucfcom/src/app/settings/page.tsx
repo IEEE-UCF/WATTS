@@ -249,7 +249,7 @@ export default function SettingsPage() {
 													<SelectTrigger id="gender">
 														<SelectValue placeholder="Select gender" />
 													</SelectTrigger>
-													<SelectContent className="bg-white">
+													<SelectContent>
 														<SelectItem value="M">Male</SelectItem>
 														<SelectItem value="F">Female</SelectItem>
 														<SelectItem value="NB">
@@ -272,7 +272,7 @@ export default function SettingsPage() {
 													<SelectTrigger id="major">
 														<SelectValue placeholder="Select major" />
 													</SelectTrigger>
-													<SelectContent className="bg-white">
+													<SelectContent>
 														{majorEnums.enumValues.map((option) => (
 															<SelectItem key={option} value={option}>
 																{option}

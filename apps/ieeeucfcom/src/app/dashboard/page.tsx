@@ -5,7 +5,7 @@ import { Card, CardHeader, CardTitle } from '@watts/ui/card';
 
 export default function Dashboard() {
 	return (
-		<div className="flex min-h-screen max-w-screen flex-col overflow-hidden bg-black text-black">
+		<div className="flex min-h-screen max-w-screen flex-col overflow-hidden bg-black">
 			{/* Navbar – match home/admin spacing */}
 			<div className="w-full px-5">
 				<Navbar />
@@ -33,7 +33,7 @@ export default function Dashboard() {
 					</Card>
 
 					{/* Left Panel – Upcoming Events */}
-					<Card className="flex-1 rounded-xl border border-border bg-[--ieee-dark-grey] p-4 shadow-lg shadow-black/40 lg:p-6">
+					<Card className="flex-1 rounded-xl border border-border bg-ieee-dark-grey p-4 shadow-lg shadow-black/40 lg:p-6">
 						<CardTitle className="-mb-4 text-lg font-semibold text-foreground lg:text-xl">
 							Upcoming Events
 						</CardTitle>

@@ -23,7 +23,7 @@ export default async function Dashboard() {
 	if (!roles?.administrator) redirect('/dashboard');
 
 	return (
-		<div className="flex min-h-screen max-w-screen flex-col overflow-hidden bg-black text-black">
+		<div className="flex min-h-screen max-w-screen flex-col overflow-hidden bg-black">
 			{/* Navbar – match home spacing */}
 			<div className="w-full px-5">
 				<Navbar />

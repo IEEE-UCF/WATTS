@@ -108,7 +108,7 @@ export default function EventSidebar() {
 						{currentEvent ? (
 							<div className="group relative h-fit">
 								<div className="absolute -inset-1 rounded-sm bg-gradient-to-r from-ieee-bright-yellow to-ieee-bright-yellow opacity-50 blur"></div>
-								<div className="relative flex h-full items-start justify-start space-x-6 rounded-sm bg-ieee-near-black leading-none ring-1 ring-gray-900/5">
+								<div className="relative flex h-full items-start justify-start space-x-6 rounded-sm bg-ieee-near-black leading-none ring-1 ring-border/5">
 									<div className="flex h-full w-[70vw] flex-row gap-x-10 rounded-sm p-10 xl:w-full">
 										<Image
 											className="h-screen w-[40vh] rounded-sm object-cover sm:w-[50vh]"
@@ -156,7 +156,7 @@ export default function EventSidebar() {
 									<X size={24} />
 								</Button>
 								<div className="absolute -inset-1 rounded-sm bg-gradient-to-r from-ieee-bright-yellow to-ieee-bright-yellow opacity-50 blur"></div>
-								<div className="relative flex h-full items-start justify-start space-x-6 rounded-sm bg-ieee-near-black leading-none ring-1 ring-gray-900/5">
+								<div className="relative flex h-full items-start justify-start space-x-6 rounded-sm bg-ieee-near-black leading-none ring-1 ring-border/5">
 									<div className="flex h-full flex-col gap-6 rounded-sm p-6 lg:flex-row lg:gap-x-10 lg:p-10">
 										<Image
 											className="mt-15 h-fit w-full rounded-sm object-cover lg:h-screen lg:w-[50vh]"
