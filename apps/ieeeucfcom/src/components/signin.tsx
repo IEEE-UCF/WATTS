@@ -6,7 +6,7 @@ export default function Signinblock() {
 		<div className="group relative self-center">
 			<div className="absolute -inset-1 bg-gradient-to-r from-ieee-bright-yellow to-ieee-bright-yellow opacity-100 blur transition duration-1000"></div>
 
-			<div className="relative flex flex-col items-center space-y-6 rounded-sm bg-[#0c0a09] px-10 py-12 text-center leading-none ring-1 ring-gray-900/5">
+			<div className="relative flex flex-col items-center space-y-6 rounded-sm bg-ieee-near-black px-10 py-12 text-center leading-none ring-1 ring-gray-900/5">
 				<h1 className="font-heading text-3xl text-white">IEEE UCF</h1>
 
 				<button

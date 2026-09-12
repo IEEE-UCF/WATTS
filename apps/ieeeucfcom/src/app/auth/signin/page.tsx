@@ -28,7 +28,7 @@ export default async function SignInPage() {
 	return (
 		<div className="flex max-w-screen flex-col overflow-x-hidden">
 			<div className="relative w-full">
-				<div className="relative flex h-screen w-full flex-col items-center [background:radial-gradient(125%_125%_at_50%_10%,#0c0a09_40%,#FFC72C_100%)]">
+				<div className="relative flex h-screen w-full flex-col items-center [background:radial-gradient(125%_125%_at_50%_10%,var(--color-ieee-near-black)_40%,var(--color-ieee-dark-yellow)_100%)]">
 					<div className="w-full px-5">
 						<Navbar />
 					</div>

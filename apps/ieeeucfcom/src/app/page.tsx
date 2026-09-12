@@ -68,7 +68,7 @@ export default function Home() {
 		<div>
 			<div className="flex max-w-screen flex-col overflow-x-hidden">
 				<div className="relative w-full">
-					<div className="relative flex h-[165vh] w-full flex-col items-center [background:radial-gradient(125%_125%_at_50%_10%,#0c0a09_40%,#FFC72C_100%)] lg:h-[150vh] 2xl:h-[140vh]">
+					<div className="relative flex h-[165vh] w-full flex-col items-center [background:radial-gradient(125%_125%_at_50%_10%,var(--color-ieee-near-black)_40%,var(--color-ieee-dark-yellow)_100%)] lg:h-[150vh] 2xl:h-[140vh]">
 						<div className="w-full px-5">
 							<Navbar />
 
@@ -130,8 +130,14 @@ export default function Home() {
 						>
 							<defs>
 								<radialGradient id="bg-gradient" cx="40%" cy="120%" r="125%">
-									<stop offset="50%" stopColor="#000000" />
-									<stop offset="100%" stopColor="#3d3110" />
+									<stop
+										offset="50%"
+										style={{ stopColor: 'var(--color-ieee-black)' }}
+									/>
+									<stop
+										offset="100%"
+										style={{ stopColor: 'var(--color-ieee-warm-dark)' }}
+									/>
 								</radialGradient>
 							</defs>
 
@@ -144,7 +150,7 @@ export default function Home() {
 					</div>
 				</div>
 
-				<div className="-translate-y-20 [background:radial-gradient(125%_125%_at_50%_10%,#3d3110_40%,#000000_100%)]">
+				<div className="-translate-y-20 [background:radial-gradient(125%_125%_at_50%_10%,var(--color-ieee-warm-dark)_40%,var(--color-ieee-black)_100%)]">
 					<div
 						ref={carouselRef}
 						className="relative z-10 flex w-full -translate-y-1/2 justify-center"
@@ -201,8 +207,14 @@ export default function Home() {
 					>
 						<defs>
 							<radialGradient id="bg-gradient2" cx="40%" cy="110%" r="125%">
-								<stop offset="50%" stopColor="#000000" />
-								<stop offset="100%" stopColor="#0d0a03" />
+								<stop
+									offset="50%"
+									style={{ stopColor: 'var(--color-ieee-black)' }}
+								/>
+								<stop
+									offset="100%"
+									style={{ stopColor: 'var(--color-ieee-near-black)' }}
+								/>
 							</radialGradient>
 						</defs>
 
@@ -214,7 +226,7 @@ export default function Home() {
 					</svg>
 				</div>
 
-				<div className="-mt-40 flex w-full flex-col bg-[#0d0a03] p-5">
+				<div className="-mt-40 flex w-full flex-col bg-ieee-near-black p-5">
 					<div className="my-5 text-center font-heading text-3xl text-ieee-bright-yellow md:text-4xl">
 						UPCOMING EVENTS
 					</div>

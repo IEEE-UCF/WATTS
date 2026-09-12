@@ -28,7 +28,7 @@ export default function EventsPage() {
 					<Navbar />
 				</div>
 
-				<div className="animated-background absolute inset-0 top-0 left-0 z-2 h-full w-full items-center bg-gradient-to-r px-5 [background:radial-gradient(125%_125%_at_50%_10%,#0c0a09_5%,transparent_100%)]"></div>
+				<div className="animated-background absolute inset-0 top-0 left-0 z-2 h-full w-full items-center bg-gradient-to-r px-5 [background:radial-gradient(125%_125%_at_50%_10%,var(--color-ieee-near-black)_5%,transparent_100%)]"></div>
 
 				<div className="absolute z-3 my-30 flex w-screen flex-row justify-center p-40 px-10 md:px-20 lg:justify-end lg:px-40">
 					<div className="float flex flex-col items-center justify-center gap-y-5 self-end text-center lg:items-end lg:justify-end lg:text-right">
@@ -63,8 +63,8 @@ export default function EventsPage() {
 				>
 					<defs>
 						<radialGradient id="bg-gradient3" cx="40%" cy="120%" r="125%">
-							<stop offset="50%" stopColor="#000000" />
-							<stop offset="100%" stopColor="#000000" />
+							<stop offset="50%" style={{ stopColor: 'var(--color-ieee-black)' }} />
+							<stop offset="100%" style={{ stopColor: 'var(--color-ieee-black)' }} />
 						</radialGradient>
 					</defs>
 

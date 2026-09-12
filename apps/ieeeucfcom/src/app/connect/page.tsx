@@ -26,7 +26,7 @@ export default function ConnectPage() {
 				<div className="absolute inset-0 z-4 h-fit w-full items-center px-5">
 					<Navbar />
 				</div>
-				<div className="animated-background absolute inset-0 top-0 left-0 z-2 h-full w-full items-center bg-gradient-to-r px-5 [background:radial-gradient(125%_125%_at_50%_10%,#0c0a09_5%,transparent_100%)]"></div>
+				<div className="animated-background absolute inset-0 top-0 left-0 z-2 h-full w-full items-center bg-gradient-to-r px-5 [background:radial-gradient(125%_125%_at_50%_10%,var(--color-ieee-near-black)_5%,transparent_100%)]"></div>
 
 				<div className="float absolute z-3 my-20 flex w-screen flex-row justify-center p-40 lg:justify-end">
 					<div className="flex flex-col items-center justify-end gap-y-5 self-end text-center lg:items-end lg:text-right">
@@ -60,8 +60,11 @@ export default function ConnectPage() {
 				>
 					<defs>
 						<radialGradient id="bg-gradient4" cx="40%" cy="120%" r="130%">
-							<stop offset="10%" stopColor="#000000" />
-							<stop offset="100%" stopColor="#3d3110" />
+							<stop offset="10%" style={{ stopColor: 'var(--color-ieee-black)' }} />
+							<stop
+								offset="100%"
+								style={{ stopColor: 'var(--color-ieee-warm-dark)' }}
+							/>
 						</radialGradient>
 					</defs>
 					<path
@@ -74,7 +77,7 @@ export default function ConnectPage() {
 
 			<div className="flex flex-col">
 				{/* SOCIALS SECTION */}
-				<div className="flex -translate-y-20 flex-col items-center justify-between gap-y-10 bg-[#30250a] px-8 py-20 lg:flex-row lg:px-15">
+				<div className="flex -translate-y-20 flex-col items-center justify-between gap-y-10 bg-ieee-warm-dark px-8 py-20 lg:flex-row lg:px-15">
 					<div className="flex w-full flex-col gap-y-3 lg:w-auto">
 						<div className="font-heading text-3xl text-ieee-bright-yellow md:text-4xl">
 							FOLLOW OUR SOCIALS
@@ -198,8 +201,14 @@ export default function ConnectPage() {
 					>
 						<defs>
 							<radialGradient id="bg-gradient5" cx="40%" cy="120%" r="130%">
-								<stop offset="10%" stopColor="#000000" />
-								<stop offset="100%" stopColor="#000000" />
+								<stop
+									offset="10%"
+									style={{ stopColor: 'var(--color-ieee-black)' }}
+								/>
+								<stop
+									offset="100%"
+									style={{ stopColor: 'var(--color-ieee-black)' }}
+								/>
 							</radialGradient>
 						</defs>
 						<path

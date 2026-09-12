@@ -96,7 +96,7 @@ export default function SettingsPage() {
 
 	if (profileLoading || !memberProfile) {
 		return (
-			<div className="flex min-h-screen items-center justify-center bg-black [background:radial-gradient(125%_125%_at_50%_10%,#0c0a09_40%,#FFC72C_100%)]" />
+			<div className="flex min-h-screen items-center justify-center bg-black [background:radial-gradient(125%_125%_at_50%_10%,var(--color-ieee-near-black)_40%,var(--color-ieee-dark-yellow)_100%)]" />
 		);
 	}
 

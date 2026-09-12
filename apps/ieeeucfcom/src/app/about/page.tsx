@@ -40,8 +40,8 @@ export default function About() {
 				>
 					<defs>
 						<radialGradient id="bg-gradient" cx="40%" cy="120%" r="125%">
-							<stop offset="50%" stopColor="#000000" />
-							<stop offset="100%" stopColor="#000000" />
+							<stop offset="50%" style={{ stopColor: 'var(--color-ieee-black)' }} />
+							<stop offset="100%" style={{ stopColor: 'var(--color-ieee-black)' }} />
 						</radialGradient>
 					</defs>
 
@@ -69,8 +69,14 @@ export default function About() {
 				>
 					<defs>
 						<radialGradient id="bg-gradient3" cx="40%" cy="120%" r="125%">
-							<stop offset="50%" stopColor="#262522" />
-							<stop offset="100%" stopColor="#262522" />
+							<stop
+								offset="50%"
+								style={{ stopColor: 'var(--color-ieee-dark-grey)' }}
+							/>
+							<stop
+								offset="100%"
+								style={{ stopColor: 'var(--color-ieee-dark-grey)' }}
+							/>
 						</radialGradient>
 					</defs>
 
@@ -81,7 +87,7 @@ export default function About() {
 					/>
 				</svg>
 			</div>
-			<div className="-translate-y-40 bg-[#262522]">
+			<div className="-translate-y-40 bg-ieee-dark-grey">
 				<AboutOfficers />
 			</div>
 			<div className="-mt-40">

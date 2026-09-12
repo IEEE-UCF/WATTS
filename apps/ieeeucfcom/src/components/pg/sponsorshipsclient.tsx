@@ -83,7 +83,7 @@ export const PDFViewer: React.FC = () => {
 	// ── Mobile: card with open / download buttons ───────────────────────────
 	if (isMobile) {
 		return (
-			<div className="flex flex-col items-center gap-6 rounded-xl border border-white/10 bg-[#111] px-4 py-10">
+			<div className="flex flex-col items-center gap-6 rounded-xl border border-white/10 bg-ieee-near-black px-4 py-10">
 				<svg
 					className="h-14 w-14 text-ieee-bright-yellow"
 					fill="none"
