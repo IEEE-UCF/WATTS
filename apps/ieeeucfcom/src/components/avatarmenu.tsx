@@ -19,7 +19,7 @@ interface AvatarMenuProps {
 const AvatarMenu: React.FC<AvatarMenuProps> = ({ image }) => {
 	return (
 		<div className="z-100">
-			<NavigationMenu>
+			<NavigationMenu viewport={false}>
 				<NavigationMenuItem>
 					<NavigationMenuTrigger>
 						<Image
