@@ -138,18 +138,22 @@ export function MemberQRCode({
 	}, [memberInfo, size, logoUrl, logoSize, errorCorrectionLevel]);
 
 	if (loading) {
-		return <div className="flex justify-center p-4">Generating QR Code...</div>;
+		return (
+			<div className="flex justify-center p-4 text-muted-foreground">
+				Generating QR Code...
+			</div>
+		);
 	}
 
 	if (error) {
-		return <div className="p-4 text-red-500">Error: {error}</div>;
+		return <div className="p-4 text-red-400">Error: {error}</div>;
 	}
 
 	const qrImage = qrCodeUrl && (
 		<img
 			src={qrCodeUrl}
 			alt="Member QR Code"
-			className="rounded-lg border shadow-md"
+			className="rounded-lg border border-border shadow-md"
 			data-testid="qr-code-image"
 		/>
 	);
@@ -157,9 +161,9 @@ export function MemberQRCode({
 	if (variant === 'plain') {
 		return (
 			<div className="flex flex-col items-center p-4">
-				<h3 className="mb-2 text-lg font-semibold">Member QR Code</h3>
+				<h3 className="mb-2 text-lg font-semibold text-foreground">Member QR Code</h3>
 				{qrImage}
-				<p className="mt-2 text-sm text-gray-600">Scan to access member info</p>
+				<p className="mt-2 text-sm text-muted-foreground">Scan to access member info</p>
 			</div>
 		);
 	}
@@ -170,7 +174,7 @@ export function MemberQRCode({
 				{title}&apos;s QR Code
 			</CardTitle>
 			{qrImage}
-			<p className="mb-4 text-gray-300">Scan to access member info</p>
+			<p className="mb-4 text-muted-foreground">Scan to access member info</p>
 		</Card>
 	);
 }

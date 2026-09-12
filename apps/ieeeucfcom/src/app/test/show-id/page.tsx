@@ -9,16 +9,16 @@ const ShowIdPage = () => {
 
 	if (isLoading) {
 		return (
-			<div className="flex min-h-screen items-center justify-center bg-black">
-				<p className="text-xl text-white">Loading session data...</p>
+			<div className="flex min-h-screen items-center justify-center bg-background">
+				<p className="text-xl text-foreground">Loading session data...</p>
 			</div>
 		);
 	}
 
 	if (isError || !session?.user?.discordId) {
 		return (
-			<div className="flex min-h-screen items-center justify-center bg-black">
-				<p className="text-xl text-red-500">
+			<div className="flex min-h-screen items-center justify-center bg-background">
+				<p className="text-xl text-red-400">
 					Error loading session or Discord ID not found.
 				</p>
 			</div>
@@ -37,21 +37,25 @@ const ShowIdPage = () => {
 	const memberInfoString = JSON.stringify(memberData);
 
 	return (
-		<div className="min-h-screen bg-gray-100 py-8">
+		<div className="min-h-screen bg-background py-8">
 			<div className="mx-auto max-w-4xl px-4">
-				<h1 className="mb-8 text-center text-3xl font-bold">QR Code Testing</h1>
+				<h1 className="mb-8 text-center text-3xl font-bold text-foreground">
+					QR Code Testing
+				</h1>
 
 				<div className="grid grid-cols-1 gap-8 md:grid-cols-2">
 					{/* QR Code with IEEE-UCF Logo */}
-					<div className="rounded-lg bg-white p-6 shadow-md">
-						<h2 className="mb-4 text-xl font-semibold">QR Code with IEEE-UCF Logo</h2>
+					<div className="rounded-lg bg-card p-6 shadow-md">
+						<h2 className="mb-4 text-xl font-semibold text-foreground">
+							QR Code with IEEE-UCF Logo
+						</h2>
 						<MemberQRCode
 							memberInfo={memberInfoString}
 							logoUrl="/iconography/ieeeucficon.png"
 							variant="plain"
 							errorCorrectionLevel="L"
 						/>
-						<div className="mt-4 text-sm text-gray-600">
+						<div className="mt-4 text-sm text-muted-foreground">
 							<p>
 								<strong>Data:</strong> {memberInfoString}
 							</p>
@@ -59,8 +63,10 @@ const ShowIdPage = () => {
 					</div>
 
 					{/* QR Code with no data sent */}
-					<div className="rounded-lg bg-white p-6 shadow-md">
-						<h2 className="mb-4 text-xl font-semibold">QR Code with Icon</h2>
+					<div className="rounded-lg bg-card p-6 shadow-md">
+						<h2 className="mb-4 text-xl font-semibold text-foreground">
+							QR Code with Icon
+						</h2>
 						<MemberQRCode
 							memberInfo=""
 							logoUrl="/iconography/ieeeucficon.png"
@@ -68,7 +74,7 @@ const ShowIdPage = () => {
 							variant="plain"
 							errorCorrectionLevel="L"
 						/>
-						<div className="mt-4 text-sm text-gray-600">
+						<div className="mt-4 text-sm text-muted-foreground">
 							<p>
 								<strong>Blank</strong>
 							</p>

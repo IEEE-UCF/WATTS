@@ -52,23 +52,25 @@ export function QREventScanner() {
 	}, [memberInfo, selectedEventId]);
 
 	return (
-		<div className="rounded-lg bg-gray-50 p-4 shadow-md">
+		<div className="rounded-lg bg-background p-4 shadow-md">
 			<div className="mx-auto max-w-2xl">
 				{/* Header + event selector */}
-				<div className="mb-4 rounded-lg bg-white p-6 shadow-md">
-					<h1 className="mb-2 text-center text-2xl font-bold">IEEE Member Check-In</h1>
-					<p className="mb-4 text-center text-sm text-gray-600">
+				<div className="mb-4 rounded-lg bg-card p-6 shadow-md">
+					<h1 className="mb-2 text-center text-2xl font-bold text-foreground">
+						IEEE Member Check-In
+					</h1>
+					<p className="mb-4 text-center text-sm text-muted-foreground">
 						Select an event and scan member QR codes to check in.
 					</p>
 					{eventsLoading ? (
-						<p className="text-center text-gray-500">Loading events...</p>
+						<p className="text-center text-muted-foreground-dim">Loading events...</p>
 					) : eventsError ? (
-						<p className="text-center text-red-500">{eventsError.message}</p>
+						<p className="text-center text-red-400">{eventsError.message}</p>
 					) : (
 						<div className="mx-auto max-w-xs">
 							<label
 								htmlFor="event-select"
-								className="mb-1 block text-sm font-medium text-gray-700"
+								className="mb-1 block text-sm font-medium text-muted-foreground"
 							>
 								Select Event
 							</label>
@@ -80,7 +82,7 @@ export function QREventScanner() {
 									resetScanner();
 									setCheckInStatus('idle');
 								}}
-								className="block w-full rounded-md border-gray-300 py-2 pr-10 pl-3 text-base focus:border-blue-500 focus:ring-blue-500 focus:outline-none sm:text-sm"
+								className="block w-full rounded-md border border-input bg-card py-2 pr-10 pl-3 text-base text-foreground focus:border-ring focus:ring-ring focus:outline-none sm:text-sm"
 							>
 								<option value="" disabled>
 									-- Please choose an event --
@@ -97,14 +99,16 @@ export function QREventScanner() {
 
 				{/* Scanner */}
 				{isScanning ? (
-					<div className="mb-4 rounded-lg bg-white p-6 shadow-md">
-						<h2 className="mb-2 text-lg font-semibold">Camera Scanner</h2>
-						<p className="mb-4 text-sm text-gray-600">
+					<div className="mb-4 rounded-lg bg-card p-6 shadow-md">
+						<h2 className="mb-2 text-lg font-semibold text-foreground">
+							Camera Scanner
+						</h2>
+						<p className="mb-4 text-sm text-muted-foreground">
 							Point camera at member&apos;s QR code
 						</p>
 						{error ? (
-							<div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-4">
-								<p className="text-red-700">{error}</p>
+							<div className="mb-4 rounded-lg border border-red-500/30 bg-red-500/10 p-4">
+								<p className="text-red-300">{error}</p>
 							</div>
 						) : (
 							<div className="relative mx-auto aspect-square max-w-md overflow-hidden rounded-lg border-4 border-blue-500">
@@ -122,7 +126,7 @@ export function QREventScanner() {
 						<div className="mt-4 text-center">
 							<button
 								onClick={() => setIsScanning(false)}
-								className="rounded-lg bg-gray-200 px-4 py-2 text-gray-700 hover:bg-gray-300"
+								className="rounded-lg bg-secondary px-4 py-2 text-secondary-foreground hover:bg-secondary/80"
 							>
 								Cancel
 							</button>
@@ -130,12 +134,12 @@ export function QREventScanner() {
 					</div>
 				) : (
 					memberInfo && (
-						<div className="mb-4 rounded-lg bg-white p-6 shadow-md">
+						<div className="mb-4 rounded-lg bg-card p-6 shadow-md">
 							{checkInStatus === 'loading' && (
 								<div className="mb-4 text-center">
-									<div className="mb-3 inline-flex h-16 w-16 items-center justify-center rounded-full bg-blue-100">
+									<div className="mb-3 inline-flex h-16 w-16 items-center justify-center rounded-full bg-blue-500/15">
 										<svg
-											className="h-8 w-8 animate-spin text-blue-600"
+											className="h-8 w-8 animate-spin text-blue-400"
 											xmlns="http://www.w3.org/2000/svg"
 											fill="none"
 											viewBox="0 0 24 24"
@@ -155,16 +159,16 @@ export function QREventScanner() {
 											></path>
 										</svg>
 									</div>
-									<h2 className="mb-2 text-xl font-bold text-blue-600">
+									<h2 className="mb-2 text-xl font-bold text-blue-400">
 										Checking In...
 									</h2>
 								</div>
 							)}
 							{checkInStatus === 'success' && (
 								<div className="mb-4 text-center">
-									<div className="mb-3 inline-flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
+									<div className="mb-3 inline-flex h-16 w-16 items-center justify-center rounded-full bg-green-500/15">
 										<svg
-											className="h-8 w-8 text-green-600"
+											className="h-8 w-8 text-green-400"
 											fill="none"
 											stroke="currentColor"
 											viewBox="0 0 24 24"
@@ -177,16 +181,16 @@ export function QREventScanner() {
 											/>
 										</svg>
 									</div>
-									<h2 className="mb-2 text-xl font-bold text-green-600">
+									<h2 className="mb-2 text-xl font-bold text-green-400">
 										Check-In Successful!
 									</h2>
 								</div>
 							)}
 							{checkInStatus === 'error' && (
 								<div className="mb-4 text-center">
-									<div className="mb-3 inline-flex h-16 w-16 items-center justify-center rounded-full bg-red-100">
+									<div className="mb-3 inline-flex h-16 w-16 items-center justify-center rounded-full bg-red-500/15">
 										<svg
-											className="h-8 w-8 text-red-600"
+											className="h-8 w-8 text-red-400"
 											fill="none"
 											stroke="currentColor"
 											viewBox="0 0 24 24"
@@ -199,24 +203,26 @@ export function QREventScanner() {
 											></path>
 										</svg>
 									</div>
-									<h2 className="mb-2 text-xl font-bold text-red-600">
+									<h2 className="mb-2 text-xl font-bold text-red-400">
 										Check-In Failed
 									</h2>
-									<p className="text-red-700">{checkInError}</p>
+									<p className="text-red-300">{checkInError}</p>
 								</div>
 							)}
-							<div className="mb-4 rounded-lg bg-gray-50 p-4">
-								<h3 className="mb-2 font-semibold">Member Information:</h3>
+							<div className="mb-4 rounded-lg bg-secondary p-4">
+								<h3 className="mb-2 font-semibold text-foreground">
+									Member Information:
+								</h3>
 								<div className="space-y-2">
 									<div className="flex justify-between">
-										<span className="text-gray-600">Discord ID:</span>
-										<span className="font-mono font-semibold">
+										<span className="text-muted-foreground">Discord ID:</span>
+										<span className="font-mono font-semibold text-foreground">
 											{memberInfo.id}
 										</span>
 									</div>
 									<div className="flex justify-between">
-										<span className="text-gray-600">Time:</span>
-										<span className="font-semibold">
+										<span className="text-muted-foreground">Time:</span>
+										<span className="font-semibold text-foreground">
 											{memberInfo.timestamp}
 										</span>
 									</div>
@@ -237,14 +243,14 @@ export function QREventScanner() {
 
 				{/* Scan history */}
 				{scanHistory.length > 0 && (
-					<div className="rounded-lg bg-white p-6 shadow-md">
+					<div className="rounded-lg bg-card p-6 shadow-md">
 						<div className="mb-4 flex items-center justify-between">
-							<h2 className="text-lg font-semibold">
+							<h2 className="text-lg font-semibold text-foreground">
 								Check-In History ({scanHistory.length})
 							</h2>
 							<button
 								onClick={clearHistory}
-								className="text-sm text-red-600 hover:text-red-700"
+								className="text-sm text-red-400 hover:text-red-300"
 							>
 								Clear
 							</button>
@@ -253,16 +259,18 @@ export function QREventScanner() {
 							{scanHistory.map((member, index) => (
 								<div
 									key={index}
-									className="flex items-center justify-between rounded-lg bg-gray-50 p-3"
+									className="flex items-center justify-between rounded-lg bg-secondary p-3"
 								>
 									<div>
-										<p className="font-semibold">
+										<p className="font-semibold text-foreground">
 											{member.data?.name ||
 												`Member ${member.id.slice(0, 8)}...`}
 										</p>
-										<p className="text-xs text-gray-500">{member.timestamp}</p>
+										<p className="text-xs text-muted-foreground-dim">
+											{member.timestamp}
+										</p>
 									</div>
-									<div className="text-green-600">
+									<div className="text-green-400">
 										<svg
 											className="h-5 w-5"
 											fill="currentColor"
@@ -283,8 +291,8 @@ export function QREventScanner() {
 
 				{/* Idle state */}
 				{!isScanning && !memberInfo && (
-					<div className="rounded-lg bg-white p-6 text-center shadow-md">
-						<p className="mb-4 text-gray-600">
+					<div className="rounded-lg bg-card p-6 text-center shadow-md">
+						<p className="mb-4 text-muted-foreground">
 							{selectedEventId
 								? 'Ready to scan for the selected event.'
 								: 'Please select an event to begin scanning.'}
@@ -292,7 +300,7 @@ export function QREventScanner() {
 						<button
 							onClick={resetScanner}
 							disabled={!selectedEventId}
-							className="rounded-lg bg-blue-600 px-6 py-3 font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-400"
+							className="rounded-lg bg-blue-600 px-6 py-3 font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-muted-foreground-dim"
 						>
 							Start Scanning
 						</button>
