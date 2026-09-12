@@ -21,7 +21,7 @@ const AvatarMenu: React.FC<AvatarMenuProps> = ({ image }) => {
 		<div className="z-100">
 			<NavigationMenu viewport={false}>
 				<NavigationMenuItem>
-					<NavigationMenuTrigger>
+					<NavigationMenuTrigger className="h-auto w-auto rounded-full bg-transparent p-0 hover:bg-transparent focus:bg-transparent data-[state=open]:bg-transparent">
 						<Image
 							className="h-12 w-12 cursor-pointer rounded-full border border-white object-cover transition-all hover:scale-107"
 							src={image}
