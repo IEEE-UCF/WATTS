@@ -74,14 +74,36 @@ without crashing (loading state only, no session in this environment).
 
 ---
 
-## Step 3 — Card panel convention (not started)
+## Step 3 — Card panel convention (done)
 
-Adopt `@watts/ui/card`'s `Card`/`CardHeader`/`CardTitle`/`CardContent` as the
-structural wrapper for `staff-hub.tsx`'s hand-rolled `Panel`,
-`event-photo-manager.tsx`'s photo cards, and `resume-dashboard.tsx`'s preview
-panel — each with an explicit className override to preserve current
-radius/padding/opacity exactly (same technique `dashboard/event-list.tsx`
-already uses successfully).
+Adopted `@watts/ui/card`'s `Card` as the structural wrapper for
+`staff-hub.tsx`'s hand-rolled `Panel` (a `<section>` → `<Card>`, `<h2>`
+header kept as a direct child rather than forced into `CardHeader`'s grid
+layout, which doesn't match this panel's simple flex-row title — same
+"use Card as shell, keep the internals" judgment call as `event-list.tsx`),
+`event-photo-manager.tsx`'s photo grid cards, and `resume-dashboard.tsx`'s
+résumé preview panel. Each passes an explicit `className` override
+(`gap-0` to cancel `Card`'s default `gap-6` flex spacing, plus the
+radius/opacity/padding each site already had) to preserve current pixels
+exactly.
+
+**Caught and fixed a real bug during this step:** one of my own edits to
+`resume-dashboard.tsx` wrote 4 JSX attribute values using Unicode smart
+quotes (`”…”`) instead of straight quotes — invalid JSX syntax that broke
+`prettier --check` immediately. Fixed by targeting exactly those 4
+attribute lines (leaving the file's one legitimate prose smart-quote,
+"Select 'preview'...", untouched).
+
+**Deliberately NOT retrofitted:** `staff-hub.tsx`'s "no staff tools yet"
+message box (`<p className="rounded-lg border border-border bg-card/60 p-4 ...">`).
+It's a `<p>` tag, not a titled panel — converting it to `<Card>` (a `<div>`)
+would be a semantic-tag change for a simple one-off message, not a
+duplicated pattern.
+
+**See it live:** `/dev/ui/card` confirms the underlying primitive renders
+correctly. `/dev/staff/staff-hub` confirms `Panel`'s retrofit doesn't
+crash (loading state only, no session in this environment — same
+limitation as the Table-primitive step).
 
 ---
 

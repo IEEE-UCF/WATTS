@@ -3,6 +3,7 @@
 import { useMemo, useRef, useState } from 'react';
 import { trpc } from '@/lib/trpc/client';
 import { uploadEventPhoto } from '@watts/storage/client';
+import { Card } from '@watts/ui/card';
 
 interface UploadRow {
 	name: string;
@@ -145,9 +146,9 @@ export function EventPhotoManager() {
 					</h3>
 					<div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
 						{(photos ?? []).map((p) => (
-							<div
+							<Card
 								key={p.id}
-								className="rounded-lg border border-border bg-card/60 p-2"
+								className="gap-0 rounded-lg border-border bg-card/60 p-2"
 							>
 								{/* eslint-disable-next-line @next/next/no-img-element */}
 								<img
@@ -223,7 +224,7 @@ export function EventPhotoManager() {
 										delete
 									</button>
 								</div>
-							</div>
+							</Card>
 						))}
 					</div>
 				</div>

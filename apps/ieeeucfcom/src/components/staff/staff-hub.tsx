@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { trpc } from '@/lib/trpc/client';
 import { hasCapability, CAPABILITIES, type Capability } from '@watts/permissions';
+import { Card } from '@watts/ui/card';
 import { QREventScanner } from '@/components/admin/qr_event_scanner';
 
 function CapTag({ cap }: { cap: Capability }) {
@@ -25,8 +26,8 @@ function Panel({
 	children: React.ReactNode;
 }) {
 	return (
-		<section
-			className={`flex flex-col rounded-xl border border-border bg-card/60 p-4 shadow-lg shadow-black/40 ${
+		<Card
+			className={`gap-0 rounded-xl border-border bg-card/60 p-4 shadow-lg shadow-black/40 ${
 				wide ? 'lg:col-span-2' : ''
 			}`}
 		>
@@ -44,7 +45,7 @@ function Panel({
 				)}
 			</div>
 			{children}
-		</section>
+		</Card>
 	);
 }
 

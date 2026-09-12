@@ -20,6 +20,7 @@ import {
 	TableCell,
 	TableEmpty,
 } from '@watts/ui/table';
+import { Card } from '@watts/ui/card';
 
 export function ResumeDashboard() {
 	const { data, isLoading } = trpc.officer.listResumes.useQuery();
@@ -217,7 +218,7 @@ export function ResumeDashboard() {
 				)}
 			</div>
 
-			<div className="rounded-lg border border-border bg-card/50 p-2">
+			<Card className="gap-0 rounded-lg border-border bg-card/50 p-2">
 				{preview ? (
 					<iframe
 						title="résumé preview"
@@ -229,7 +230,7 @@ export function ResumeDashboard() {
 						Select “preview” to view a résumé here.
 					</p>
 				)}
-			</div>
+			</Card>
 		</div>
 	);
 }
