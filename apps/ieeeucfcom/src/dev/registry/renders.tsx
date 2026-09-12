@@ -34,6 +34,15 @@ import {
 	SheetTrigger,
 } from '@watts/ui/sheet';
 import { ScrollArea } from '@watts/ui/scroll-area';
+import {
+	Table,
+	TableHeader,
+	TableBody,
+	TableRow,
+	TableHead,
+	TableCell,
+	TableEmpty,
+} from '@watts/ui/table';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@watts/ui/tooltip';
 
 import { Navbar } from '@/components/navbar';
@@ -47,6 +56,9 @@ import { EventList } from '@/components/dashboard/event-list';
 import AboutIEEE from '@/components/pg/aboutieee';
 import AboutHeader from '@/components/pg/aboutheader';
 import { TogglePill } from '@/components/ui/toggle-pill';
+import { EventManager } from '@/components/admin/event-manager';
+import { MembersManager } from '@/components/admin/members-manager';
+import { ResumeDashboard } from '@/components/admin/resume-dashboard';
 
 type Render = ComponentType<Record<string, unknown>>;
 
@@ -206,6 +218,30 @@ export const renders: Record<string, Render> = {
 	'ui/chart': () => (
 		<NoDemo label="Recharts container — needs a dataset; no consumer in the app yet." />
 	),
+	'ui/table': () => (
+		<Table>
+			<TableHeader>
+				<TableRow>
+					<TableHead>Name</TableHead>
+					<TableHead>Major</TableHead>
+					<TableHead>Status</TableHead>
+				</TableRow>
+			</TableHeader>
+			<TableBody>
+				<TableRow>
+					<TableCell>Ada Lovelace</TableCell>
+					<TableCell className="text-muted-foreground">Computer Engineering</TableCell>
+					<TableCell>active</TableCell>
+				</TableRow>
+				<TableRow inactive>
+					<TableCell>Grace Hopper</TableCell>
+					<TableCell className="text-muted-foreground">Electrical Engineering</TableCell>
+					<TableCell>archived</TableCell>
+				</TableRow>
+				<TableEmpty colSpan={3}>No more rows.</TableEmpty>
+			</TableBody>
+		</Table>
+	),
 	'ui/sidebar': () => (
 		<NoDemo label="App sidebar shell — to be wired into the dashboard route group." />
 	),
@@ -220,6 +256,9 @@ export const renders: Record<string, Render> = {
 	'marketing/about-header': () => <AboutHeader />,
 	'staff/staff-hub': () => <StaffHub />,
 	'dashboard/event-list': () => <EventList />,
+	'admin/event-manager': () => <EventManager />,
+	'admin/members-manager': () => <MembersManager />,
+	'admin/resume-dashboard': () => <ResumeDashboard />,
 	'admin/toggle-pill': (p) => (
 		<TogglePill selected={Boolean(p.selected)} tone={p.tone as never} size={p.size as never}>
 			{(p.children as string) || 'Toggle'}

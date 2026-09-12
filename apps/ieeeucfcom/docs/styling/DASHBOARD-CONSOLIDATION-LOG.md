@@ -43,14 +43,34 @@ retrofitted call sites above.
 
 ---
 
-## Step 2 — `Table` primitive set (not started)
+## Step 2 — `Table` primitive set (done)
 
 `packages/ui/src/table.tsx` — `Table`/`TableHeader`/`TableBody`/`TableRow`/
-`TableHead`/`TableCell`, replacing the 3 independently hand-rolled
-`<table>`s in `event-manager.tsx`, `members-manager.tsx`,
+`TableHead`/`TableCell`/`TableEmpty`, replacing the 3 independently
+hand-rolled `<table>`s in `event-manager.tsx`, `members-manager.tsx`,
 `resume-dashboard.tsx`. One deliberate 1-line convergence: inactive-row
 opacity standardized to `50` (was `40` in `resume-dashboard.tsx` only, `50`
-everywhere else for the same meaning).
+everywhere else for the same meaning) — now baked into `TableRow`'s
+`inactive` prop, so it can't drift apart again.
+
+`event-manager.tsx`'s distinct header treatment (`bg-card/60 text-xs
+uppercase`, vs. the other two tables' plain `bg-card`) was preserved via an
+explicit `className` override on `TableHeader` rather than forced to match
+— that's a deliberate style choice in that file, not a bug.
+
+Also registered `EventManager`, `MembersManager`, `ResumeDashboard` in the
+`/dev` gallery for the first time (the `admin` group had zero entries
+before this) — as `legacy` (needs a real admin/officer session, so they
+show their loading state rather than live data in the gallery), plus a new
+`ui/table` gallery entry with mock data, which is what's actually visible
+in the screenshot check below.
+
+**See it live:** `/dev/ui/table` shows the primitive with mock data
+(active row, dimmed inactive row, empty-state message) since the 3 real
+retrofitted tables need an authenticated admin session to show rows.
+`/dev/admin/event-manager`, `/dev/admin/members-manager`,
+`/dev/admin/resume-dashboard` confirm the retrofitted components render
+without crashing (loading state only, no session in this environment).
 
 ---
 

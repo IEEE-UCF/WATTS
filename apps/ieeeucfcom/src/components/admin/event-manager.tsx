@@ -4,6 +4,15 @@ import { useMemo, useRef, useState } from 'react';
 import { trpc } from '@/lib/trpc/client';
 import type { RouterOutputs } from '@watts/api';
 import { uploadEventFlyer } from '@watts/storage/client';
+import {
+	Table,
+	TableHeader,
+	TableBody,
+	TableRow,
+	TableHead,
+	TableCell,
+	TableEmpty,
+} from '@watts/ui/table';
 
 type AdminEvent = RouterOutputs['event']['getAllForAdmin'][number];
 type Label = RouterOutputs['eventLabel']['list'][number];
@@ -760,178 +769,162 @@ export function EventManager() {
 			{isLoading ? (
 				<p className="text-sm text-muted-foreground">Loading…</p>
 			) : (
-				<div className="overflow-x-auto rounded-lg border border-border">
-					<table className="w-full text-left text-sm">
-						<thead className="bg-card/60 text-xs text-muted-foreground uppercase">
-							<tr>
-								<th className="px-3 py-2">Event</th>
-								<th className="px-3 py-2">Start</th>
-								<th className="px-3 py-2">Category</th>
-								<th className="px-3 py-2">Global</th>
-								<th className="px-3 py-2">Sync</th>
-								<th className="px-3 py-2">Flyer</th>
-								<th className="px-3 py-2" />
-							</tr>
-						</thead>
-						<tbody>
-							{visible.map((ev) => (
-								<tr
-									key={ev.id}
-									className={`border-t border-border ${ev.active ? '' : 'opacity-50'}`}
-								>
-									<td className="px-3 py-2">
-										<div className="font-medium">
-											{ev.title}
-											{!ev.active && (
-												<span className="ml-2 rounded bg-secondary px-1.5 py-0.5 text-[10px] text-muted-foreground uppercase">
-													archived
-												</span>
-											)}
-											{ev.hidden && (
-												<span className="ml-2 rounded bg-secondary px-1.5 py-0.5 text-[10px] text-amber-400 uppercase">
-													hidden
-												</span>
-											)}
-										</div>
-										<div className="text-xs text-muted-foreground-dim">
-											{ev.location}
-										</div>
-									</td>
-									<td className="px-3 py-2 text-xs text-muted-foreground">
-										{ev.startTime}
-									</td>
-									<td className="px-3 py-2">
-										{ev.label ? (
-											<span className="inline-flex items-center gap-1 text-xs">
-												<span
-													className="h-2.5 w-2.5 rounded-full"
-													style={{
-														backgroundColor: ev.label.hex ?? '#888',
-													}}
-												/>
-												{ev.label.name}
-											</span>
-										) : (
-											<span className="text-xs text-muted-foreground-dim">
-												—
+				<Table>
+					<TableHeader className="bg-card/60 text-xs uppercase">
+						<TableRow>
+							<TableHead>Event</TableHead>
+							<TableHead>Start</TableHead>
+							<TableHead>Category</TableHead>
+							<TableHead>Global</TableHead>
+							<TableHead>Sync</TableHead>
+							<TableHead>Flyer</TableHead>
+							<TableHead />
+						</TableRow>
+					</TableHeader>
+					<TableBody>
+						{visible.map((ev) => (
+							<TableRow key={ev.id} inactive={!ev.active}>
+								<TableCell>
+									<div className="font-medium">
+										{ev.title}
+										{!ev.active && (
+											<span className="ml-2 rounded bg-secondary px-1.5 py-0.5 text-[10px] text-muted-foreground uppercase">
+												archived
 											</span>
 										)}
-									</td>
-									<td className="px-3 py-2 text-xs">{ev.isGlobal ? '✓' : ''}</td>
-									<td className="px-3 py-2">
-										<span
-											className={`rounded px-2 py-0.5 text-xs ${SYNC_BADGE[ev.syncStatus] ?? SYNC_BADGE.pending}`}
-										>
-											{ev.syncStatus}
-										</span>
-									</td>
-									<td className="px-3 py-2">
-										{ev.flyerUrl ? (
-											// eslint-disable-next-line @next/next/no-img-element
-											<img
-												src={ev.flyerUrl}
-												alt="flyer"
-												className="h-10 w-10 rounded object-cover"
+										{ev.hidden && (
+											<span className="ml-2 rounded bg-secondary px-1.5 py-0.5 text-[10px] text-amber-400 uppercase">
+												hidden
+											</span>
+										)}
+									</div>
+									<div className="text-xs text-muted-foreground-dim">
+										{ev.location}
+									</div>
+								</TableCell>
+								<TableCell className="text-xs text-muted-foreground">
+									{ev.startTime}
+								</TableCell>
+								<TableCell>
+									{ev.label ? (
+										<span className="inline-flex items-center gap-1 text-xs">
+											<span
+												className="h-2.5 w-2.5 rounded-full"
+												style={{
+													backgroundColor: ev.label.hex ?? '#888',
+												}}
 											/>
-										) : (
-											<span className="text-xs text-muted-foreground-dim">
-												none
-											</span>
-										)}
-									</td>
-									<td className="px-3 py-2">
-										<div className="flex justify-end gap-3 text-xs">
-											<button
-												type="button"
-												onClick={() => openEdit(ev)}
-												className="text-blue-400 hover:underline"
-											>
-												edit
-											</button>
-											<button
-												type="button"
-												disabled={setHidden.isPending}
-												onClick={() =>
-													setHidden.mutate({
-														id: ev.id,
-														data: { hidden: !ev.hidden },
-													})
-												}
-												className="text-blue-400 hover:underline disabled:opacity-50"
-											>
-												{ev.hidden ? 'unhide' : 'hide'}
-											</button>
-											<button
-												type="button"
-												disabled={flyerBusy === ev.id}
-												onClick={() => pickFlyer(ev.id)}
-												className="text-blue-400 hover:underline disabled:opacity-50"
-											>
-												{flyerBusy === ev.id ? 'uploading…' : 'flyer'}
-											</button>
-											{ev.syncStatus === 'error' && (
-												<button
-													type="button"
-													disabled={resync.isPending}
-													onClick={() => resync.mutate({ id: ev.id })}
-													className="text-yellow-400 hover:underline disabled:opacity-50"
-												>
-													re-sync
-												</button>
-											)}
-											{ev.active ? (
-												<button
-													type="button"
-													onClick={() =>
-														setPendingDelete({ ev, mode: 'archive' })
-													}
-													className="text-red-400 hover:underline"
-												>
-													delete
-												</button>
-											) : (
-												<>
-													<button
-														type="button"
-														disabled={restore.isPending}
-														onClick={() =>
-															restore.mutate({ id: ev.id })
-														}
-														className="text-green-400 hover:underline disabled:opacity-50"
-													>
-														restore
-													</button>
-													<button
-														type="button"
-														onClick={() => {
-															setPurgeText('');
-															setPendingDelete({ ev, mode: 'purge' });
-														}}
-														className="text-red-500 hover:underline"
-													>
-														delete permanently
-													</button>
-												</>
-											)}
-										</div>
-									</td>
-								</tr>
-							))}
-							{visible.length === 0 && (
-								<tr>
-									<td
-										colSpan={7}
-										className="px-3 py-6 text-center text-sm text-muted-foreground-dim"
+											{ev.label.name}
+										</span>
+									) : (
+										<span className="text-xs text-muted-foreground-dim">—</span>
+									)}
+								</TableCell>
+								<TableCell className="text-xs">{ev.isGlobal ? '✓' : ''}</TableCell>
+								<TableCell>
+									<span
+										className={`rounded px-2 py-0.5 text-xs ${SYNC_BADGE[ev.syncStatus] ?? SYNC_BADGE.pending}`}
 									>
-										{sorted.length === 0
-											? 'No events yet.'
-											: 'No active events.'}
-									</td>
-								</tr>
-							)}
-						</tbody>
-					</table>
-				</div>
+										{ev.syncStatus}
+									</span>
+								</TableCell>
+								<TableCell>
+									{ev.flyerUrl ? (
+										// eslint-disable-next-line @next/next/no-img-element
+										<img
+											src={ev.flyerUrl}
+											alt="flyer"
+											className="h-10 w-10 rounded object-cover"
+										/>
+									) : (
+										<span className="text-xs text-muted-foreground-dim">
+											none
+										</span>
+									)}
+								</TableCell>
+								<TableCell>
+									<div className="flex justify-end gap-3 text-xs">
+										<button
+											type="button"
+											onClick={() => openEdit(ev)}
+											className="text-blue-400 hover:underline"
+										>
+											edit
+										</button>
+										<button
+											type="button"
+											disabled={setHidden.isPending}
+											onClick={() =>
+												setHidden.mutate({
+													id: ev.id,
+													data: { hidden: !ev.hidden },
+												})
+											}
+											className="text-blue-400 hover:underline disabled:opacity-50"
+										>
+											{ev.hidden ? 'unhide' : 'hide'}
+										</button>
+										<button
+											type="button"
+											disabled={flyerBusy === ev.id}
+											onClick={() => pickFlyer(ev.id)}
+											className="text-blue-400 hover:underline disabled:opacity-50"
+										>
+											{flyerBusy === ev.id ? 'uploading…' : 'flyer'}
+										</button>
+										{ev.syncStatus === 'error' && (
+											<button
+												type="button"
+												disabled={resync.isPending}
+												onClick={() => resync.mutate({ id: ev.id })}
+												className="text-yellow-400 hover:underline disabled:opacity-50"
+											>
+												re-sync
+											</button>
+										)}
+										{ev.active ? (
+											<button
+												type="button"
+												onClick={() =>
+													setPendingDelete({ ev, mode: 'archive' })
+												}
+												className="text-red-400 hover:underline"
+											>
+												delete
+											</button>
+										) : (
+											<>
+												<button
+													type="button"
+													disabled={restore.isPending}
+													onClick={() => restore.mutate({ id: ev.id })}
+													className="text-green-400 hover:underline disabled:opacity-50"
+												>
+													restore
+												</button>
+												<button
+													type="button"
+													onClick={() => {
+														setPurgeText('');
+														setPendingDelete({ ev, mode: 'purge' });
+													}}
+													className="text-red-500 hover:underline"
+												>
+													delete permanently
+												</button>
+											</>
+										)}
+									</div>
+								</TableCell>
+							</TableRow>
+						))}
+						{visible.length === 0 && (
+							<TableEmpty colSpan={7}>
+								{sorted.length === 0 ? 'No events yet.' : 'No active events.'}
+							</TableEmpty>
+						)}
+					</TableBody>
+				</Table>
 			)}
 
 			{pendingDelete && (

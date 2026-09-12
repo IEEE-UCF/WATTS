@@ -22,6 +22,7 @@
     "./separator": "./src/separator.tsx",
     "./sheet": "./src/sheet.tsx",
     "./sidebar": "./src/sidebar.tsx",
+    "./table": "./src/table.tsx",
     "./tooltip": "./src/tooltip.tsx",
     "./use-mobile": "./src/use-mobile.ts"
   },

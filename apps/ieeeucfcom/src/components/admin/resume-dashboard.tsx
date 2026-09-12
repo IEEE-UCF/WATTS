@@ -11,6 +11,15 @@ import {
 } from '@/lib/resume-export/filters';
 import { ResumeFilterBar, type FilterBarRow } from '@/components/admin/resume-filter-bar';
 import { ResumeExportPresetBar } from '@/components/admin/resume-export-presets';
+import {
+	Table,
+	TableHeader,
+	TableBody,
+	TableRow,
+	TableHead,
+	TableCell,
+	TableEmpty,
+} from '@watts/ui/table';
 
 export function ResumeDashboard() {
 	const { data, isLoading } = trpc.officer.listResumes.useQuery();
@@ -131,92 +140,80 @@ export function ResumeDashboard() {
 				{isLoading ? (
 					<p className="text-sm text-muted-foreground">Loading…</p>
 				) : (
-					<div className="overflow-x-auto rounded-lg border border-border">
-						<table className="w-full text-left text-sm">
-							<thead className="bg-card text-muted-foreground">
-								<tr>
-									<th className="px-3 py-2">Name</th>
-									<th className="px-3 py-2">Major</th>
-									<th className="px-3 py-2">Grad</th>
-									<th className="px-3 py-2">Résumé</th>
-								</tr>
-							</thead>
-							<tbody>
-								{rows.map((r) => {
-									const inExport = selection.ids.has(r.memberId);
-									const why = selection.reason.get(r.memberId);
-									return (
-										<tr
-											key={r.memberId}
-											className={`border-t border-border ${inExport ? '' : 'opacity-40'}`}
-										>
-											<td className="px-3 py-2">
-												{r.firstName} {r.lastName}
-												{why === 'officer' && (
-													<span className="ml-2 rounded bg-secondary px-1.5 py-0.5 text-[10px] text-muted-foreground">
-														officer
-													</span>
-												)}
-												{why === 'manual' && (
-													<span className="ml-2 rounded bg-secondary px-1.5 py-0.5 text-[10px] text-muted-foreground">
-														added
-													</span>
-												)}
-											</td>
-											<td className="px-3 py-2 text-muted-foreground">
-												{r.major}
-											</td>
-											<td className="px-3 py-2 text-muted-foreground">
-												{r.graduationYear}
-											</td>
-											<td className="px-3 py-2">
-												{r.hasResume && r.resumeUrl ? (
-													<div className="flex items-center gap-3">
-														<button
-															type="button"
-															onClick={() => setPreview(r.resumeUrl!)}
-															className="text-ieee-dark-yellow hover:underline"
-														>
-															preview
-														</button>
-														<a
-															href={r.resumeUrl}
-															target="_blank"
-															rel="noreferrer"
-															className="text-muted-foreground hover:underline"
-														>
-															open
-														</a>
-														{r.resumeUploadedAt && (
-															<span className="text-xs text-muted-foreground-dim">
-																{new Date(
-																	r.resumeUploadedAt,
-																).toLocaleDateString()}
-															</span>
-														)}
-													</div>
-												) : (
-													<span className="text-muted-foreground-dim">
-														none
-													</span>
-												)}
-											</td>
-										</tr>
-									);
-								})}
-								{rows.length === 0 && (
-									<tr>
-										<td
-											colSpan={4}
-											className="px-3 py-6 text-center text-muted-foreground-dim"
-										>
-											No matching members.
-										</td>
-									</tr>
-								)}
-							</tbody>
-						</table>
-					</div>
+					<Table>
+						<TableHeader>
+							<TableRow>
+								<TableHead>Name</TableHead>
+								<TableHead>Major</TableHead>
+								<TableHead>Grad</TableHead>
+								<TableHead>Résumé</TableHead>
+							</TableRow>
+						</TableHeader>
+						<TableBody>
+							{rows.map((r) => {
+								const inExport = selection.ids.has(r.memberId);
+								const why = selection.reason.get(r.memberId);
+								return (
+									<TableRow key={r.memberId} inactive={!inExport}>
+										<TableCell>
+											{r.firstName} {r.lastName}
+											{why === 'officer' && (
+												<span className="ml-2 rounded bg-secondary px-1.5 py-0.5 text-[10px] text-muted-foreground">
+													officer
+												</span>
+											)}
+											{why === 'manual' && (
+												<span className="ml-2 rounded bg-secondary px-1.5 py-0.5 text-[10px] text-muted-foreground">
+													added
+												</span>
+											)}
+										</TableCell>
+										<TableCell className="text-muted-foreground">
+											{r.major}
+										</TableCell>
+										<TableCell className="text-muted-foreground">
+											{r.graduationYear}
+										</TableCell>
+										<TableCell>
+											{r.hasResume && r.resumeUrl ? (
+												<div className="flex items-center gap-3">
+													<button
+														type="button"
+														onClick={() => setPreview(r.resumeUrl!)}
+														className="text-ieee-dark-yellow hover:underline"
+													>
+														preview
+													</button>
+													<a
+														href={r.resumeUrl}
+														target="_blank"
+														rel="noreferrer"
+														className="text-muted-foreground hover:underline"
+													>
+														open
+													</a>
+													{r.resumeUploadedAt && (
+														<span className="text-xs text-muted-foreground-dim">
+															{new Date(
+																r.resumeUploadedAt,
+															).toLocaleDateString()}
+														</span>
+													)}
+												</div>
+											) : (
+												<span className="text-muted-foreground-dim">
+													none
+												</span>
+											)}
+										</TableCell>
+									</TableRow>
+								);
+							})}
+							{rows.length === 0 && (
+								<TableEmpty colSpan={4}>No matching members.</TableEmpty>
+							)}
+						</TableBody>
+					</Table>
 				)}
 			</div>
 

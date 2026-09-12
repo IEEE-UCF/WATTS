@@ -5,6 +5,15 @@ import { useSession } from 'next-auth/react';
 import { trpc } from '@/lib/trpc/client';
 import { officerRoleEnum } from '@watts/db/schema';
 import { CAPABILITIES, CAPABILITY_KEYS, type Capability } from '@watts/permissions';
+import {
+	Table,
+	TableHeader,
+	TableBody,
+	TableRow,
+	TableHead,
+	TableCell,
+	TableEmpty,
+} from '@watts/ui/table';
 import { TogglePill } from '@/components/ui/toggle-pill';
 
 type RoleFilter = 'all' | 'admin' | 'officer' | 'none';
@@ -203,255 +212,232 @@ export function MembersManager() {
 			{isLoading ? (
 				<p className="text-sm text-muted-foreground">Loading…</p>
 			) : (
-				<div className="overflow-x-auto rounded-lg border border-border">
-					<table className="w-full text-left text-sm">
-						<thead className="bg-card text-muted-foreground">
-							<tr>
-								<th className="px-3 py-2">Name</th>
-								<th className="px-3 py-2">Email</th>
-								<th className="px-3 py-2">Major / Year</th>
-								<th className="px-3 py-2">Admin</th>
-								<th className="px-3 py-2">Officer</th>
-								<th className="px-3 py-2">Capabilities</th>
-								<th className="px-3 py-2">Dues</th>
-								<th className="px-3 py-2">Résumé</th>
-								<th className="px-3 py-2">Committees</th>
-								<th className="px-3 py-2">Discord</th>
-							</tr>
-						</thead>
-						<tbody>
-							{rows.map((m) => {
-								const isSelf = m.id === myMemberId;
-								const st = status[m.id];
-								return (
-									<tr
-										key={m.id}
-										className={`border-t border-border ${m.active ? '' : 'opacity-50'}`}
-									>
-										<td className="px-3 py-2 whitespace-nowrap">
-											{m.firstName} {m.lastName}
-											{isSelf && (
-												<span className="ml-1 text-xs text-ieee-dark-yellow">
-													(you)
-												</span>
-											)}
-											{st && (
-												<div
-													className={`text-xs ${
-														st === 'saving'
-															? 'text-muted-foreground'
-															: st === 'saved'
-																? 'text-green-400'
-																: 'text-red-400'
-													}`}
-												>
-													{st === 'saving'
-														? 'saving…'
+				<Table>
+					<TableHeader>
+						<TableRow>
+							<TableHead>Name</TableHead>
+							<TableHead>Email</TableHead>
+							<TableHead>Major / Year</TableHead>
+							<TableHead>Admin</TableHead>
+							<TableHead>Officer</TableHead>
+							<TableHead>Capabilities</TableHead>
+							<TableHead>Dues</TableHead>
+							<TableHead>Résumé</TableHead>
+							<TableHead>Committees</TableHead>
+							<TableHead>Discord</TableHead>
+						</TableRow>
+					</TableHeader>
+					<TableBody>
+						{rows.map((m) => {
+							const isSelf = m.id === myMemberId;
+							const st = status[m.id];
+							return (
+								<TableRow key={m.id} inactive={!m.active}>
+									<TableCell className="whitespace-nowrap">
+										{m.firstName} {m.lastName}
+										{isSelf && (
+											<span className="ml-1 text-xs text-ieee-dark-yellow">
+												(you)
+											</span>
+										)}
+										{st && (
+											<div
+												className={`text-xs ${
+													st === 'saving'
+														? 'text-muted-foreground'
 														: st === 'saved'
-															? 'saved ✓'
-															: st}
-												</div>
-											)}
-										</td>
-										<td className="px-3 py-2 text-muted-foreground">
-											<div>{m.ucfEmail}</div>
-											{m.personalEmail && (
-												<div className="text-xs">{m.personalEmail}</div>
-											)}
-										</td>
-										<td className="px-3 py-2 text-muted-foreground">
-											<div className="max-w-[220px] truncate">{m.major}</div>
-											<div className="text-xs">{m.graduationYear}</div>
-										</td>
+															? 'text-green-400'
+															: 'text-red-400'
+												}`}
+											>
+												{st === 'saving'
+													? 'saving…'
+													: st === 'saved'
+														? 'saved ✓'
+														: st}
+											</div>
+										)}
+									</TableCell>
+									<TableCell className="text-muted-foreground">
+										<div>{m.ucfEmail}</div>
+										{m.personalEmail && (
+											<div className="text-xs">{m.personalEmail}</div>
+										)}
+									</TableCell>
+									<TableCell className="text-muted-foreground">
+										<div className="max-w-[220px] truncate">{m.major}</div>
+										<div className="text-xs">{m.graduationYear}</div>
+									</TableCell>
 
-										{/* Admin */}
-										<td className="px-3 py-2">
-											{isAdmin ? (
+									{/* Admin */}
+									<TableCell>
+										{isAdmin ? (
+											<TogglePill
+												selected={m.administrator}
+												disabled={isSelf || st === 'saving'}
+												onClick={() => runAdmin(m.id, !m.administrator)}
+												title={
+													isSelf
+														? "You can't change your own admin access"
+														: undefined
+												}
+											>
+												{m.administrator ? 'Admin' : 'Make admin'}
+											</TogglePill>
+										) : (
+											<span className="text-xs text-muted-foreground">
+												{m.administrator ? 'Admin' : '—'}
+											</span>
+										)}
+									</TableCell>
+
+									{/* Officer */}
+									<TableCell>
+										{isAdmin ? (
+											<div className="flex items-center gap-2">
 												<TogglePill
-													selected={m.administrator}
-													disabled={isSelf || st === 'saving'}
-													onClick={() => runAdmin(m.id, !m.administrator)}
-													title={
-														isSelf
-															? "You can't change your own admin access"
-															: undefined
+													selected={m.officerStatus}
+													tone="info"
+													disabled={st === 'saving'}
+													onClick={() =>
+														runOfficer(
+															m.id,
+															!m.officerStatus,
+															m.officerStatus
+																? null
+																: asOfficerRole(
+																		m.officerRole ?? '',
+																	),
+														)
 													}
 												>
-													{m.administrator ? 'Admin' : 'Make admin'}
+													{m.officerStatus ? 'Officer' : 'Make officer'}
 												</TogglePill>
-											) : (
-												<span className="text-xs text-muted-foreground">
-													{m.administrator ? 'Admin' : '—'}
-												</span>
-											)}
-										</td>
-
-										{/* Officer */}
-										<td className="px-3 py-2">
-											{isAdmin ? (
-												<div className="flex items-center gap-2">
-													<TogglePill
-														selected={m.officerStatus}
-														tone="info"
-														disabled={st === 'saving'}
-														onClick={() =>
-															runOfficer(
-																m.id,
-																!m.officerStatus,
-																m.officerStatus
-																	? null
-																	: asOfficerRole(
-																			m.officerRole ?? '',
-																		),
-															)
-														}
-													>
-														{m.officerStatus
-															? 'Officer'
-															: 'Make officer'}
-													</TogglePill>
-													<select
-														value={m.officerRole ?? ''}
-														disabled={
-															!m.officerStatus || st === 'saving'
-														}
-														onChange={(e) =>
-															runOfficer(
-																m.id,
-																true,
-																asOfficerRole(e.target.value),
-															)
-														}
-														className="rounded border border-input bg-secondary px-1 py-0.5 text-xs disabled:opacity-40"
-													>
-														<option value="">— role —</option>
-														{officerRoleEnum.enumValues.map((r) => (
-															<option key={r} value={r}>
-																{r}
-															</option>
-														))}
-													</select>
-												</div>
-											) : (
-												<span className="text-xs text-muted-foreground">
-													{m.officerStatus
-														? `Officer${m.officerRole ? ` · ${m.officerRole}` : ''}`
-														: '—'}
-												</span>
-											)}
-										</td>
-
-										{/* Capabilities — implied for admins/officers, else per-grant toggles */}
-										<td className="px-3 py-2">
-											{m.administrator || m.officerStatus ? (
-												<span className="text-xs text-muted-foreground-dim">
-													all (via {m.administrator ? 'admin' : 'officer'}
-													)
-												</span>
-											) : (
-												<div className="flex max-w-[260px] flex-wrap gap-1">
-													{CAPABILITY_KEYS.map((cap) => {
-														const on = m.permissions.includes(cap);
-														const allowed = canToggleCap(cap);
-														return (
-															<TogglePill
-																key={cap}
-																selected={on}
-																tone="success"
-																size="xs"
-																disabled={
-																	st === 'saving' || !allowed
-																}
-																onClick={() =>
-																	runPermission(m.id, cap, !on)
-																}
-																title={
-																	allowed
-																		? CAPABILITIES[cap].label
-																		: `${CAPABILITIES[cap].label} — only an admin can grant this`
-																}
-															>
-																{cap}
-															</TogglePill>
-														);
-													})}
-												</div>
-											)}
-										</td>
-
-										<td className="px-3 py-2 text-muted-foreground">
-											{m.duesPaid ? 'paid' : '—'}
-										</td>
-										<td className="px-3 py-2 text-muted-foreground">
-											{m.hasResume && m.resumeUrl ? (
-												<a
-													href={m.resumeUrl}
-													target="_blank"
-													rel="noreferrer"
-													className="text-ieee-dark-yellow hover:underline"
+												<select
+													value={m.officerRole ?? ''}
+													disabled={!m.officerStatus || st === 'saving'}
+													onChange={(e) =>
+														runOfficer(
+															m.id,
+															true,
+															asOfficerRole(e.target.value),
+														)
+													}
+													className="rounded border border-input bg-secondary px-1 py-0.5 text-xs disabled:opacity-40"
 												>
-													{m.resumeUploadedAt
-														? new Date(
-																m.resumeUploadedAt,
-															).toLocaleDateString()
-														: 'view'}
-												</a>
-											) : (
-												'—'
-											)}
-										</td>
-										<td className="px-3 py-2">
-											<div className="flex max-w-[200px] flex-wrap gap-1">
-												{m.committees.length === 0 && (
-													<span className="text-muted-foreground-dim">
-														—
-													</span>
-												)}
-												{m.committees.map((c) => (
-													<span
-														key={c.id}
-														className={`rounded px-1.5 py-0.5 text-xs ${
-															c.isChair
-																? 'bg-ieee-dark-yellow text-black'
-																: 'bg-secondary text-muted-foreground'
-														}`}
-														title={
-															c.isChair
-																? `${c.title} (chair)`
-																: c.title
-														}
-													>
-														{c.slug ?? c.title}
-														{c.isChair ? '★' : ''}
-													</span>
-												))}
+													<option value="">— role —</option>
+													{officerRoleEnum.enumValues.map((r) => (
+														<option key={r} value={r}>
+															{r}
+														</option>
+													))}
+												</select>
 											</div>
-										</td>
-										<td className="px-3 py-2 text-xs text-muted-foreground">
-											{m.discordLinked ? (
-												(m.userName ?? 'linked')
-											) : (
-												<span className="text-muted-foreground-dim">
-													not linked
-												</span>
+										) : (
+											<span className="text-xs text-muted-foreground">
+												{m.officerStatus
+													? `Officer${m.officerRole ? ` · ${m.officerRole}` : ''}`
+													: '—'}
+											</span>
+										)}
+									</TableCell>
+
+									{/* Capabilities — implied for admins/officers, else per-grant toggles */}
+									<TableCell>
+										{m.administrator || m.officerStatus ? (
+											<span className="text-xs text-muted-foreground-dim">
+												all (via {m.administrator ? 'admin' : 'officer'})
+											</span>
+										) : (
+											<div className="flex max-w-[260px] flex-wrap gap-1">
+												{CAPABILITY_KEYS.map((cap) => {
+													const on = m.permissions.includes(cap);
+													const allowed = canToggleCap(cap);
+													return (
+														<TogglePill
+															key={cap}
+															selected={on}
+															tone="success"
+															size="xs"
+															disabled={st === 'saving' || !allowed}
+															onClick={() =>
+																runPermission(m.id, cap, !on)
+															}
+															title={
+																allowed
+																	? CAPABILITIES[cap].label
+																	: `${CAPABILITIES[cap].label} — only an admin can grant this`
+															}
+														>
+															{cap}
+														</TogglePill>
+													);
+												})}
+											</div>
+										)}
+									</TableCell>
+
+									<TableCell className="text-muted-foreground">
+										{m.duesPaid ? 'paid' : '—'}
+									</TableCell>
+									<TableCell className="text-muted-foreground">
+										{m.hasResume && m.resumeUrl ? (
+											<a
+												href={m.resumeUrl}
+												target="_blank"
+												rel="noreferrer"
+												className="text-ieee-dark-yellow hover:underline"
+											>
+												{m.resumeUploadedAt
+													? new Date(
+															m.resumeUploadedAt,
+														).toLocaleDateString()
+													: 'view'}
+											</a>
+										) : (
+											'—'
+										)}
+									</TableCell>
+									<TableCell>
+										<div className="flex max-w-[200px] flex-wrap gap-1">
+											{m.committees.length === 0 && (
+												<span className="text-muted-foreground-dim">—</span>
 											)}
-										</td>
-									</tr>
-								);
-							})}
-							{rows.length === 0 && (
-								<tr>
-									<td
-										colSpan={10}
-										className="px-3 py-6 text-center text-muted-foreground-dim"
-									>
-										No matching members.
-									</td>
-								</tr>
-							)}
-						</tbody>
-					</table>
-				</div>
+											{m.committees.map((c) => (
+												<span
+													key={c.id}
+													className={`rounded px-1.5 py-0.5 text-xs ${
+														c.isChair
+															? 'bg-ieee-dark-yellow text-black'
+															: 'bg-secondary text-muted-foreground'
+													}`}
+													title={
+														c.isChair ? `${c.title} (chair)` : c.title
+													}
+												>
+													{c.slug ?? c.title}
+													{c.isChair ? '★' : ''}
+												</span>
+											))}
+										</div>
+									</TableCell>
+									<TableCell className="text-xs text-muted-foreground">
+										{m.discordLinked ? (
+											(m.userName ?? 'linked')
+										) : (
+											<span className="text-muted-foreground-dim">
+												not linked
+											</span>
+										)}
+									</TableCell>
+								</TableRow>
+							);
+						})}
+						{rows.length === 0 && (
+							<TableEmpty colSpan={10}>No matching members.</TableEmpty>
+						)}
+					</TableBody>
+				</Table>
 			)}
 		</div>
 	);
