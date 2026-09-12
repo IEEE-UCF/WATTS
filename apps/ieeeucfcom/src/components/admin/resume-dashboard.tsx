@@ -80,7 +80,7 @@ export function ResumeDashboard() {
 
 	return (
 		<div className="grid gap-6 lg:grid-cols-[1fr_minmax(0,480px)]">
-			<div className="text-gray-100">
+			<div className="text-foreground">
 				<div className="mb-4 flex flex-col gap-3">
 					<ResumeExportPresetBar current={filter} onApply={setFilter} />
 					<ResumeFilterBar
@@ -96,7 +96,7 @@ export function ResumeDashboard() {
 							value={q}
 							onChange={(e) => setQ(e.target.value)}
 							placeholder="Search name or major…"
-							className="rounded-md border border-gray-700 bg-gray-900 px-3 py-2 text-sm"
+							className="rounded-md border border-input bg-card px-3 py-2 text-sm"
 						/>
 						<label className="flex items-center gap-2 text-sm">
 							<input
@@ -119,7 +119,7 @@ export function ResumeDashboard() {
 								<a
 									href={`/api/files/resume/export${exportPdfQuery}`}
 									download
-									className="rounded-md border border-gray-700 px-3 py-2 text-sm text-gray-200 hover:border-ieee-dark-yellow hover:text-ieee-dark-yellow"
+									className="rounded-md border border-input px-3 py-2 text-sm text-foreground hover:border-ieee-dark-yellow hover:text-ieee-dark-yellow"
 								>
 									one PDF
 								</a>
@@ -129,11 +129,11 @@ export function ResumeDashboard() {
 				</div>
 
 				{isLoading ? (
-					<p className="text-sm text-gray-400">Loading…</p>
+					<p className="text-sm text-muted-foreground">Loading…</p>
 				) : (
-					<div className="overflow-x-auto rounded-lg border border-gray-800">
+					<div className="overflow-x-auto rounded-lg border border-border">
 						<table className="w-full text-left text-sm">
-							<thead className="bg-gray-900 text-gray-300">
+							<thead className="bg-card text-muted-foreground">
 								<tr>
 									<th className="px-3 py-2">Name</th>
 									<th className="px-3 py-2">Major</th>
@@ -148,23 +148,25 @@ export function ResumeDashboard() {
 									return (
 										<tr
 											key={r.memberId}
-											className={`border-t border-gray-800 ${inExport ? '' : 'opacity-40'}`}
+											className={`border-t border-border ${inExport ? '' : 'opacity-40'}`}
 										>
 											<td className="px-3 py-2">
 												{r.firstName} {r.lastName}
 												{why === 'officer' && (
-													<span className="ml-2 rounded bg-gray-800 px-1.5 py-0.5 text-[10px] text-gray-400">
+													<span className="ml-2 rounded bg-secondary px-1.5 py-0.5 text-[10px] text-muted-foreground">
 														officer
 													</span>
 												)}
 												{why === 'manual' && (
-													<span className="ml-2 rounded bg-gray-800 px-1.5 py-0.5 text-[10px] text-gray-400">
+													<span className="ml-2 rounded bg-secondary px-1.5 py-0.5 text-[10px] text-muted-foreground">
 														added
 													</span>
 												)}
 											</td>
-											<td className="px-3 py-2 text-gray-400">{r.major}</td>
-											<td className="px-3 py-2 text-gray-400">
+											<td className="px-3 py-2 text-muted-foreground">
+												{r.major}
+											</td>
+											<td className="px-3 py-2 text-muted-foreground">
 												{r.graduationYear}
 											</td>
 											<td className="px-3 py-2">
@@ -181,12 +183,12 @@ export function ResumeDashboard() {
 															href={r.resumeUrl}
 															target="_blank"
 															rel="noreferrer"
-															className="text-gray-300 hover:underline"
+															className="text-muted-foreground hover:underline"
 														>
 															open
 														</a>
 														{r.resumeUploadedAt && (
-															<span className="text-xs text-gray-500">
+															<span className="text-xs text-muted-foreground-dim">
 																{new Date(
 																	r.resumeUploadedAt,
 																).toLocaleDateString()}
@@ -194,7 +196,9 @@ export function ResumeDashboard() {
 														)}
 													</div>
 												) : (
-													<span className="text-gray-600">none</span>
+													<span className="text-muted-foreground-dim">
+														none
+													</span>
 												)}
 											</td>
 										</tr>
@@ -204,7 +208,7 @@ export function ResumeDashboard() {
 									<tr>
 										<td
 											colSpan={4}
-											className="px-3 py-6 text-center text-gray-500"
+											className="px-3 py-6 text-center text-muted-foreground-dim"
 										>
 											No matching members.
 										</td>
@@ -216,7 +220,7 @@ export function ResumeDashboard() {
 				)}
 			</div>
 
-			<div className="rounded-lg border border-gray-800 bg-gray-900/50 p-2">
+			<div className="rounded-lg border border-border bg-card/50 p-2">
 				{preview ? (
 					<iframe
 						title="résumé preview"
@@ -224,7 +228,7 @@ export function ResumeDashboard() {
 						className="h-[70vh] w-full rounded"
 					/>
 				) : (
-					<p className="p-6 text-sm text-gray-500">
+					<p className="p-6 text-sm text-muted-foreground-dim">
 						Select “preview” to view a résumé here.
 					</p>
 				)}

@@ -116,7 +116,7 @@ const Timer: React.FC = () => {
 						    the Events system. The manual date editor below is the fallback. */}
 						{isAdmin && nextGbm && (
 							<div className="mt-4 flex flex-wrap items-center justify-center gap-3">
-								<span className="font-[body-font] text-sm text-gray-400">
+								<span className="font-[body-font] text-sm text-muted-foreground">
 									{new Date(nextGbm.startTimeRaw ?? '').toLocaleString('en-US', {
 										month: 'long',
 										day: 'numeric',
@@ -139,7 +139,7 @@ const Timer: React.FC = () => {
 							<div className="mt-4">
 								{!isEditing ? (
 									<div className="flex flex-wrap items-center justify-center gap-3">
-										<span className="font-[body-font] text-sm text-gray-400">
+										<span className="font-[body-font] text-sm text-muted-foreground">
 											{new Date(gbmDate).toLocaleString('en-US', {
 												month: 'long',
 												day: 'numeric',

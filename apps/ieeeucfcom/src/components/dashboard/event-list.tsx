@@ -72,7 +72,9 @@ export const EventList = () => {
 											{event.title}
 										</h3>
 										<p className="text-ieee-light-grey">{event.location}</p>
-										<p className="text-gray-600">{event.startTime}</p>
+										<p className="text-muted-foreground-dim">
+											{event.startTime}
+										</p>
 									</div>
 								</Card>
 							))

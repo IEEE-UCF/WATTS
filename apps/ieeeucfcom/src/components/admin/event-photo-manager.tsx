@@ -75,7 +75,7 @@ export function EventPhotoManager() {
 	}
 
 	return (
-		<div className="space-y-6 text-gray-100">
+		<div className="space-y-6 text-foreground">
 			<div>
 				<label className="mb-1 block text-sm font-medium">Event</label>
 				<select
@@ -84,7 +84,7 @@ export function EventPhotoManager() {
 						setEventId(e.target.value);
 						setRows([]);
 					}}
-					className="w-full rounded-md border border-gray-700 bg-gray-900 px-3 py-2 text-sm"
+					className="w-full rounded-md border border-input bg-card px-3 py-2 text-sm"
 				>
 					<option value="">Select an event…</option>
 					{sortedEvents.map((ev) => (
@@ -104,7 +104,7 @@ export function EventPhotoManager() {
 				>
 					{busy ? 'Uploading…' : 'Add photos'}
 				</button>
-				<span className="ml-3 text-xs text-gray-400">
+				<span className="ml-3 text-xs text-muted-foreground">
 					JPEG / PNG / WebP. Resized to 1600px and stripped of location data before
 					upload.
 				</span>
@@ -128,7 +128,7 @@ export function EventPhotoManager() {
 									? 'text-red-400'
 									: r.status === 'done'
 										? 'text-green-400'
-										: 'text-gray-400'
+										: 'text-muted-foreground'
 							}
 						>
 							{r.name} — {r.status}
@@ -140,14 +140,14 @@ export function EventPhotoManager() {
 
 			{eventId && (
 				<div>
-					<h3 className="mb-3 text-sm font-semibold text-gray-300">
+					<h3 className="mb-3 text-sm font-semibold text-muted-foreground">
 						{photos?.length ?? 0} photo(s)
 					</h3>
 					<div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
 						{(photos ?? []).map((p) => (
 							<div
 								key={p.id}
-								className="rounded-lg border border-gray-800 bg-gray-900/60 p-2"
+								className="rounded-lg border border-border bg-card/60 p-2"
 							>
 								{/* eslint-disable-next-line @next/next/no-img-element */}
 								<img
@@ -166,7 +166,7 @@ export function EventPhotoManager() {
 											});
 										}
 									}}
-									className="mb-1 w-full rounded border border-gray-700 bg-gray-800 px-2 py-1 text-xs"
+									className="mb-1 w-full rounded border border-input bg-secondary px-2 py-1 text-xs"
 								/>
 								<input
 									defaultValue={(p.tags ?? []).join(', ')}
@@ -178,10 +178,10 @@ export function EventPhotoManager() {
 											.filter(Boolean);
 										updatePhoto.mutate({ id: p.id, tags });
 									}}
-									className="mb-1 w-full rounded border border-gray-700 bg-gray-800 px-2 py-1 text-xs"
+									className="mb-1 w-full rounded border border-input bg-secondary px-2 py-1 text-xs"
 								/>
 								<div className="mb-1 flex items-center gap-2 text-xs">
-									<span className="text-gray-500">visibility</span>
+									<span className="text-muted-foreground-dim">visibility</span>
 									<select
 										defaultValue={p.visibility}
 										onChange={(e) =>
@@ -191,7 +191,7 @@ export function EventPhotoManager() {
 													'public' | 'members' | 'private',
 											})
 										}
-										className="flex-1 rounded border border-gray-700 bg-gray-800 px-1 py-0.5"
+										className="flex-1 rounded border border-input bg-secondary px-1 py-0.5"
 									>
 										<option value="private">private (officers only)</option>
 										<option value="members">members</option>

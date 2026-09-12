@@ -110,20 +110,24 @@ export function ResumeExportPresetBar({
 
 	return (
 		<div className="flex flex-wrap items-center gap-2">
-			<span className="text-xs tracking-wide text-gray-500 uppercase">Presets</span>
+			<span className="text-xs tracking-wide text-muted-foreground-dim uppercase">
+				Presets
+			</span>
 
-			{presets.length === 0 && <span className="text-xs text-gray-600">none saved</span>}
+			{presets.length === 0 && (
+				<span className="text-xs text-muted-foreground-dim">none saved</span>
+			)}
 
 			{presets.map((p) => (
 				<span
 					key={p.id}
-					className="inline-flex items-center gap-1 rounded-full border border-gray-700 bg-gray-900 py-1 pr-1 pl-3 text-xs"
+					className="inline-flex items-center gap-1 rounded-full border border-input bg-card py-1 pr-1 pl-3 text-xs"
 				>
 					<button
 						type="button"
 						onClick={() => onApply(p.filter)}
 						title={describeResumeFilter(p.filter)}
-						className="text-gray-200 hover:text-ieee-dark-yellow"
+						className="text-foreground hover:text-ieee-dark-yellow"
 					>
 						{p.name}
 					</button>
@@ -131,7 +135,7 @@ export function ResumeExportPresetBar({
 						type="button"
 						onClick={() => deletePreset(p.id)}
 						aria-label={`Delete preset ${p.name}`}
-						className="rounded-full px-1 text-gray-500 hover:bg-gray-800 hover:text-red-400"
+						className="rounded-full px-1 text-muted-foreground-dim hover:bg-secondary hover:text-red-400"
 					>
 						×
 					</button>
@@ -141,7 +145,7 @@ export function ResumeExportPresetBar({
 			<button
 				type="button"
 				onClick={onSaveCurrent}
-				className="rounded-full border border-dashed border-gray-600 px-3 py-1 text-xs text-gray-400 hover:border-ieee-dark-yellow hover:text-ieee-dark-yellow"
+				className="rounded-full border border-dashed border-border px-3 py-1 text-xs text-muted-foreground hover:border-ieee-dark-yellow hover:text-ieee-dark-yellow"
 			>
 				+ Save current
 			</button>

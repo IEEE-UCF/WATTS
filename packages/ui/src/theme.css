@@ -88,6 +88,7 @@
 	--color-secondary-foreground: var(--secondary-foreground);
 	--color-muted: var(--muted);
 	--color-muted-foreground: var(--muted-foreground);
+	--color-muted-foreground-dim: var(--muted-foreground-dim);
 	--color-accent: var(--accent);
 	--color-accent-foreground: var(--accent-foreground);
 	--color-destructive: var(--destructive);
@@ -128,6 +129,7 @@
 	--secondary-foreground: oklch(0.216 0.006 56.043);
 	--muted: oklch(0.97 0.001 106.424);
 	--muted-foreground: oklch(0.553 0.013 58.071);
+	--muted-foreground-dim: oklch(0.44 0.013 58.071);
 	--accent: oklch(0.97 0.001 106.424);
 	--accent-foreground: oklch(0.216 0.006 56.043);
 	--destructive: oklch(0.577 0.245 27.325);
@@ -169,6 +171,12 @@
 	--secondary-foreground: var(--color-ieee-white);
 	--muted: var(--color-ieee-dark-grey);
 	--muted-foreground: var(--color-ieee-light-grey);
+	/* Dimmer than muted-foreground — for hint/disabled/placeholder text that today
+	 * uses gray-500/gray-600, one step further from foreground than the "label" role
+	 * muted-foreground serves. Reuses the existing ieee-grey brand token (a mid-grey
+	 * that already sits between ieee-light-grey and ieee-dark-grey) rather than
+	 * inventing a new raw color. */
+	--muted-foreground-dim: var(--color-ieee-grey);
 	--accent: var(--color-ieee-dark-grey);
 	--accent-foreground: var(--color-ieee-white);
 	--destructive: oklch(0.704 0.191 22.216);

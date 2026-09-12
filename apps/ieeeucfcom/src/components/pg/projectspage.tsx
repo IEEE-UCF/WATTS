@@ -162,11 +162,11 @@ export default function ProjectsPage() {
 												{project.title}
 											</div>
 											{project.lead && (
-												<div className="mb-2 text-gray-300">
+												<div className="mb-2 text-muted-foreground">
 													Project Lead: {project.lead}
 												</div>
 											)}
-											<div className="mb-4 text-gray-400">
+											<div className="mb-4 text-muted-foreground">
 												{project.overview?.slice(0, 120)}...
 											</div>
 											<div className="mb-4 flex flex-wrap gap-2">

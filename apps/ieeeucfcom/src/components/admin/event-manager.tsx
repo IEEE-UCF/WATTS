@@ -12,9 +12,9 @@ const GOOGLE_COLOR_IDS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11
 
 const SYNC_BADGE: Record<string, string> = {
 	synced: 'bg-green-900/70 text-green-300',
-	pending: 'bg-gray-800 text-gray-300',
+	pending: 'bg-secondary text-muted-foreground',
 	error: 'bg-red-900/70 text-red-300',
-	skipped: 'bg-gray-800 text-gray-400',
+	skipped: 'bg-secondary text-muted-foreground',
 };
 
 const COMMON_TZ = [
@@ -150,21 +150,20 @@ function EventForm({
 		else await create.mutateAsync(payload);
 	}
 
-	const field =
-		'w-full rounded-md border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-gray-100';
+	const field = 'w-full rounded-md border border-input bg-card px-3 py-2 text-sm text-foreground';
 
 	return (
 		<form
 			onSubmit={submit}
-			className="mb-8 space-y-4 rounded-lg border border-gray-800 bg-gray-900/50 p-5"
+			className="mb-8 space-y-4 rounded-lg border border-border bg-card/50 p-5"
 		>
-			<h3 className="text-sm font-semibold text-gray-200">
+			<h3 className="text-sm font-semibold text-foreground">
 				{editing ? `Edit “${editing.title}”` : 'New event'}
 			</h3>
 
 			<div className="grid gap-4 sm:grid-cols-2">
 				<label className="block">
-					<span className="mb-1 block text-xs text-gray-400">Title</span>
+					<span className="mb-1 block text-xs text-muted-foreground">Title</span>
 					<input
 						id="title"
 						required
@@ -174,7 +173,7 @@ function EventForm({
 					/>
 				</label>
 				<label className="block">
-					<span className="mb-1 block text-xs text-gray-400">Location</span>
+					<span className="mb-1 block text-xs text-muted-foreground">Location</span>
 					<input
 						id="location"
 						required
@@ -184,7 +183,7 @@ function EventForm({
 					/>
 				</label>
 				<label className="block">
-					<span className="mb-1 block text-xs text-gray-400">Start</span>
+					<span className="mb-1 block text-xs text-muted-foreground">Start</span>
 					<input
 						id="startTime"
 						type="datetime-local"
@@ -195,7 +194,7 @@ function EventForm({
 					/>
 				</label>
 				<label className="block">
-					<span className="mb-1 block text-xs text-gray-400">End</span>
+					<span className="mb-1 block text-xs text-muted-foreground">End</span>
 					<input
 						id="endTime"
 						type="datetime-local"
@@ -205,7 +204,7 @@ function EventForm({
 					/>
 				</label>
 				<label className="block">
-					<span className="mb-1 block text-xs text-gray-400">Category</span>
+					<span className="mb-1 block text-xs text-muted-foreground">Category</span>
 					<select
 						id="labelId"
 						value={form.labelId}
@@ -223,7 +222,7 @@ function EventForm({
 					</select>
 				</label>
 				<label className="block">
-					<span className="mb-1 block text-xs text-gray-400">Time zone</span>
+					<span className="mb-1 block text-xs text-muted-foreground">Time zone</span>
 					<select
 						id="timeZone"
 						value={form.timeZone}
@@ -240,7 +239,7 @@ function EventForm({
 			</div>
 
 			<label className="block">
-				<span className="mb-1 block text-xs text-gray-400">Description</span>
+				<span className="mb-1 block text-xs text-muted-foreground">Description</span>
 				<textarea
 					id="description"
 					required
@@ -253,7 +252,9 @@ function EventForm({
 
 			<div className="grid gap-4 sm:grid-cols-2">
 				<label className="block">
-					<span className="mb-1 block text-xs text-gray-400">RSVP link (optional)</span>
+					<span className="mb-1 block text-xs text-muted-foreground">
+						RSVP link (optional)
+					</span>
 					<input
 						id="rsvpLink"
 						value={form.rsvpLink}
@@ -262,7 +263,9 @@ function EventForm({
 					/>
 				</label>
 				<label className="block">
-					<span className="mb-1 block text-xs text-gray-400">Slug (optional)</span>
+					<span className="mb-1 block text-xs text-muted-foreground">
+						Slug (optional)
+					</span>
 					<input
 						id="slug"
 						value={form.slug}
@@ -272,7 +275,7 @@ function EventForm({
 				</label>
 			</div>
 
-			<div className="flex flex-wrap gap-6 text-sm text-gray-300">
+			<div className="flex flex-wrap gap-6 text-sm text-muted-foreground">
 				<label className="flex items-center gap-2">
 					<input
 						id="isGlobal"
@@ -327,7 +330,7 @@ function EventForm({
 					/>
 					Needs SU Room Reservation
 				</label>
-				<label className="flex items-center gap-2 text-gray-400">
+				<label className="flex items-center gap-2 text-muted-foreground">
 					<input
 						id="manuallyGivenRoom"
 						type="checkbox"
@@ -351,7 +354,7 @@ function EventForm({
 				<button
 					type="button"
 					onClick={onDone}
-					className="rounded-md border border-gray-700 px-4 py-2 text-sm text-gray-300"
+					className="rounded-md border border-input px-4 py-2 text-sm text-muted-foreground"
 				>
 					Cancel
 				</button>
@@ -391,12 +394,12 @@ function LabelBar({ labels }: { labels: Label[] }) {
 	});
 
 	return (
-		<div className="mb-6 rounded-lg border border-gray-800 bg-gray-900/40 p-4">
+		<div className="mb-6 rounded-lg border border-border bg-card/40 p-4">
 			<div className="flex items-center justify-between">
 				<button
 					type="button"
 					onClick={() => setOpen((o) => !o)}
-					className="text-sm font-semibold text-gray-300"
+					className="text-sm font-semibold text-muted-foreground"
 				>
 					Categories ({labels.filter((l) => l.active).length}) {open ? '▾' : '▸'}
 				</button>
@@ -405,7 +408,7 @@ function LabelBar({ labels }: { labels: Label[] }) {
 						type="button"
 						disabled={pull.isPending}
 						onClick={() => pull.mutate()}
-						className="rounded border border-gray-700 px-2 py-1 text-xs text-gray-300 disabled:opacity-50"
+						className="rounded border border-input px-2 py-1 text-xs text-muted-foreground disabled:opacity-50"
 					>
 						{pull.isPending ? 'Pulling…' : 'Pull colours from Google'}
 					</button>
@@ -425,8 +428,8 @@ function LabelBar({ labels }: { labels: Label[] }) {
 								}
 								className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs ${
 									l.active
-										? 'border-gray-700 text-gray-200'
-										: 'border-gray-800 text-gray-500 line-through'
+										? 'border-input text-foreground'
+										: 'border-border text-muted-foreground-dim line-through'
 								}`}
 							>
 								<span
@@ -442,7 +445,7 @@ function LabelBar({ labels }: { labels: Label[] }) {
 									onClick={() =>
 										setActive.mutate({ id: l.id, active: !l.active })
 									}
-									className="text-gray-500 hover:text-gray-300"
+									className="text-muted-foreground-dim hover:text-muted-foreground"
 								>
 									{l.active ? '×' : '↺'}
 								</button>
@@ -462,19 +465,19 @@ function LabelBar({ labels }: { labels: Label[] }) {
 							required
 							value={name}
 							onChange={(e) => setName(e.target.value)}
-							className="rounded border border-gray-700 bg-gray-900 px-2 py-1"
+							className="rounded border border-input bg-card px-2 py-1"
 						/>
 						<input
 							placeholder="slug"
 							required
 							value={slug}
 							onChange={(e) => setSlug(e.target.value)}
-							className="rounded border border-gray-700 bg-gray-900 px-2 py-1"
+							className="rounded border border-input bg-card px-2 py-1"
 						/>
 						<select
 							value={colorId}
 							onChange={(e) => setColorId(e.target.value)}
-							className="rounded border border-gray-700 bg-gray-900 px-2 py-1"
+							className="rounded border border-input bg-card px-2 py-1"
 						>
 							{GOOGLE_COLOR_IDS.map((c) => (
 								<option key={c} value={c}>
@@ -485,7 +488,7 @@ function LabelBar({ labels }: { labels: Label[] }) {
 						<button
 							type="submit"
 							disabled={create.isPending}
-							className="rounded bg-gray-700 px-3 py-1 text-gray-100 disabled:opacity-50"
+							className="rounded bg-secondary px-3 py-1 text-foreground disabled:opacity-50"
 						>
 							Add
 						</button>
@@ -651,7 +654,7 @@ export function EventManager() {
 	}
 
 	return (
-		<div className="text-gray-100">
+		<div className="text-foreground">
 			<LabelBar labels={labels ?? []} />
 
 			{banner && (
@@ -685,12 +688,12 @@ export function EventManager() {
 					type="button"
 					disabled={importGoogle.isPending}
 					onClick={previewImport}
-					className="rounded-md border border-gray-700 px-4 py-2 text-sm text-gray-200 disabled:opacity-50"
+					className="rounded-md border border-input px-4 py-2 text-sm text-foreground disabled:opacity-50"
 				>
 					{importGoogle.isPending ? 'Working…' : 'Import from Google Calendar'}
 				</button>
 				{archivedCount > 0 && (
-					<label className="ml-auto flex items-center gap-2 text-xs text-gray-400">
+					<label className="ml-auto flex items-center gap-2 text-xs text-muted-foreground">
 						<input
 							type="checkbox"
 							checked={showArchived}
@@ -702,14 +705,14 @@ export function EventManager() {
 			</div>
 
 			{importPreview && (
-				<div className="mb-6 rounded-lg border border-gray-700 bg-gray-900/60 p-4 text-sm">
-					<p className="mb-2 font-semibold text-gray-200">
+				<div className="mb-6 rounded-lg border border-input bg-card/60 p-4 text-sm">
+					<p className="mb-2 font-semibold text-foreground">
 						Import {importPreview.imported} event(s) from Google Calendar?
 					</p>
-					<p className="mb-2 text-xs text-gray-400">
+					<p className="mb-2 text-xs text-muted-foreground">
 						{importPreview.skipped} already linked and will be left alone.
 					</p>
-					<ul className="mb-3 max-h-40 overflow-y-auto text-xs text-gray-300">
+					<ul className="mb-3 max-h-40 overflow-y-auto text-xs text-muted-foreground">
 						{importPreview.results
 							.filter((r) => r.action === 'imported')
 							.map((r) => (
@@ -728,7 +731,7 @@ export function EventManager() {
 						<button
 							type="button"
 							onClick={() => setImportPreview(null)}
-							className="rounded-md border border-gray-700 px-4 py-2 text-sm text-gray-300"
+							className="rounded-md border border-input px-4 py-2 text-sm text-muted-foreground"
 						>
 							Cancel
 						</button>
@@ -755,11 +758,11 @@ export function EventManager() {
 			/>
 
 			{isLoading ? (
-				<p className="text-sm text-gray-400">Loading…</p>
+				<p className="text-sm text-muted-foreground">Loading…</p>
 			) : (
-				<div className="overflow-x-auto rounded-lg border border-gray-800">
+				<div className="overflow-x-auto rounded-lg border border-border">
 					<table className="w-full text-left text-sm">
-						<thead className="bg-gray-900/60 text-xs text-gray-400 uppercase">
+						<thead className="bg-card/60 text-xs text-muted-foreground uppercase">
 							<tr>
 								<th className="px-3 py-2">Event</th>
 								<th className="px-3 py-2">Start</th>
@@ -774,25 +777,27 @@ export function EventManager() {
 							{visible.map((ev) => (
 								<tr
 									key={ev.id}
-									className={`border-t border-gray-800 ${ev.active ? '' : 'opacity-50'}`}
+									className={`border-t border-border ${ev.active ? '' : 'opacity-50'}`}
 								>
 									<td className="px-3 py-2">
 										<div className="font-medium">
 											{ev.title}
 											{!ev.active && (
-												<span className="ml-2 rounded bg-gray-800 px-1.5 py-0.5 text-[10px] text-gray-400 uppercase">
+												<span className="ml-2 rounded bg-secondary px-1.5 py-0.5 text-[10px] text-muted-foreground uppercase">
 													archived
 												</span>
 											)}
 											{ev.hidden && (
-												<span className="ml-2 rounded bg-gray-800 px-1.5 py-0.5 text-[10px] text-amber-400 uppercase">
+												<span className="ml-2 rounded bg-secondary px-1.5 py-0.5 text-[10px] text-amber-400 uppercase">
 													hidden
 												</span>
 											)}
 										</div>
-										<div className="text-xs text-gray-500">{ev.location}</div>
+										<div className="text-xs text-muted-foreground-dim">
+											{ev.location}
+										</div>
 									</td>
-									<td className="px-3 py-2 text-xs text-gray-300">
+									<td className="px-3 py-2 text-xs text-muted-foreground">
 										{ev.startTime}
 									</td>
 									<td className="px-3 py-2">
@@ -807,7 +812,9 @@ export function EventManager() {
 												{ev.label.name}
 											</span>
 										) : (
-											<span className="text-xs text-gray-600">—</span>
+											<span className="text-xs text-muted-foreground-dim">
+												—
+											</span>
 										)}
 									</td>
 									<td className="px-3 py-2 text-xs">{ev.isGlobal ? '✓' : ''}</td>
@@ -827,7 +834,9 @@ export function EventManager() {
 												className="h-10 w-10 rounded object-cover"
 											/>
 										) : (
-											<span className="text-xs text-gray-600">none</span>
+											<span className="text-xs text-muted-foreground-dim">
+												none
+											</span>
 										)}
 									</td>
 									<td className="px-3 py-2">
@@ -912,7 +921,7 @@ export function EventManager() {
 								<tr>
 									<td
 										colSpan={7}
-										className="px-3 py-6 text-center text-sm text-gray-500"
+										className="px-3 py-6 text-center text-sm text-muted-foreground-dim"
 									>
 										{sorted.length === 0
 											? 'No events yet.'
@@ -927,13 +936,13 @@ export function EventManager() {
 
 			{pendingDelete && (
 				<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-					<div className="w-full max-w-md rounded-lg border border-gray-700 bg-gray-900 p-6">
+					<div className="w-full max-w-md rounded-lg border border-input bg-card p-6">
 						{pendingDelete.mode === 'archive' ? (
 							<>
-								<h3 className="mb-2 text-lg font-semibold text-gray-100">
+								<h3 className="mb-2 text-lg font-semibold text-foreground">
 									Archive “{pendingDelete.ev.title}”?
 								</h3>
-								<p className="mb-5 text-sm text-gray-400">
+								<p className="mb-5 text-sm text-muted-foreground">
 									It's removed from the website
 									{pendingDelete.ev.googleCalendarEventId
 										? ' and Google Calendar'
@@ -945,7 +954,7 @@ export function EventManager() {
 									<button
 										type="button"
 										onClick={() => setPendingDelete(null)}
-										className="rounded-md border border-gray-700 px-4 py-2 text-sm text-gray-300"
+										className="rounded-md border border-input px-4 py-2 text-sm text-muted-foreground"
 									>
 										Cancel
 									</button>
@@ -964,7 +973,7 @@ export function EventManager() {
 								<h3 className="mb-2 text-lg font-semibold text-red-300">
 									Permanently delete “{pendingDelete.ev.title}”?
 								</h3>
-								<p className="mb-3 text-sm text-gray-400">
+								<p className="mb-3 text-sm text-muted-foreground">
 									This cannot be undone. It removes the event, its attendee
 									records
 									{pendingDelete.ev.googleCalendarEventId
@@ -972,9 +981,9 @@ export function EventManager() {
 										: ''}
 									.
 								</p>
-								<label className="mb-1 block text-xs text-gray-400">
+								<label className="mb-1 block text-xs text-muted-foreground">
 									Type{' '}
-									<span className="font-mono text-gray-200">
+									<span className="font-mono text-foreground">
 										{pendingDelete.ev.title}
 									</span>{' '}
 									to confirm
@@ -984,14 +993,14 @@ export function EventManager() {
 									aria-label="Confirm event title"
 									value={purgeText}
 									onChange={(e) => setPurgeText(e.target.value)}
-									className="mb-5 w-full rounded-md border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-gray-100"
+									className="mb-5 w-full rounded-md border border-input bg-secondary px-3 py-2 text-sm text-foreground"
 								/>
 
 								<div className="flex justify-end gap-3">
 									<button
 										type="button"
 										onClick={() => setPendingDelete(null)}
-										className="rounded-md border border-gray-700 px-4 py-2 text-sm text-gray-300"
+										className="rounded-md border border-input px-4 py-2 text-sm text-muted-foreground"
 									>
 										Cancel
 									</button>

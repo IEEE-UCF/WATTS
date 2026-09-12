@@ -81,7 +81,7 @@ const Navbar: React.FC = () => {
 					)}
 
 					{auth?.isAdmin && (
-						<div className="ml-2 flex items-center gap-3 border-l border-gray-700 pl-4">
+						<div className="ml-2 flex items-center gap-3 border-l border-input pl-4">
 							<span className="font-[heading-font] text-xs tracking-[0.2em] text-ieee-dark-yellow">
 								ADMIN
 							</span>

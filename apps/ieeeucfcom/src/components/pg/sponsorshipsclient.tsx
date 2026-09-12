@@ -58,7 +58,7 @@ export const SponsorsCarousel: React.FC = () => (
 									className="object-contain"
 								/>
 							</div>
-							<span className="text-center font-[body-font] text-base text-gray-400 transition-colors group-hover:text-ieee-bright-yellow">
+							<span className="text-center font-[body-font] text-base text-muted-foreground transition-colors group-hover:text-ieee-bright-yellow">
 								{sponsor.name}
 							</span>
 							<span className="rounded-full border border-ieee-bright-yellow px-3 py-1 font-[heading-font] text-xs tracking-widest text-ieee-bright-yellow uppercase opacity-70 transition-opacity group-hover:opacity-100">
@@ -107,7 +107,7 @@ export const PDFViewer: React.FC = () => {
 					<p className="mb-1 font-[heading-font] text-xl text-white">
 						IEEE UCF Sponsorship Package
 					</p>
-					<p className="font-[body-font] text-sm text-gray-400">
+					<p className="font-[body-font] text-sm text-muted-foreground">
 						View the full sponsorship packet to learn about partnership opportunities.
 					</p>
 				</div>

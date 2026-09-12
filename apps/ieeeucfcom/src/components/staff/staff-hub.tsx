@@ -7,7 +7,7 @@ import { QREventScanner } from '@/components/admin/qr_event_scanner';
 
 function CapTag({ cap }: { cap: Capability }) {
 	return (
-		<span className="rounded bg-gray-800 px-2 py-0.5 font-mono text-[10px] tracking-tight text-gray-400">
+		<span className="rounded bg-secondary px-2 py-0.5 font-mono text-[10px] tracking-tight text-muted-foreground">
 			{cap}
 		</span>
 	);
@@ -26,17 +26,19 @@ function Panel({
 }) {
 	return (
 		<section
-			className={`flex flex-col rounded-xl border border-gray-800 bg-gray-900/60 p-4 shadow-lg shadow-black/40 ${
+			className={`flex flex-col rounded-xl border border-border bg-card/60 p-4 shadow-lg shadow-black/40 ${
 				wide ? 'lg:col-span-2' : ''
 			}`}
 		>
 			<div className="mb-3 flex items-center gap-2">
-				<h2 className="font-[heading-font] text-sm tracking-[0.14em] text-gray-100 uppercase">
+				<h2 className="font-[heading-font] text-sm tracking-[0.14em] text-foreground uppercase">
 					{title}
 				</h2>
 				{cap && (
 					<span className="ml-auto flex items-center gap-2">
-						<span className="text-[11px] text-gray-500">{CAPABILITIES[cap].label}</span>
+						<span className="text-[11px] text-muted-foreground-dim">
+							{CAPABILITIES[cap].label}
+						</span>
 						<CapTag cap={cap} />
 					</span>
 				)}
@@ -50,7 +52,7 @@ function LinkCard({ href, label }: { href: string; label: string }) {
 	return (
 		<Link
 			href={href}
-			className="inline-flex items-center gap-1 rounded-md border border-gray-700 px-3 py-2 text-sm text-gray-200 transition-colors hover:border-ieee-dark-yellow hover:text-ieee-dark-yellow"
+			className="inline-flex items-center gap-1 rounded-md border border-input px-3 py-2 text-sm text-foreground transition-colors hover:border-ieee-dark-yellow hover:text-ieee-dark-yellow"
 		>
 			{label}{' '}
 			<span aria-hidden className="opacity-60">
@@ -64,7 +66,7 @@ export function StaffHub() {
 	const { data: auth, isLoading } = trpc.auth.getAuthStatus.useQuery();
 
 	if (isLoading) {
-		return <p className="text-sm text-gray-400">Loading…</p>;
+		return <p className="text-sm text-muted-foreground">Loading…</p>;
 	}
 
 	const subject = {
@@ -88,20 +90,20 @@ export function StaffHub() {
 		can('review_resumes');
 
 	return (
-		<div className="text-gray-100">
+		<div className="text-foreground">
 			<div className="mb-6 flex flex-wrap items-baseline gap-x-4 gap-y-1">
-				<span className="text-sm text-gray-500">
+				<span className="text-sm text-muted-foreground-dim">
 					{auth?.member
 						? `${auth.member.firstName} ${auth.member.lastName}`
 						: 'Signed in'}
 				</span>
-				<span className="rounded-full border border-gray-700 px-3 py-1 text-xs text-gray-300">
+				<span className="rounded-full border border-input px-3 py-1 text-xs text-muted-foreground">
 					{scope}
 				</span>
 			</div>
 
 			{!anyTool && !isAdmin && (
-				<p className="rounded-lg border border-gray-800 bg-gray-900/60 p-4 text-sm text-gray-400">
+				<p className="rounded-lg border border-border bg-card/60 p-4 text-sm text-muted-foreground">
 					You don&apos;t have any staff tools yet. An admin can grant you capabilities on
 					the Members screen.
 				</p>
@@ -116,7 +118,7 @@ export function StaffHub() {
 
 				{can('manage_events') && (
 					<Panel title="Events" cap="manage_events">
-						<p className="mb-3 text-sm text-gray-400">
+						<p className="mb-3 text-sm text-muted-foreground">
 							Create &amp; edit events, pick a category, upload a flyer, and sync to
 							Google Calendar.
 						</p>
@@ -126,7 +128,7 @@ export function StaffHub() {
 
 				{can('manage_event_photos') && (
 					<Panel title="Event Photos" cap="manage_event_photos">
-						<p className="mb-3 text-sm text-gray-400">
+						<p className="mb-3 text-sm text-muted-foreground">
 							Upload and manage photos per event, set captions, tags, and visibility.
 						</p>
 						<LinkCard href="/admin/photos" label="Open photo manager" />
@@ -135,7 +137,7 @@ export function StaffHub() {
 
 				{can('review_resumes') && (
 					<Panel title="Résumés" cap="review_resumes">
-						<p className="mb-3 text-sm text-gray-400">
+						<p className="mb-3 text-sm text-muted-foreground">
 							Browse member résumés with inline preview and filters.
 						</p>
 						<LinkCard href="/admin/resumes" label="Open résumé review" />
@@ -144,7 +146,7 @@ export function StaffHub() {
 
 				{(isAdmin || auth?.isOfficer) && (
 					<Panel title="Members">
-						<p className="mb-3 text-sm text-gray-400">
+						<p className="mb-3 text-sm text-muted-foreground">
 							{isAdmin
 								? 'Roster, roles, capabilities, and résumé / committee status.'
 								: 'Roster & status. Toggle admin-delegated capabilities for regular members.'}
@@ -155,7 +157,7 @@ export function StaffHub() {
 
 				{isAdmin && (
 					<Panel title="Admin">
-						<p className="mb-3 text-sm text-gray-400">
+						<p className="mb-3 text-sm text-muted-foreground">
 							The full admin dashboard — events, photos, résumés, and site settings.
 						</p>
 						<LinkCard href="/admin/dashboard" label="Admin dashboard" />

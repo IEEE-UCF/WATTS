@@ -18,9 +18,9 @@ export default async function AdminEventsPage() {
 				<h1 className="mb-6 font-[heading-font] text-3xl text-ieee-dark-yellow">
 					EVENT MANAGEMENT
 				</h1>
-				<p className="mb-6 text-sm text-gray-400">
+				<p className="mb-6 text-sm text-muted-foreground">
 					Events created here are the source of truth. Each one mirrors to the chapter
-					Google Calendar; tick <span className="text-gray-200">Global</span> to also
+					Google Calendar; tick <span className="text-foreground">Global</span> to also
 					publish a Discord scheduled event.
 				</p>
 				<EventManager />

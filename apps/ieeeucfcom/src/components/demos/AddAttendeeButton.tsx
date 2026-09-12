@@ -19,7 +19,7 @@ export function AddAttendeeButton() {
 			<select
 				value={selectedEventId}
 				onChange={(e) => setSelectedEventId(e.target.value)}
-				className="rounded-md border border-gray-300 px-3 py-2 text-sm text-black"
+				className="rounded-md border border-input px-3 py-2 text-sm text-foreground"
 				disabled={eventsLoading}
 			>
 				<option value="" disabled>
@@ -36,7 +36,7 @@ export function AddAttendeeButton() {
 				value={discordId}
 				onChange={(e) => setDiscordId(e.target.value)}
 				placeholder="Discord ID"
-				className="rounded-md border border-gray-300 px-3 py-2 text-sm text-black"
+				className="rounded-md border border-input px-3 py-2 text-sm text-foreground"
 			/>
 			<button
 				onClick={() => addAttendee.mutate({ eventId: selectedEventId, discordId })}

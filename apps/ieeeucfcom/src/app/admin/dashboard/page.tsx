@@ -32,7 +32,7 @@ export default async function Dashboard() {
 			{/* Dashboard Content */}
 			<main className="flex-1">
 				<div className="mx-auto max-w-6xl px-4 pt-6">
-					<h2 className="mb-3 text-lg font-semibold text-gray-100 lg:text-xl">
+					<h2 className="mb-3 text-lg font-semibold text-foreground lg:text-xl">
 						Admin Tools
 					</h2>
 					<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -40,12 +40,14 @@ export default async function Dashboard() {
 							<Link
 								key={tool.href}
 								href={tool.href}
-								className="rounded-xl border border-gray-800 bg-gray-900/60 p-4 shadow-lg shadow-black/40 transition-colors hover:border-ieee-dark-yellow hover:bg-gray-900"
+								className="rounded-xl border border-border bg-card/60 p-4 shadow-lg shadow-black/40 transition-colors hover:border-ieee-dark-yellow hover:bg-card"
 							>
-								<div className="text-base font-semibold text-gray-100">
+								<div className="text-base font-semibold text-foreground">
 									{tool.title}
 								</div>
-								<div className="mt-1 text-sm text-gray-400">{tool.desc}</div>
+								<div className="mt-1 text-sm text-muted-foreground">
+									{tool.desc}
+								</div>
 							</Link>
 						))}
 					</div>
@@ -53,8 +55,8 @@ export default async function Dashboard() {
 
 				<div className="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-6 lg:flex-row">
 					{/* Left Panel – QR Scanner */}
-					<section className="flex-1 rounded-xl border border-gray-800 bg-gray-900/60 p-4 shadow-lg shadow-black/40 lg:p-6">
-						<h2 className="mb-4 text-lg font-semibold text-gray-100 lg:text-xl">
+					<section className="flex-1 rounded-xl border border-border bg-card/60 p-4 shadow-lg shadow-black/40 lg:p-6">
+						<h2 className="mb-4 text-lg font-semibold text-foreground lg:text-xl">
 							Event Check-In
 						</h2>
 						<div className="flex justify-center">
@@ -68,10 +70,10 @@ export default async function Dashboard() {
 					</Card>
 
 					{/* Right Panel – Event Management */}
-					<section className="flex-1 rounded-xl border border-gray-800 bg-gray-900/60 p-4 shadow-lg shadow-black/40 lg:max-w-md lg:p-6">
+					<section className="flex-1 rounded-xl border border-border bg-card/60 p-4 shadow-lg shadow-black/40 lg:max-w-md lg:p-6">
 						<div className="space-y-6">
 							<div>
-								<h2 className="mb-3 text-lg font-semibold text-gray-100 lg:text-xl">
+								<h2 className="mb-3 text-lg font-semibold text-foreground lg:text-xl">
 									Events
 								</h2>
 								<Link
@@ -80,13 +82,13 @@ export default async function Dashboard() {
 								>
 									Open event manager →
 								</Link>
-								<p className="mt-2 text-sm text-gray-400">
+								<p className="mt-2 text-sm text-muted-foreground">
 									Create &amp; edit events, pick a category, upload a flyer. Syncs
 									to Google Calendar.
 								</p>
 							</div>
-							<div className="border-t border-gray-800 pt-5">
-								<h2 className="mb-3 text-lg font-semibold text-gray-100 lg:text-xl">
+							<div className="border-t border-border pt-5">
+								<h2 className="mb-3 text-lg font-semibold text-foreground lg:text-xl">
 									Upcoming Events
 								</h2>
 								<EventList />

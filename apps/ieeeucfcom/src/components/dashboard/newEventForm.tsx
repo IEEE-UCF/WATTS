@@ -137,13 +137,13 @@ export const FormPopup: React.FC = () => {
 			</button>
 			{isOpen && (
 				<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-					<div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-lg border border-gray-800 bg-gray-900 p-8 text-gray-100">
+					<div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-lg border border-border bg-card p-8 text-foreground">
 						<h2 className="mb-4 text-2xl">Create Event</h2>
 						<form onSubmit={handleSubmit}>
 							<div className="mb-4">
 								<label
 									htmlFor="title"
-									className="block text-sm font-medium text-gray-400"
+									className="block text-sm font-medium text-muted-foreground"
 								>
 									Title
 								</label>
@@ -154,13 +154,13 @@ export const FormPopup: React.FC = () => {
 									value={formData.title}
 									onChange={handleChange}
 									required
-									className="mt-1 block w-full rounded-md border border-gray-700 bg-gray-900 px-3 py-2 text-gray-100 shadow-sm sm:text-sm"
+									className="mt-1 block w-full rounded-md border border-input bg-card px-3 py-2 text-foreground shadow-sm sm:text-sm"
 								/>
 							</div>
 							<div className="mb-4">
 								<label
 									htmlFor="location"
-									className="block text-sm font-medium text-gray-400"
+									className="block text-sm font-medium text-muted-foreground"
 								>
 									Location
 								</label>
@@ -171,13 +171,13 @@ export const FormPopup: React.FC = () => {
 									value={formData.location}
 									onChange={handleChange}
 									required
-									className="mt-1 block w-full rounded-md border border-gray-700 bg-gray-900 px-3 py-2 text-gray-100 shadow-sm sm:text-sm"
+									className="mt-1 block w-full rounded-md border border-input bg-card px-3 py-2 text-foreground shadow-sm sm:text-sm"
 								/>
 							</div>
 							<div className="mb-4">
 								<label
 									htmlFor="hostType"
-									className="block text-sm font-medium text-gray-400"
+									className="block text-sm font-medium text-muted-foreground"
 								>
 									Host Type
 								</label>
@@ -187,7 +187,7 @@ export const FormPopup: React.FC = () => {
 									value={formData.hostType}
 									onChange={handleChange}
 									required
-									className="mt-1 block w-full rounded-md border border-gray-700 bg-gray-900 px-3 py-2 text-gray-100 shadow-sm sm:text-sm"
+									className="mt-1 block w-full rounded-md border border-input bg-card px-3 py-2 text-foreground shadow-sm sm:text-sm"
 								>
 									<option value="">Select Host Type</option>
 									<option value="club">Club</option>
@@ -199,7 +199,7 @@ export const FormPopup: React.FC = () => {
 							<div className="mb-4">
 								<label
 									htmlFor="startTime"
-									className="block text-sm font-medium text-gray-400"
+									className="block text-sm font-medium text-muted-foreground"
 								>
 									Start Time
 								</label>
@@ -210,13 +210,13 @@ export const FormPopup: React.FC = () => {
 									value={formData.startTime}
 									onChange={handleChange}
 									required
-									className="mt-1 block w-full rounded-md border border-gray-700 bg-gray-900 px-3 py-2 text-gray-100 shadow-sm sm:text-sm"
+									className="mt-1 block w-full rounded-md border border-input bg-card px-3 py-2 text-foreground shadow-sm sm:text-sm"
 								/>
 							</div>
 							<div className="mb-4">
 								<label
 									htmlFor="endTime"
-									className="block text-sm font-medium text-gray-400"
+									className="block text-sm font-medium text-muted-foreground"
 								>
 									End Time
 								</label>
@@ -226,13 +226,13 @@ export const FormPopup: React.FC = () => {
 									id="endTime"
 									value={formData.endTime}
 									onChange={handleChange}
-									className="mt-1 block w-full rounded-md border border-gray-700 bg-gray-900 px-3 py-2 text-gray-100 shadow-sm sm:text-sm"
+									className="mt-1 block w-full rounded-md border border-input bg-card px-3 py-2 text-foreground shadow-sm sm:text-sm"
 								/>
 							</div>
 							<div className="mb-4">
 								<label
 									htmlFor="description"
-									className="block text-sm font-medium text-gray-400"
+									className="block text-sm font-medium text-muted-foreground"
 								>
 									Description
 								</label>
@@ -242,13 +242,13 @@ export const FormPopup: React.FC = () => {
 									value={formData.description}
 									onChange={handleChange}
 									rows={3}
-									className="mt-1 block w-full rounded-md border border-gray-700 bg-gray-900 px-3 py-2 text-gray-100 shadow-sm sm:text-sm"
+									className="mt-1 block w-full rounded-md border border-input bg-card px-3 py-2 text-foreground shadow-sm sm:text-sm"
 								/>
 							</div>
 							<div className="mb-4">
 								<label
 									htmlFor="flyerUrl"
-									className="block text-sm font-medium text-gray-400"
+									className="block text-sm font-medium text-muted-foreground"
 								>
 									Flyer URL
 								</label>
@@ -258,13 +258,13 @@ export const FormPopup: React.FC = () => {
 									id="flyerUrl"
 									value={formData.flyerUrl}
 									onChange={handleChange}
-									className="mt-1 block w-full rounded-md border border-gray-700 bg-gray-900 px-3 py-2 text-gray-100 shadow-sm sm:text-sm"
+									className="mt-1 block w-full rounded-md border border-input bg-card px-3 py-2 text-foreground shadow-sm sm:text-sm"
 								/>
 							</div>
 							<div className="mb-4">
 								<label
 									htmlFor="rsvpLink"
-									className="block text-sm font-medium text-gray-400"
+									className="block text-sm font-medium text-muted-foreground"
 								>
 									RSVP Link
 								</label>
@@ -274,7 +274,7 @@ export const FormPopup: React.FC = () => {
 									id="rsvpLink"
 									value={formData.rsvpLink}
 									onChange={handleChange}
-									className="mt-1 block w-full rounded-md border border-gray-700 bg-gray-900 px-3 py-2 text-gray-100 shadow-sm sm:text-sm"
+									className="mt-1 block w-full rounded-md border border-input bg-card px-3 py-2 text-foreground shadow-sm sm:text-sm"
 								/>
 							</div>
 							<div className="mb-4 flex items-center">
@@ -284,11 +284,11 @@ export const FormPopup: React.FC = () => {
 									id="needsRoomReservation"
 									checked={formData.needsRoomReservation}
 									onChange={handleChange}
-									className="h-4 w-4 rounded border-gray-700 bg-gray-900 text-indigo-600"
+									className="h-4 w-4 rounded border-input bg-card text-indigo-600"
 								/>
 								<label
 									htmlFor="needsRoomReservation"
-									className="ml-2 block text-sm text-gray-200"
+									className="ml-2 block text-sm text-foreground"
 								>
 									Needs SU Room Reservation
 								</label>
@@ -301,11 +301,11 @@ export const FormPopup: React.FC = () => {
 										id="manuallyGivenRoom"
 										checked={formData.manuallyGivenRoom}
 										onChange={handleChange}
-										className="h-4 w-4 rounded border-gray-700 bg-gray-900 text-indigo-600"
+										className="h-4 w-4 rounded border-input bg-card text-indigo-600"
 									/>
 									<label
 										htmlFor="manuallyGivenRoom"
-										className="ml-2 block text-sm text-gray-200"
+										className="ml-2 block text-sm text-foreground"
 									>
 										Room is already confirmed (Skip Tracking)
 									</label>
@@ -318,11 +318,11 @@ export const FormPopup: React.FC = () => {
 									id="requiresDues"
 									checked={formData.requiresDues}
 									onChange={handleChange}
-									className="h-4 w-4 rounded border-gray-700 bg-gray-900 text-indigo-600"
+									className="h-4 w-4 rounded border-input bg-card text-indigo-600"
 								/>
 								<label
 									htmlFor="requiresDues"
-									className="ml-2 block text-sm text-gray-200"
+									className="ml-2 block text-sm text-foreground"
 								>
 									Requires Dues
 								</label>
@@ -334,11 +334,11 @@ export const FormPopup: React.FC = () => {
 									id="pingCreatorOnUpdate"
 									checked={formData.pingCreatorOnUpdate}
 									onChange={handleChange}
-									className="h-4 w-4 rounded border-gray-700 bg-gray-900 text-indigo-600"
+									className="h-4 w-4 rounded border-input bg-card text-indigo-600"
 								/>
 								<label
 									htmlFor="pingCreatorOnUpdate"
-									className="ml-2 block text-sm text-gray-200"
+									className="ml-2 block text-sm text-foreground"
 								>
 									Ping Creator on Discord for updates
 								</label>
@@ -359,7 +359,7 @@ export const FormPopup: React.FC = () => {
 								<button
 									type="button"
 									onClick={togglePopup}
-									className="mr-2 rounded-md bg-gray-500 px-4 py-2 text-white"
+									className="mr-2 rounded-md bg-muted-foreground-dim px-4 py-2 text-white"
 								>
 									Close
 								</button>

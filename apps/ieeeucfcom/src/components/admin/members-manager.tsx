@@ -123,16 +123,16 @@ export function MembersManager() {
 	}
 
 	return (
-		<div className="text-gray-100">
+		<div className="text-foreground">
 			{isAdmin && (
-				<div className="mb-4 rounded-lg border border-gray-800 bg-gray-900/50 p-3 text-sm">
+				<div className="mb-4 rounded-lg border border-border bg-card/50 p-3 text-sm">
 					<div className="mb-1 flex items-center gap-2">
-						<span className="font-semibold text-gray-200">Officer delegation</span>
+						<span className="font-semibold text-foreground">Officer delegation</span>
 						{delegationMsg && (
 							<span
 								className={`text-xs ${
 									delegationMsg === 'saving…'
-										? 'text-gray-400'
+										? 'text-muted-foreground'
 										: delegationMsg === 'saved ✓'
 											? 'text-green-400'
 											: 'text-red-400'
@@ -142,7 +142,7 @@ export function MembersManager() {
 							</span>
 						)}
 					</div>
-					<p className="mb-2 text-xs text-gray-400">
+					<p className="mb-2 text-xs text-muted-foreground">
 						Capabilities officers may grant to regular members. Officers can never
 						change admin/officer roles, and can only act on members who are not staff.
 					</p>
@@ -156,11 +156,11 @@ export function MembersManager() {
 									onChange={(e) => toggleDelegable(cap, e.target.checked)}
 								/>
 								<span>{CAPABILITIES[cap as Capability]?.label ?? cap}</span>
-								<code className="text-[10px] text-gray-500">{cap}</code>
+								<code className="text-[10px] text-muted-foreground-dim">{cap}</code>
 							</label>
 						))}
 						{delegableCaps.length === 0 && (
-							<span className="text-xs text-gray-500">
+							<span className="text-xs text-muted-foreground-dim">
 								No delegable capabilities.
 							</span>
 						)}
@@ -173,12 +173,12 @@ export function MembersManager() {
 					value={q}
 					onChange={(e) => setQ(e.target.value)}
 					placeholder="Search name / email / major…"
-					className="rounded-md border border-gray-700 bg-gray-900 px-3 py-2"
+					className="rounded-md border border-input bg-card px-3 py-2"
 				/>
 				<select
 					value={role}
 					onChange={(e) => setRole(e.target.value as RoleFilter)}
-					className="rounded-md border border-gray-700 bg-gray-900 px-2 py-2"
+					className="rounded-md border border-input bg-card px-2 py-2"
 				>
 					<option value="all">All roles</option>
 					<option value="admin">Admins</option>
@@ -193,18 +193,18 @@ export function MembersManager() {
 					/>
 					active only
 				</label>
-				<span className="ml-auto text-gray-400">
+				<span className="ml-auto text-muted-foreground">
 					{counts.total} members · {counts.admins} admins · {counts.officers} officers
 					{rows.length !== counts.total && ` · ${rows.length} shown`}
 				</span>
 			</div>
 
 			{isLoading ? (
-				<p className="text-sm text-gray-400">Loading…</p>
+				<p className="text-sm text-muted-foreground">Loading…</p>
 			) : (
-				<div className="overflow-x-auto rounded-lg border border-gray-800">
+				<div className="overflow-x-auto rounded-lg border border-border">
 					<table className="w-full text-left text-sm">
-						<thead className="bg-gray-900 text-gray-300">
+						<thead className="bg-card text-muted-foreground">
 							<tr>
 								<th className="px-3 py-2">Name</th>
 								<th className="px-3 py-2">Email</th>
@@ -225,7 +225,7 @@ export function MembersManager() {
 								return (
 									<tr
 										key={m.id}
-										className={`border-t border-gray-800 ${m.active ? '' : 'opacity-50'}`}
+										className={`border-t border-border ${m.active ? '' : 'opacity-50'}`}
 									>
 										<td className="px-3 py-2 whitespace-nowrap">
 											{m.firstName} {m.lastName}
@@ -238,7 +238,7 @@ export function MembersManager() {
 												<div
 													className={`text-xs ${
 														st === 'saving'
-															? 'text-gray-400'
+															? 'text-muted-foreground'
 															: st === 'saved'
 																? 'text-green-400'
 																: 'text-red-400'
@@ -252,13 +252,13 @@ export function MembersManager() {
 												</div>
 											)}
 										</td>
-										<td className="px-3 py-2 text-gray-400">
+										<td className="px-3 py-2 text-muted-foreground">
 											<div>{m.ucfEmail}</div>
 											{m.personalEmail && (
 												<div className="text-xs">{m.personalEmail}</div>
 											)}
 										</td>
-										<td className="px-3 py-2 text-gray-400">
+										<td className="px-3 py-2 text-muted-foreground">
 											<div className="max-w-[220px] truncate">{m.major}</div>
 											<div className="text-xs">{m.graduationYear}</div>
 										</td>
@@ -278,13 +278,13 @@ export function MembersManager() {
 													className={`rounded px-2 py-1 text-xs font-semibold disabled:opacity-40 ${
 														m.administrator
 															? 'bg-ieee-dark-yellow text-black'
-															: 'border border-gray-600 text-gray-300 hover:border-gray-400'
+															: 'border border-border text-muted-foreground hover:border-foreground'
 													}`}
 												>
 													{m.administrator ? 'Admin' : 'Make admin'}
 												</button>
 											) : (
-												<span className="text-xs text-gray-400">
+												<span className="text-xs text-muted-foreground">
 													{m.administrator ? 'Admin' : '—'}
 												</span>
 											)}
@@ -311,7 +311,7 @@ export function MembersManager() {
 														className={`rounded px-2 py-1 text-xs font-semibold disabled:opacity-40 ${
 															m.officerStatus
 																? 'bg-blue-600 text-white'
-																: 'border border-gray-600 text-gray-300 hover:border-gray-400'
+																: 'border border-border text-muted-foreground hover:border-foreground'
 														}`}
 													>
 														{m.officerStatus
@@ -330,7 +330,7 @@ export function MembersManager() {
 																asOfficerRole(e.target.value),
 															)
 														}
-														className="rounded border border-gray-700 bg-gray-800 px-1 py-0.5 text-xs disabled:opacity-40"
+														className="rounded border border-input bg-secondary px-1 py-0.5 text-xs disabled:opacity-40"
 													>
 														<option value="">— role —</option>
 														{officerRoleEnum.enumValues.map((r) => (
@@ -341,7 +341,7 @@ export function MembersManager() {
 													</select>
 												</div>
 											) : (
-												<span className="text-xs text-gray-400">
+												<span className="text-xs text-muted-foreground">
 													{m.officerStatus
 														? `Officer${m.officerRole ? ` · ${m.officerRole}` : ''}`
 														: '—'}
@@ -352,7 +352,7 @@ export function MembersManager() {
 										{/* Capabilities — implied for admins/officers, else per-grant toggles */}
 										<td className="px-3 py-2">
 											{m.administrator || m.officerStatus ? (
-												<span className="text-xs text-gray-500">
+												<span className="text-xs text-muted-foreground-dim">
 													all (via {m.administrator ? 'admin' : 'officer'}
 													)
 												</span>
@@ -379,7 +379,7 @@ export function MembersManager() {
 																className={`rounded px-1.5 py-0.5 text-xs disabled:opacity-40 ${
 																	on
 																		? 'bg-green-700 text-white'
-																		: 'border border-gray-600 text-gray-400 hover:border-gray-400'
+																		: 'border border-border text-muted-foreground hover:border-foreground'
 																}`}
 															>
 																{cap}
@@ -390,10 +390,10 @@ export function MembersManager() {
 											)}
 										</td>
 
-										<td className="px-3 py-2 text-gray-400">
+										<td className="px-3 py-2 text-muted-foreground">
 											{m.duesPaid ? 'paid' : '—'}
 										</td>
-										<td className="px-3 py-2 text-gray-400">
+										<td className="px-3 py-2 text-muted-foreground">
 											{m.hasResume && m.resumeUrl ? (
 												<a
 													href={m.resumeUrl}
@@ -414,7 +414,9 @@ export function MembersManager() {
 										<td className="px-3 py-2">
 											<div className="flex max-w-[200px] flex-wrap gap-1">
 												{m.committees.length === 0 && (
-													<span className="text-gray-600">—</span>
+													<span className="text-muted-foreground-dim">
+														—
+													</span>
 												)}
 												{m.committees.map((c) => (
 													<span
@@ -422,7 +424,7 @@ export function MembersManager() {
 														className={`rounded px-1.5 py-0.5 text-xs ${
 															c.isChair
 																? 'bg-ieee-dark-yellow text-black'
-																: 'bg-gray-800 text-gray-300'
+																: 'bg-secondary text-muted-foreground'
 														}`}
 														title={
 															c.isChair
@@ -436,11 +438,13 @@ export function MembersManager() {
 												))}
 											</div>
 										</td>
-										<td className="px-3 py-2 text-xs text-gray-400">
+										<td className="px-3 py-2 text-xs text-muted-foreground">
 											{m.discordLinked ? (
 												(m.userName ?? 'linked')
 											) : (
-												<span className="text-gray-600">not linked</span>
+												<span className="text-muted-foreground-dim">
+													not linked
+												</span>
 											)}
 										</td>
 									</tr>
@@ -450,7 +454,7 @@ export function MembersManager() {
 								<tr>
 									<td
 										colSpan={10}
-										className="px-3 py-6 text-center text-gray-500"
+										className="px-3 py-6 text-center text-muted-foreground-dim"
 									>
 										No matching members.
 									</td>
