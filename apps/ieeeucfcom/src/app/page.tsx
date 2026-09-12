@@ -75,13 +75,13 @@ export default function Home() {
 							<div className="float flex flex-row flex-wrap justify-center gap-x-[3vw] self-center md:my-30 lg:my-0">
 								<div className="flex flex-col items-start justify-center self-center text-center xl:text-left">
 									<div className="my-8 max-w-full">
-										<div className="font-[display-font] text-7xl text-ieee-bright-yellow lg:text-8xl">
+										<div className="font-display text-7xl text-ieee-bright-yellow lg:text-8xl">
 											IEEE @ UCF
 										</div>
-										<div className="font-[subheading-font] text-4xl text-white lg:text-5xl">
+										<div className="font-subheading text-4xl text-white lg:text-5xl">
 											STUDENT CHAPTER
 										</div>
-										<div className="my-3 flex w-fit flex-wrap font-[body-italic-font] text-sm text-white md:text-xl lg:text-2xl">
+										<div className="my-3 flex w-fit flex-wrap font-body-italic text-sm text-white md:text-xl lg:text-2xl">
 											<div className="typewriter flex flex-wrap break-words whitespace-normal">
 												From circuits to embedded systems, we engineer the
 												future
@@ -94,7 +94,7 @@ export default function Home() {
 										innerClassName="justify-start rounded-sm px-12 py-5"
 									>
 										<Link href="/about">
-											<p className="font-[body-italic-font] text-xl text-white">
+											<p className="font-body-italic text-xl text-white">
 												LEARN MORE!
 											</p>
 										</Link>
@@ -177,7 +177,7 @@ export default function Home() {
 																priority
 															/>
 															<div className="pointer-events-none absolute inset-0 bg-black/40 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-															<span className="absolute bottom-0 left-1/2 h-fit w-full -translate-x-1/2 bg-black/60 p-2 font-[body-font] text-lg text-white">
+															<span className="absolute bottom-0 left-1/2 h-fit w-full -translate-x-1/2 bg-black/60 p-2 font-body text-lg text-white">
 																{item.feature}
 															</span>
 														</div>
@@ -215,7 +215,7 @@ export default function Home() {
 				</div>
 
 				<div className="-mt-40 flex w-full flex-col bg-[#0d0a03] p-5">
-					<div className="my-5 text-center font-[heading-font] text-5xl text-ieee-bright-yellow lg:text-6xl">
+					<div className="my-5 text-center font-heading text-3xl text-ieee-bright-yellow md:text-4xl">
 						UPCOMING EVENTS
 					</div>
 

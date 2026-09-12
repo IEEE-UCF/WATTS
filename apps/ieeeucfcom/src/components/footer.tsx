@@ -35,21 +35,21 @@ const Footer: React.FC = () => {
 					<div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-2 text-xs md:justify-start md:text-sm">
 						<Link
 							href={'/'}
-							className="font-[body-font] font-extralight text-white hover:text-ieee-bright-yellow"
+							className="font-body font-extralight text-white hover:text-ieee-bright-yellow"
 						>
 							HOME
 						</Link>
-						<span className="hidden font-[body-font] text-xl md:inline">|</span>
+						<span className="hidden font-body text-xl md:inline">|</span>
 						<Link
 							href={'/about'}
-							className="font-[body-font] font-extralight text-white hover:text-ieee-bright-yellow"
+							className="font-body font-extralight text-white hover:text-ieee-bright-yellow"
 						>
 							ABOUT
 						</Link>
-						<span className="hidden font-[body-font] text-xl md:inline">|</span>
+						<span className="hidden font-body text-xl md:inline">|</span>
 						<Link
 							href={'/connect'}
-							className="font-[body-font] font-extralight text-white hover:text-ieee-bright-yellow"
+							className="font-body font-extralight text-white hover:text-ieee-bright-yellow"
 						>
 							CONTACT
 						</Link>
@@ -57,35 +57,35 @@ const Footer: React.FC = () => {
 					<div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-2 text-xs md:justify-start md:text-sm">
 						<Link
 							href={'https://www.ieee.org/accessibility_statement.html'}
-							className="font-[body-font] font-extralight text-white hover:text-ieee-bright-yellow"
+							className="font-body font-extralight text-white hover:text-ieee-bright-yellow"
 						>
 							ACCESSIBILITY
 						</Link>
-						<span className="hidden font-[body-font] text-xl md:inline">|</span>
+						<span className="hidden font-body text-xl md:inline">|</span>
 						<Link
 							href={'https://www.ieee.org/nondiscrimination'}
-							className="font-[body-font] font-extralight text-white hover:text-ieee-bright-yellow"
+							className="font-body font-extralight text-white hover:text-ieee-bright-yellow"
 						>
 							NONDISCRIMINATION POLICY
 						</Link>
-						<span className="hidden font-[body-font] text-xl md:inline">|</span>
+						<span className="hidden font-body text-xl md:inline">|</span>
 						<Link
 							href={'http://www.ieee-ethics-reporting.org'}
-							className="font-[body-font] font-extralight text-white hover:text-ieee-bright-yellow"
+							className="font-body font-extralight text-white hover:text-ieee-bright-yellow"
 						>
 							IEEE ETHICS REPORTING
 						</Link>
-						<span className="hidden font-[body-font] text-xl md:inline">|</span>
+						<span className="hidden font-body text-xl md:inline">|</span>
 						<Link
 							href={'https://privacy.ieee.org/policies'}
-							className="font-[body-font] font-extralight text-white hover:text-ieee-bright-yellow"
+							className="font-body font-extralight text-white hover:text-ieee-bright-yellow"
 						>
 							IEEE PRIVACY POLICY
 						</Link>
-						<span className="hidden font-[body-font] text-xl md:inline">|</span>
+						<span className="hidden font-body text-xl md:inline">|</span>
 						<Link
 							href={'https://www.ieee.org/site_terms_conditions.html'}
-							className="font-[body-font] font-extralight text-white hover:text-ieee-bright-yellow"
+							className="font-body font-extralight text-white hover:text-ieee-bright-yellow"
 						>
 							TERMS & DISCLOSURES
 						</Link>

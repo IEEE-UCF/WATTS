@@ -30,10 +30,10 @@ export default function ConnectPage() {
 
 				<div className="float absolute z-3 my-20 flex w-screen flex-row justify-center p-40 lg:justify-end">
 					<div className="flex flex-col items-center justify-end gap-y-5 self-end text-center lg:items-end lg:text-right">
-						<div className="font-[heading-font] text-5xl text-ieee-bright-yellow sm:text-6xl">
+						<div className="font-heading text-5xl text-ieee-bright-yellow sm:text-6xl">
 							CONNECT WITH US
 						</div>
-						<div className="w-3/4 font-[body-font] text-xl text-white lg:text-2xl">
+						<div className="w-3/4 font-body text-xl text-white lg:text-2xl">
 							To keep updated on upcoming events, novel projects, and other related
 							endeavors, follow IEEE @ UCF on various forms of social media.
 						</div>
@@ -76,16 +76,16 @@ export default function ConnectPage() {
 				{/* SOCIALS SECTION */}
 				<div className="flex -translate-y-20 flex-col items-center justify-between gap-y-10 bg-[#30250a] px-8 py-20 lg:flex-row lg:px-15">
 					<div className="flex w-full flex-col gap-y-3 lg:w-auto">
-						<div className="font-[heading-font] text-4xl text-ieee-bright-yellow">
+						<div className="font-heading text-3xl text-ieee-bright-yellow md:text-4xl">
 							FOLLOW OUR SOCIALS
 						</div>
-						<div className="flex flex-col flex-wrap items-center gap-x-5 font-[body-font] text-xl font-bold text-white lg:flex-row lg:text-2xl">
+						<div className="flex flex-col flex-wrap items-center gap-x-5 font-body text-xl font-bold text-white lg:flex-row lg:text-2xl">
 							ieee@ucf.edu
 						</div>
 
 						<Link
 							href={'https://discord.com/invite/WBcKem9kCq'}
-							className="flex flex-row items-center gap-x-5 font-[body-font] text-base font-bold text-white transition-colors hover:text-ieee-bright-yellow lg:text-2xl"
+							className="flex flex-row items-center gap-x-5 font-body text-base font-bold text-white transition-colors hover:text-ieee-bright-yellow lg:text-2xl"
 						>
 							<svg
 								xmlns="http://www.w3.org/2000/svg"
@@ -101,7 +101,7 @@ export default function ConnectPage() {
 
 						<Link
 							href={'https://www.instagram.com/ieeeucf/?hl=en'}
-							className="flex flex-row items-center gap-x-5 font-[body-font] text-base font-bold text-white transition-colors hover:text-ieee-bright-yellow lg:text-2xl"
+							className="flex flex-row items-center gap-x-5 font-body text-base font-bold text-white transition-colors hover:text-ieee-bright-yellow lg:text-2xl"
 						>
 							<svg
 								xmlns="http://www.w3.org/2000/svg"
@@ -117,7 +117,7 @@ export default function ConnectPage() {
 
 						<Link
 							href={'https://www.youtube.com/@ieeeucf2287'}
-							className="flex flex-row items-center gap-x-5 font-[body-font] text-base font-bold text-white transition-colors hover:text-ieee-bright-yellow lg:text-2xl"
+							className="flex flex-row items-center gap-x-5 font-body text-base font-bold text-white transition-colors hover:text-ieee-bright-yellow lg:text-2xl"
 						>
 							<svg
 								xmlns="http://www.w3.org/2000/svg"
@@ -133,7 +133,7 @@ export default function ConnectPage() {
 
 						<Link
 							href={'https://www.linkedin.com/company/ieee-ucf/'}
-							className="flex flex-row items-center gap-x-5 font-[body-font] text-base font-bold text-white transition-colors hover:text-ieee-bright-yellow lg:text-2xl"
+							className="flex flex-row items-center gap-x-5 font-body text-base font-bold text-white transition-colors hover:text-ieee-bright-yellow lg:text-2xl"
 						>
 							<svg
 								xmlns="http://www.w3.org/2000/svg"
@@ -149,7 +149,7 @@ export default function ConnectPage() {
 
 						<Link
 							href={'https://www.facebook.com/ieeeatucf/'}
-							className="flex flex-row items-center gap-x-5 font-[body-font] text-base font-bold text-white transition-colors hover:text-ieee-bright-yellow lg:text-2xl"
+							className="flex flex-row items-center gap-x-5 font-body text-base font-bold text-white transition-colors hover:text-ieee-bright-yellow lg:text-2xl"
 						>
 							<svg
 								xmlns="http://www.w3.org/2000/svg"
@@ -165,7 +165,7 @@ export default function ConnectPage() {
 
 						<Link
 							href={'https://github.com/IEEE-UCF'}
-							className="flex flex-row items-center gap-x-5 font-[body-font] text-base font-bold text-white transition-colors hover:text-ieee-bright-yellow lg:text-2xl"
+							className="flex flex-row items-center gap-x-5 font-body text-base font-bold text-white transition-colors hover:text-ieee-bright-yellow lg:text-2xl"
 						>
 							<svg
 								xmlns="http://www.w3.org/2000/svg"
@@ -211,20 +211,18 @@ export default function ConnectPage() {
 				</div>
 
 				<div className="-translate-y-40 bg-black p-15">
-					<div className="place-self-start py-8 font-[heading-font] text-4xl text-ieee-bright-yellow">
+					<div className="place-self-start py-8 font-heading text-3xl text-ieee-bright-yellow md:text-4xl">
 						INTERESTED IN JOINING?
 					</div>
 
 					<div className="flex basis-1 flex-row flex-wrap justify-between">
 						<Card className="h-fit w-full rounded-sm border border-white bg-ieee-dark-grey opacity-90 transition-transform hover:scale-102 hover:opacity-100 lg:h-100 lg:w-1/4 2xl:h-fit">
 							<CardContent className="flex w-full flex-col flex-wrap items-start justify-start gap-y-1 text-left">
-								<div className="font-[heading-font] text-2xl text-white">
-									STEP ONE
-								</div>
-								<div className="font-[body-font] text-white">
+								<div className="font-heading text-2xl text-white">STEP ONE</div>
+								<div className="font-body text-white">
 									Head over to <Link href={'https://www.ieee.org'}>IEEE.org</Link>{' '}
 									and select{' '}
-									<span className="font-[subheading-italic-font] text-white">
+									<span className="font-subheading-italic text-white">
 										Join IEEE
 									</span>
 									.
@@ -241,12 +239,10 @@ export default function ConnectPage() {
 
 						<Card className="h-fit w-full rounded-sm border border-white bg-ieee-dark-grey opacity-90 transition-transform hover:scale-102 hover:opacity-100 lg:h-100 lg:w-1/4 2xl:h-fit">
 							<CardContent className="flex w-full flex-col flex-wrap items-start justify-start gap-y-1 text-left">
-								<div className="font-[heading-font] text-2xl text-white">
-									STEP TWO
-								</div>
-								<div className="font-[body-font] text-white">
+								<div className="font-heading text-2xl text-white">STEP TWO</div>
+								<div className="font-body text-white">
 									To create an account, select{' '}
-									<span className="font-[subheading-italic-font] text-white">
+									<span className="font-subheading-italic text-white">
 										JOIN AS A STUDENT
 									</span>
 									.
@@ -263,12 +259,10 @@ export default function ConnectPage() {
 
 						<Card className="h-fit w-full rounded-sm border border-white bg-ieee-dark-grey opacity-90 transition-transform hover:scale-102 hover:opacity-100 lg:h-100 lg:w-1/4 2xl:h-fit">
 							<CardContent className="flex w-full flex-col flex-wrap items-start justify-start gap-y-1 text-left">
-								<div className="font-[heading-font] text-2xl text-white">
-									STEP THREE
-								</div>
-								<div className="font-[body-font] text-white">
+								<div className="font-heading text-2xl text-white">STEP THREE</div>
+								<div className="font-body text-white">
 									Fill out the following fields.{' '}
-									<span className="font-[subheading-italic-font] text-ieee-bright-yellow">
+									<span className="font-subheading-italic text-ieee-bright-yellow">
 										Use your UCF email, not personal email!
 									</span>
 								</div>
@@ -284,10 +278,8 @@ export default function ConnectPage() {
 
 						<Card className="h-fit w-full rounded-sm border border-white bg-ieee-dark-grey opacity-90 transition-transform hover:scale-102 hover:opacity-100 lg:h-100 lg:w-1/4 2xl:h-fit">
 							<CardContent className="flex w-full flex-col flex-wrap items-start justify-start gap-y-1 text-left">
-								<div className="font-[heading-font] text-2xl text-white">
-									STEP FOUR
-								</div>
-								<div className="font-[body-font] text-white">
+								<div className="font-heading text-2xl text-white">STEP FOUR</div>
+								<div className="font-body text-white">
 									Accept the Terms and Conditions, fill out payment information,
 									and check email to confirm.
 								</div>

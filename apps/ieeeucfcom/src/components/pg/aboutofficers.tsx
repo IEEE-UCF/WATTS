@@ -211,10 +211,10 @@ export default function AboutOfficers() {
 		>
 			<OfficerImage src={officer.photo} alt={officer.name} />
 			<div className="absolute inset-0 flex flex-col justify-end bg-black/40 p-4 text-white transition-colors hover:bg-black/0">
-				<span className="font-[heading-font] text-xl">{officer.name.toUpperCase()}</span>
-				<span className="font-[heading-font] text-base">{officer.role.toUpperCase()}</span>
-				<span className="font-[body-font] text-sm">{officer.year}</span>
-				<span className="font-[body-font] text-sm">{officer.major}</span>
+				<span className="font-heading text-xl">{officer.name.toUpperCase()}</span>
+				<span className="font-heading text-base">{officer.role.toUpperCase()}</span>
+				<span className="font-body text-sm">{officer.year}</span>
+				<span className="font-body text-sm">{officer.major}</span>
 				<Link href={officer.linkedin} className="mt-2 inline-block">
 					<FaLinkedin size={25} color="white" />
 				</Link>
@@ -237,7 +237,7 @@ export default function AboutOfficers() {
 	return (
 		<div className="flex w-full flex-col items-center justify-center gap-10 p-10">
 			<div>
-				<div className="my-5 text-center font-[heading-font] text-3xl text-white">
+				<div className="my-5 text-center font-heading text-3xl text-white md:text-4xl">
 					EXECUTIVE BOARD
 				</div>
 				<div ref={executiveRef} className="flex w-full flex-col gap-4">
@@ -246,7 +246,7 @@ export default function AboutOfficers() {
 			</div>
 
 			<div>
-				<div className="my-5 text-center font-[heading-font] text-3xl text-white">
+				<div className="my-5 text-center font-heading text-3xl text-white md:text-4xl">
 					CHAIRS
 				</div>
 				<div ref={chairRef} className="flex w-full flex-col gap-4">

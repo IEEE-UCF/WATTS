@@ -57,9 +57,7 @@ export function ResumeUpload() {
 
 	return (
 		<div className="mb-6">
-			<h2 className="mb-4 border-b border-white/20 pb-2 font-[heading-font] text-2xl">
-				RESUME
-			</h2>
+			<h2 className="mb-4 border-b border-white/20 pb-2 font-heading text-2xl">RESUME</h2>
 
 			{hasResume ? (
 				<div className="flex flex-wrap items-center gap-3 text-white">

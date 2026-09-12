@@ -27,7 +27,7 @@ export default function AboutIEEE() {
 		<div className="">
 			<Accordion type="single" collapsible>
 				<AccordionItem value="item-1">
-					<AccordionTrigger className="cursor-pointer font-[subheading-font] text-2xl">
+					<AccordionTrigger className="cursor-pointer font-subheading text-2xl">
 						AWARDS AND ACCOMPLISHMENTS
 					</AccordionTrigger>
 					<AccordionContent>
@@ -42,14 +42,11 @@ export default function AboutIEEE() {
 							),
 						).map(([category, awardsInCategory], index) => (
 							<div key={index} className="mb-5">
-								<div className="mb-2 font-[subheading-font] text-2xl text-ieee-bright-yellow">
+								<div className="mb-2 font-subheading text-2xl text-ieee-bright-yellow">
 									{category}
 								</div>
 								{awardsInCategory.map((award, awardIndex) => (
-									<div
-										key={awardIndex}
-										className="font-[body-font] text-lg text-white"
-									>
+									<div key={awardIndex} className="font-body text-lg text-white">
 										{award.place ? (
 											<p>
 												{award.event} – {award.place}
@@ -64,15 +61,15 @@ export default function AboutIEEE() {
 					</AccordionContent>
 				</AccordionItem>
 				<AccordionItem value="item-2">
-					<AccordionTrigger className="cursor-pointer font-[subheading-font] text-2xl">
+					<AccordionTrigger className="cursor-pointer font-subheading text-2xl">
 						TECHNICAL DEVELOPMENT
 					</AccordionTrigger>
 					<AccordionContent>
-						<div className="py-2 font-[subheading-italic-font] text-lg text-ieee-bright-yellow">
+						<div className="py-2 font-subheading-italic text-lg text-ieee-bright-yellow">
 							Workshops and projects are premier opportunities for IEEE @ UCF members
 							to advance their technical knowledge and experience.
 						</div>
-						<div className="py-2 font-[body-font] text-lg text-white">
+						<div className="py-2 font-body text-lg text-white">
 							The Workshop Committee offers specialized, expert-led sessions on topics
 							such as circuit analysis, Verilog, soldering, wiring, microcontroller
 							programming, and beyond. These workshops provide members with valuable
@@ -104,15 +101,15 @@ export default function AboutIEEE() {
 					</AccordionContent>
 				</AccordionItem>
 				<AccordionItem value="item-3">
-					<AccordionTrigger className="cursor-pointer font-[subheading-font] text-2xl">
+					<AccordionTrigger className="cursor-pointer font-subheading text-2xl">
 						SOUTHEASTCON
 					</AccordionTrigger>
 					<AccordionContent>
-						<div className="py-2 font-[subheading-italic-font] text-lg text-ieee-bright-yellow">
+						<div className="py-2 font-subheading-italic text-lg text-ieee-bright-yellow">
 							IEEE @ UCF is an annual participant at SoutheastCon, the most
 							influential IEEE Region 3 conference.
 						</div>
-						<div className="py-2 font-[body-font] text-lg text-white">
+						<div className="py-2 font-body text-lg text-white">
 							This conference, encompassing the southeastern United States and
 							Jamaica, showcases the groundbreaking engineering and technical
 							contributions made by both professionals and students. The next
@@ -138,7 +135,7 @@ export default function AboutIEEE() {
 								height={2000}
 							/>
 						</div>
-						<div className="py-2 font-[body-font] text-lg text-white">
+						<div className="py-2 font-body text-lg text-white">
 							This past 2025 SoutheastCon, IEEE @ UCF brought home several prestigious
 							awards, earning 1st Place in the Hardware Design Competition, 2nd Place
 							in the Hardware Competition, 1st Place in the Networking Competition
@@ -151,14 +148,14 @@ export default function AboutIEEE() {
 					</AccordionContent>
 				</AccordionItem>
 				<AccordionItem value="item-4">
-					<AccordionTrigger className="cursor-pointer font-[subheading-font] text-2xl">
+					<AccordionTrigger className="cursor-pointer font-subheading text-2xl">
 						COMMUNITY SERVICE
 					</AccordionTrigger>
 					<AccordionContent>
-						<div className="py-2 font-[subheading-italic-font] text-lg text-ieee-bright-yellow">
+						<div className="py-2 font-subheading-italic text-lg text-ieee-bright-yellow">
 							Community involvement is a core value for IEEE @ UCF.
 						</div>
-						<div className="py-2 font-[body-font] text-lg text-white">
+						<div className="py-2 font-body text-lg text-white">
 							Our Service Committee enriches the entirety of Orlando, Florida by
 							hosting events that share our passion for engineering and inspire others
 							to explore its possibilities. We expose local elementary, middle, and
@@ -186,14 +183,14 @@ export default function AboutIEEE() {
 					</AccordionContent>
 				</AccordionItem>
 				<AccordionItem value="item-5">
-					<AccordionTrigger className="cursor-pointer font-[subheading-font] text-2xl">
+					<AccordionTrigger className="cursor-pointer font-subheading text-2xl">
 						SOCIAL EVENTS
 					</AccordionTrigger>
 					<AccordionContent>
-						<div className="py-2 font-[subheading-italic-font] text-lg text-ieee-bright-yellow">
+						<div className="py-2 font-subheading-italic text-lg text-ieee-bright-yellow">
 							A highlight of IEEE @ UCF is the fun, connection-building social events.
 						</div>
-						<div className="py-2 font-[body-font] text-lg text-white">
+						<div className="py-2 font-body text-lg text-white">
 							In-person and virtual events are hosted weekly by the Social Committee
 							and allow for the club to build a community around itself. Throughout
 							this past year, members have enjoyed grabbing bubble tea, ice skating,
@@ -221,14 +218,14 @@ export default function AboutIEEE() {
 					</AccordionContent>
 				</AccordionItem>
 				<AccordionItem value="item-6">
-					<AccordionTrigger className="cursor-pointer font-[subheading-font] text-2xl">
+					<AccordionTrigger className="cursor-pointer font-subheading text-2xl">
 						PROFESSIONAL DEVELOPMENT
 					</AccordionTrigger>
 					<AccordionContent>
-						<div className="py-2 font-[subheading-italic-font] text-lg text-ieee-bright-yellow">
+						<div className="py-2 font-subheading-italic text-lg text-ieee-bright-yellow">
 							Supporting members' career advancement is critical for IEEE @ UCF.
 						</div>
-						<div className="py-2 font-[body-font] text-lg text-white">
+						<div className="py-2 font-body text-lg text-white">
 							The Professional Development Committee is committed to equipping members
 							with essential career-building strategies to enhance their
 							marketability. Members have access to workshops on resumes, LinkedIn
@@ -257,11 +254,11 @@ export default function AboutIEEE() {
 					</AccordionContent>
 				</AccordionItem>
 				<AccordionItem value="item-7">
-					<AccordionTrigger className="cursor-pointer font-[subheading-font] text-2xl">
+					<AccordionTrigger className="cursor-pointer font-subheading text-2xl">
 						ALUMNI AND MEMBER NETWORK
 					</AccordionTrigger>
 					<AccordionContent>
-						<div className="py-2 font-[subheading-italic-font] text-lg text-ieee-bright-yellow">
+						<div className="py-2 font-subheading-italic text-lg text-ieee-bright-yellow">
 							IEEE @ UCF has an extensive network of engineering professionals at
 							notable companies.
 						</div>

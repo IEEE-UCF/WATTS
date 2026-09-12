@@ -38,7 +38,7 @@ export const MailTo: React.FC<MailToProps> = ({ email, subject = '', body = '', 
 // ---------------------------------------------------------------------------
 export const SponsorsCarousel: React.FC = () => (
 	<div className="w-full py-14">
-		<div className="mb-12 text-center font-[heading-font] text-3xl text-ieee-bright-yellow">
+		<div className="mb-12 text-center font-heading text-3xl text-ieee-bright-yellow md:text-4xl">
 			OUR SPONSORS
 		</div>
 		<Carousel
@@ -58,10 +58,10 @@ export const SponsorsCarousel: React.FC = () => (
 									className="object-contain"
 								/>
 							</div>
-							<span className="text-center font-[body-font] text-base text-muted-foreground transition-colors group-hover:text-ieee-bright-yellow">
+							<span className="text-center font-body text-base text-muted-foreground transition-colors group-hover:text-ieee-bright-yellow">
 								{sponsor.name}
 							</span>
-							<span className="rounded-full border border-ieee-bright-yellow px-3 py-1 font-[heading-font] text-xs tracking-widest text-ieee-bright-yellow uppercase opacity-70 transition-opacity group-hover:opacity-100">
+							<span className="rounded-full border border-ieee-bright-yellow px-3 py-1 font-heading text-xs tracking-widest text-ieee-bright-yellow uppercase opacity-70 transition-opacity group-hover:opacity-100">
 								{sponsor.tier}
 							</span>
 						</div>
@@ -104,17 +104,17 @@ export const PDFViewer: React.FC = () => {
 					/>
 				</svg>
 				<div className="text-center">
-					<p className="mb-1 font-[heading-font] text-xl text-white">
+					<p className="mb-1 font-heading text-xl text-white">
 						IEEE UCF Sponsorship Package
 					</p>
-					<p className="font-[body-font] text-sm text-muted-foreground">
+					<p className="font-body text-sm text-muted-foreground">
 						View the full sponsorship packet to learn about partnership opportunities.
 					</p>
 				</div>
 				<div className="flex w-full max-w-xs flex-row gap-4">
 					<a href={PDF_PATH} target="_blank" rel="noopener noreferrer" className="flex-1">
 						<GlowButton innerClassName="px-7 py-3">
-							<span className="font-[heading-font] text-sm text-white">OPEN PDF</span>
+							<span className="font-heading text-sm text-white">OPEN PDF</span>
 						</GlowButton>
 					</a>
 					<a
@@ -123,7 +123,7 @@ export const PDFViewer: React.FC = () => {
 						className="flex-1"
 					>
 						<GlowButton innerClassName="px-7 py-3">
-							<span className="font-[heading-font] text-sm text-white">DOWNLOAD</span>
+							<span className="font-heading text-sm text-white">DOWNLOAD</span>
 						</GlowButton>
 					</a>
 				</div>

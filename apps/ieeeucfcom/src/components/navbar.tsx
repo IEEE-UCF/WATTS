@@ -47,7 +47,7 @@ const Navbar: React.FC = () => {
 				<div className="flex items-center justify-start">
 					<Link
 						href={'/'}
-						className="flex flex-row items-center justify-center gap-x-5 align-middle font-[body-font] text-xl text-white transition hover:text-ieee-dark-yellow lg:text-2xl"
+						className="flex flex-row items-center justify-center gap-x-5 align-middle font-body text-xl text-white transition hover:text-ieee-dark-yellow lg:text-2xl"
 					>
 						<Image
 							className="object-contain"
@@ -65,7 +65,7 @@ const Navbar: React.FC = () => {
 						<Link
 							key={index}
 							href={route.href}
-							className="inline-flex items-center font-[body-font] text-sm text-white transition hover:text-ieee-dark-yellow sm:px-1.5 md:px-3 lg:px-5"
+							className="inline-flex items-center font-body text-sm text-white transition hover:text-ieee-dark-yellow sm:px-1.5 md:px-3 lg:px-5"
 						>
 							{route.title}
 						</Link>
@@ -74,7 +74,7 @@ const Navbar: React.FC = () => {
 					{auth?.hasStaffAccess && (
 						<Link
 							href="/staff"
-							className="inline-flex items-center font-[body-font] text-sm text-white transition hover:text-ieee-dark-yellow sm:px-1.5 md:px-3 lg:px-5"
+							className="inline-flex items-center font-body text-sm text-white transition hover:text-ieee-dark-yellow sm:px-1.5 md:px-3 lg:px-5"
 						>
 							Staff
 						</Link>
@@ -82,14 +82,14 @@ const Navbar: React.FC = () => {
 
 					{auth?.isAdmin && (
 						<div className="ml-2 flex items-center gap-3 border-l border-input pl-4">
-							<span className="font-[heading-font] text-xs tracking-[0.2em] text-ieee-dark-yellow">
+							<span className="font-heading text-xs tracking-[0.2em] text-ieee-dark-yellow">
 								ADMIN
 							</span>
 							{adminRoutes.map((route, index) => (
 								<Link
 									key={index}
 									href={route.href}
-									className="inline-flex items-center font-[body-font] text-xs text-white transition hover:text-ieee-dark-yellow"
+									className="inline-flex items-center font-body text-xs text-white transition hover:text-ieee-dark-yellow"
 								>
 									{route.title.toUpperCase()}
 								</Link>
@@ -105,7 +105,7 @@ const Navbar: React.FC = () => {
 						<div className="ml-3 flex items-center">
 							<Link
 								href="/auth/signin"
-								className="group relative inline-flex h-fit w-fit items-center rounded-sm bg-ieee-dark-yellow py-2 font-[heading-font] text-sm text-white transition sm:px-1 md:px-2 lg:px-4"
+								className="group relative inline-flex h-fit w-fit items-center rounded-sm bg-ieee-dark-yellow py-2 font-heading text-sm text-white transition sm:px-1 md:px-2 lg:px-4"
 							>
 								<div className="absolute inset-0 rounded-sm bg-gradient-to-r from-ieee-bright-yellow to-ieee-bright-yellow opacity-25 blur transition duration-1000 group-hover:opacity-100 group-hover:duration-200"></div>
 								<div className="relative px-2">SIGN IN</div>
@@ -139,7 +139,7 @@ const MobileMenu: React.FC<{ toggleMenu: () => void }> = ({ toggleMenu }) => {
 	return (
 		<div className="fixed inset-0 z-40 flex h-screen max-w-screen flex-col bg-black">
 			<div className="mt-5 mb-5 flex w-full grow flex-col overflow-y-auto">
-				<div className="m-6 flex flex-row items-center gap-5 gap-x-5 px-5 font-[body-font] text-xl text-white lg:text-2xl">
+				<div className="m-6 flex flex-row items-center gap-5 gap-x-5 px-5 font-body text-xl text-white lg:text-2xl">
 					<Image
 						className="object-contain"
 						src="/iconography/ieeeucficon.png"
@@ -152,14 +152,14 @@ const MobileMenu: React.FC<{ toggleMenu: () => void }> = ({ toggleMenu }) => {
 
 				{/* <div className="flex w-full justify-between m-6">
 				<div className="flex justify-start items-center">
-					<Link href={"/"} className="text-white font-[body-font] flex-row flex align-middle justify-center items-center gap-x-5 text-xl lg:text-2xl hover:text-ieee-dark-yellow transition">
+					<Link href={"/"} className="text-white font-body flex-row flex align-middle justify-center items-center gap-x-5 text-xl lg:text-2xl hover:text-ieee-dark-yellow transition">
 						<Image className="object-contain" src="/iconography/ieeeucficon.png" alt="IEEE UCF Logo" width={70} height={70} />IEEE @ UCF Student Chapter
 					</Link>
 				</div> */}
 				{auth?.isMember ? (
 					<div className="flex flex-col bg-ieee-dark-yellow p-5">
 						<div className="">
-							<div className="font-[heading-font] text-xl text-white">
+							<div className="font-heading text-xl text-white">
 								{auth?.member?.firstName.toUpperCase()}{' '}
 								{auth?.member?.lastName.toUpperCase()}
 							</div>
@@ -170,15 +170,13 @@ const MobileMenu: React.FC<{ toggleMenu: () => void }> = ({ toggleMenu }) => {
 				)}
 
 				<div className="flex flex-col p-5">
-					<div className="ml-6 font-[heading-font] text-xl text-ieee-dark-yellow">
-						CLUB
-					</div>
+					<div className="ml-6 font-heading text-xl text-ieee-dark-yellow">CLUB</div>
 					<div className="ml-6">
 						<Link
 							href="/"
 							onClick={toggleMenu}
 							className={
-								'inline-flex h-10 w-full items-center gap-3 font-[subheading-font] text-base text-white transition-colors hover:text-ieee-bright-yellow'
+								'inline-flex h-10 w-full items-center gap-3 font-subheading text-base text-white transition-colors hover:text-ieee-bright-yellow'
 							}
 						>
 							<Image
@@ -197,7 +195,7 @@ const MobileMenu: React.FC<{ toggleMenu: () => void }> = ({ toggleMenu }) => {
 								href={route.href}
 								onClick={toggleMenu}
 								className={
-									'inline-flex h-10 w-full items-center gap-3 font-[subheading-font] text-base text-white transition-colors hover:text-ieee-bright-yellow'
+									'inline-flex h-10 w-full items-center gap-3 font-subheading text-base text-white transition-colors hover:text-ieee-bright-yellow'
 								}
 							>
 								<Image
@@ -216,13 +214,11 @@ const MobileMenu: React.FC<{ toggleMenu: () => void }> = ({ toggleMenu }) => {
 
 				{auth?.hasStaffAccess && (
 					<div className="ml-6 flex flex-col p-5">
-						<div className="font-[heading-font] text-xl text-ieee-dark-yellow">
-							STAFF
-						</div>
+						<div className="font-heading text-xl text-ieee-dark-yellow">STAFF</div>
 						<Link
 							href="/staff"
 							onClick={toggleMenu}
-							className="inline-flex h-10 w-full items-center gap-3 font-[subheading-font] text-base text-white transition-colors hover:text-ieee-bright-yellow"
+							className="inline-flex h-10 w-full items-center gap-3 font-subheading text-base text-white transition-colors hover:text-ieee-bright-yellow"
 						>
 							<Image
 								className="h-7 w-7 object-cover"
@@ -238,16 +234,14 @@ const MobileMenu: React.FC<{ toggleMenu: () => void }> = ({ toggleMenu }) => {
 
 				{auth?.isAdmin && (
 					<div className="ml-6 flex flex-col p-5">
-						<div className="font-[heading-font] text-xl text-ieee-dark-yellow">
-							ADMIN
-						</div>
+						<div className="font-heading text-xl text-ieee-dark-yellow">ADMIN</div>
 						{adminRoutes.map((route, index) => (
 							<Link
 								key={index}
 								href={route.href}
 								onClick={toggleMenu}
 								className={
-									'inline-flex h-10 w-full items-center gap-3 font-[subheading-font] text-base text-white transition-colors hover:text-ieee-bright-yellow'
+									'inline-flex h-10 w-full items-center gap-3 font-subheading text-base text-white transition-colors hover:text-ieee-bright-yellow'
 								}
 							>
 								<Image
@@ -266,9 +260,7 @@ const MobileMenu: React.FC<{ toggleMenu: () => void }> = ({ toggleMenu }) => {
 
 				{auth?.isMember ? (
 					<div className="ml-6 flex flex-col p-5">
-						<div className="font-[heading-font] text-xl text-ieee-dark-yellow">
-							ACCOUNT
-						</div>
+						<div className="font-heading text-xl text-ieee-dark-yellow">ACCOUNT</div>
 
 						{authRoutes.map((route, index) => (
 							<Link
@@ -276,7 +268,7 @@ const MobileMenu: React.FC<{ toggleMenu: () => void }> = ({ toggleMenu }) => {
 								href={route.href}
 								onClick={toggleMenu}
 								className={
-									'inline-flex h-10 w-full items-center gap-3 font-[subheading-font] text-base text-white transition-colors hover:text-ieee-bright-yellow'
+									'inline-flex h-10 w-full items-center gap-3 font-subheading text-base text-white transition-colors hover:text-ieee-bright-yellow'
 								}
 							>
 								<Image
@@ -294,7 +286,7 @@ const MobileMenu: React.FC<{ toggleMenu: () => void }> = ({ toggleMenu }) => {
 				) : (
 					<Link
 						href="/auth/signin"
-						className="group relative m-6 inline-flex h-fit w-2/5 items-center justify-center self-center rounded-sm bg-ieee-dark-yellow py-3 align-middle font-[heading-font] text-base text-white transition sm:px-1 md:px-2 lg:px-4"
+						className="group relative m-6 inline-flex h-fit w-2/5 items-center justify-center self-center rounded-sm bg-ieee-dark-yellow py-3 align-middle font-heading text-base text-white transition sm:px-1 md:px-2 lg:px-4"
 					>
 						<div className="absolute inset-0 rounded-sm bg-gradient-to-r from-ieee-bright-yellow to-ieee-bright-yellow opacity-25 blur transition duration-1000 group-hover:opacity-100 group-hover:duration-200"></div>
 

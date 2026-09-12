@@ -13,11 +13,11 @@ export default function AboutHeader() {
 
 			<div className="absolute z-3 my-10 flex w-screen flex-row justify-center p-40">
 				<div className="float flex flex-col items-center justify-center gap-y-3 self-center text-center">
-					<div className="font-[heading-font] text-5xl text-ieee-bright-yellow sm:text-6xl">
+					<div className="font-heading text-5xl text-ieee-bright-yellow sm:text-6xl">
 						WHAT IS IEEE?
 					</div>
 
-					<div className="flex max-w-screen flex-wrap px-3 font-[body-font] text-xl text-white lg:text-3xl">
+					<div className="flex max-w-screen flex-wrap px-3 font-body text-xl text-white lg:text-3xl">
 						ieee • /aɪ ˈtɹɪp.əl iː/ • institute of electrical and electronics engineers
 					</div>
 
@@ -35,10 +35,10 @@ export default function AboutHeader() {
 							>
 								{isFlipped ? (
 									<div>
-										<div className="font-[subheading-italic-font] text-xl text-ieee-bright-yellow sm:text-2xl">
+										<div className="font-subheading-italic text-xl text-ieee-bright-yellow sm:text-2xl">
 											We are the innovators of tomorrow.
 										</div>
-										<div className="font-[body-font] text-base sm:text-xl">
+										<div className="font-body text-base sm:text-xl">
 											Located at the University of Central Florida, our IEEE
 											student chapter is one of the largest in the nation and
 											boasts over 300 active members. We foster technical
@@ -49,11 +49,11 @@ export default function AboutHeader() {
 									</div>
 								) : (
 									<div>
-										<div className="font-[subheading-italic-font] text-2xl">
+										<div className="font-subheading-italic text-2xl">
 											Want to see our full story?
 										</div>
 										<div className="my-6"></div>
-										<div className="w-fit place-self-center font-[heading-font] text-2xl transition-transform hover:scale-110 hover:text-ieee-bright-yellow">
+										<div className="w-fit place-self-center font-heading text-2xl transition-transform hover:scale-110 hover:text-ieee-bright-yellow">
 											<GlowButton innerClassName="justify-start px-8 py-7">
 												<Link href="https://www.youtube.com/watch?v=JyjVBBVm0g4">
 													<p>WATCH VIDEO</p>

@@ -116,7 +116,7 @@ export default function SettingsPage() {
 								<FieldSet>
 									{/* Header */}
 									<div className="mb-6 flex items-center justify-between">
-										<h1 className="font-[heading-font] text-5xl text-ieee-dark-yellow">
+										<h1 className="font-heading text-5xl text-ieee-dark-yellow">
 											SETTINGS
 										</h1>
 									</div>
@@ -134,12 +134,12 @@ export default function SettingsPage() {
 
 									{/* Membership info (read-only) */}
 									<div className="mb-6">
-										<h2 className="mb-4 border-b border-white/20 pb-2 font-[heading-font] text-2xl text-white">
+										<h2 className="mb-4 border-b border-white/20 pb-2 font-heading text-2xl text-white">
 											MEMBERSHIP INFORMATION
 										</h2>
 										<div className="grid grid-cols-1 gap-4 text-ieee-dark-yellow md:grid-cols-2">
 											<div>
-												<p className="font-[heading-font] text-sm">
+												<p className="font-heading text-sm">
 													Officer Status
 												</p>
 												<p className="text-white">
@@ -147,23 +147,19 @@ export default function SettingsPage() {
 												</p>
 											</div>
 											<div>
-												<p className="font-[heading-font] text-sm">
-													Dues Paid
-												</p>
+												<p className="font-heading text-sm">Dues Paid</p>
 												<p className="text-white">
 													{memberProfile.duesPaid ? 'Yes' : 'No'}
 												</p>
 											</div>
 											<div>
-												<p className="font-[heading-font] text-sm">
-													UCF Email
-												</p>
+												<p className="font-heading text-sm">UCF Email</p>
 												<p className="text-white">
 													{memberProfile.ucfEmail}
 												</p>
 											</div>
 											<div>
-												<p className="font-[heading-font] text-sm">
+												<p className="font-heading text-sm">
 													Personal Email
 												</p>
 												<p className="text-white">
@@ -174,7 +170,7 @@ export default function SettingsPage() {
 									</div>
 
 									{/* Linked Discord */}
-									<div className="flex flex-row items-center gap-2 font-[heading-font] text-sm text-ieee-dark-yellow">
+									<div className="flex flex-row items-center gap-2 font-heading text-sm text-ieee-dark-yellow">
 										<svg
 											className="h-5 w-5"
 											fill="currentColor"
@@ -202,7 +198,7 @@ export default function SettingsPage() {
 
 									{/* Basic information */}
 									<div className="mb-6">
-										<h2 className="mb-4 border-b border-white/20 pb-2 font-[heading-font] text-2xl">
+										<h2 className="mb-4 border-b border-white/20 pb-2 font-heading text-2xl">
 											BASIC INFORMATION
 										</h2>
 										<FieldGroup className="space-y-4">
@@ -319,7 +315,7 @@ export default function SettingsPage() {
 
 									{/* Biography */}
 									<div className="mb-6">
-										<h2 className="mb-4 border-b border-white/20 pb-2 font-[heading-font] text-2xl">
+										<h2 className="mb-4 border-b border-white/20 pb-2 font-heading text-2xl">
 											BIOGRAPHY
 										</h2>
 										<Field>
@@ -336,7 +332,7 @@ export default function SettingsPage() {
 
 									{/* Professional links */}
 									<div className="mb-6">
-										<h2 className="mb-4 border-b border-white/20 pb-2 font-[heading-font] text-2xl">
+										<h2 className="mb-4 border-b border-white/20 pb-2 font-heading text-2xl">
 											PROFESSIONAL LINKS
 										</h2>
 										<FieldGroup className="space-y-4">
@@ -386,14 +382,14 @@ export default function SettingsPage() {
 									<div className="mt-8 flex w-full gap-4 self-center md:w-1/2">
 										<Button
 											type="submit"
-											className="flex-1 cursor-pointer bg-ieee-dark-yellow py-6 font-[heading-font] text-base transition-all hover:scale-102 hover:bg-ieee-bright-yellow"
+											className="flex-1 cursor-pointer bg-ieee-dark-yellow py-6 font-heading text-base transition-all hover:scale-102 hover:bg-ieee-bright-yellow"
 											disabled={isSubmitting}
 										>
 											{isSubmitting ? 'SAVING CHANGES...' : 'SAVE CHANGES'}
 										</Button>
 										<Button
 											type="button"
-											className="flex-1 cursor-pointer bg-ieee-dark-grey py-6 font-[heading-font] text-lg transition-all hover:scale-102 hover:opacity-80"
+											className="flex-1 cursor-pointer bg-ieee-dark-grey py-6 font-heading text-lg transition-all hover:scale-102 hover:opacity-80"
 											onClick={handleCancel}
 										>
 											CANCEL
@@ -405,7 +401,7 @@ export default function SettingsPage() {
 										<Button
 											type="button"
 											onClick={handleSignOut}
-											className="w-full cursor-pointer bg-red-600 py-6 font-[heading-font] text-base text-white transition-all hover:scale-102 hover:bg-red-700 md:w-1/3"
+											className="w-full cursor-pointer bg-red-600 py-6 font-heading text-base text-white transition-all hover:scale-102 hover:bg-red-700 md:w-1/3"
 										>
 											SIGN OUT
 										</Button>

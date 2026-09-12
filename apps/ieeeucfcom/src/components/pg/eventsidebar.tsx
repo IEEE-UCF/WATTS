@@ -87,12 +87,12 @@ export default function EventSidebar() {
 		<div className="">
 			<div className="flex h-fit w-full flex-col items-center bg-black px-10">
 				<div className="items-center place-self-center bg-black p-20 text-center lg:items-start lg:place-self-start lg:text-left">
-					<div className="py-3 text-center font-[heading-font] text-4xl text-white lg:text-left lg:text-5xl">
+					<div className="py-3 text-center font-heading text-3xl text-white md:text-4xl lg:text-left">
 						UPCOMING EVENTS
 					</div>
-					<div className="text-center font-[body-font] text-xl text-white lg:text-left lg:text-2xl">
+					<div className="text-center font-body text-xl text-white lg:text-left lg:text-2xl">
 						Experience IEEE @ UCF&rsquo;s exciting lineup of events this
-						<span className="font-[subheading-font] text-ieee-bright-yellow">
+						<span className="font-subheading text-ieee-bright-yellow">
 							{' '}
 							{currentMonth}{' '}
 						</span>

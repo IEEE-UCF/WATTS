@@ -28,9 +28,7 @@ export const EventList = () => {
 
 	return (
 		<Card className="mx-auto mt-8 flex w-full max-w-4xl flex-col rounded-xl bg-black p-6 text-card-foreground shadow-[0_0_20px_rgba(250,204,21,0.5)] shadow-sm">
-			<CardTitle className="-mb-2 font-[subheading-font] text-2xl text-white">
-				Events
-			</CardTitle>
+			<CardTitle className="-mb-2 font-subheading text-2xl text-white">Events</CardTitle>
 			<CardContent>
 				<div className="mx-auto w-full max-w-4xl">
 					<div className="mb-3 flex gap-2">
@@ -39,7 +37,7 @@ export const EventList = () => {
 								key={t}
 								type="button"
 								onClick={() => setTab(t)}
-								className={`rounded-md px-3 py-1 font-[body-font] text-sm capitalize transition-colors ${
+								className={`rounded-md px-3 py-1 font-body text-sm capitalize transition-colors ${
 									tab === t
 										? 'bg-ieee-bright-yellow text-black'
 										: 'border border-ieee-grey text-ieee-white hover:border-ieee-bright-yellow'

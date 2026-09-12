@@ -54,7 +54,7 @@ export default function About() {
 			</div>
 			<div className="flex w-full -translate-y-20 flex-col justify-center gap-x-3 bg-black">
 				<div className="h-auto place-self-center p-10 text-white sm:w-10/12 sm:p-20">
-					<div className="font-[heading-font] text-4xl text-ieee-bright-yellow">
+					<div className="font-heading text-3xl text-ieee-bright-yellow md:text-4xl">
 						IEEE @ UCF IN A NUTSHELL
 					</div>
 					<AboutIEEE />

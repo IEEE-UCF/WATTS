@@ -37,7 +37,7 @@ const AvatarMenu: React.FC<AvatarMenuProps> = ({ image }) => {
 								<NavigationMenuLink asChild>
 									<Link
 										href="/dashboard"
-										className="m-1 flex-row items-center gap-2 font-[subheading-font] text-white transition-all hover:bg-ieee-bright-yellow"
+										className="m-1 flex-row items-center gap-2 font-subheading text-white transition-all hover:bg-ieee-bright-yellow"
 									>
 										DASHBOARD
 									</Link>
@@ -46,7 +46,7 @@ const AvatarMenu: React.FC<AvatarMenuProps> = ({ image }) => {
 								<NavigationMenuLink asChild>
 									<Link
 										href="/settings"
-										className="m-1 flex-row items-center gap-2 font-[subheading-font] text-white transition-all hover:bg-ieee-bright-yellow"
+										className="m-1 flex-row items-center gap-2 font-subheading text-white transition-all hover:bg-ieee-bright-yellow"
 									>
 										SETTINGS
 									</Link>

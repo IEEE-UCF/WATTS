@@ -34,10 +34,10 @@ export default function SponsorshipsPage() {
 
 				<div className="absolute z-3 my-20 flex w-screen flex-row justify-center p-40">
 					<div className="float flex flex-col items-center justify-center gap-y-5 self-center text-center">
-						<div className="font-[heading-font] text-5xl text-ieee-bright-yellow sm:text-6xl">
+						<div className="font-heading text-5xl text-ieee-bright-yellow sm:text-6xl">
 							SPONSORSHIPS
 						</div>
-						<div className="w-3/4 font-[body-font] text-xl text-white lg:text-2xl">
+						<div className="w-3/4 font-body text-xl text-white lg:text-2xl">
 							Without sponsors, nothing would be possible for IEEE @ UCF. To inquire
 							about supporting IEEE @ UCF, view the sponsorship package below or click
 							the button to send a direct email.

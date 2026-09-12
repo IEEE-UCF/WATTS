@@ -31,7 +31,7 @@ function Panel({
 			}`}
 		>
 			<div className="mb-3 flex items-center gap-2">
-				<h2 className="font-[heading-font] text-sm tracking-[0.14em] text-foreground uppercase">
+				<h2 className="font-heading text-sm tracking-[0.14em] text-foreground uppercase">
 					{title}
 				</h2>
 				{cap && (

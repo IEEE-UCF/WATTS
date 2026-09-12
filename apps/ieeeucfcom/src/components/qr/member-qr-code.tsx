@@ -170,7 +170,7 @@ export function MemberQRCode({
 
 	return (
 		<Card>
-			<CardTitle className="font-[subheading-font] text-lg text-white">
+			<CardTitle className="font-subheading text-lg text-white">
 				{title}&apos;s QR Code
 			</CardTitle>
 			{qrImage}

@@ -75,10 +75,10 @@ export default function ProjectsPage() {
 					<div className="animated-background absolute inset-0 top-0 left-0 z-2 h-full w-full items-center bg-gradient-to-r px-5 [background:radial-gradient(125%_125%_at_50%_10%,#0c0a09_5%,transparent_100%)]"></div>
 					<div className="absolute z-3 my-30 flex w-screen flex-row justify-center p-40 px-10 md:px-20 lg:justify-end lg:px-40">
 						<div className="flex w-full flex-col items-center gap-y-5 text-center lg:items-start lg:text-left">
-							<div className="font-[heading-font] text-5xl text-ieee-bright-yellow sm:text-6xl">
+							<div className="font-heading text-5xl text-ieee-bright-yellow sm:text-6xl">
 								PROJECTS
 							</div>
-							<div className="w-full font-[body-font] text-xl text-white lg:w-3/4 lg:text-2xl">
+							<div className="w-full font-body text-xl text-white lg:w-3/4 lg:text-2xl">
 								Tackle real-world challenges by joining or leading IEEE @ UCF's
 								hands-on projects. Members of all skill levels and backgrounds can
 								get involved to develop technical experience, collaborate with
@@ -179,7 +179,7 @@ export default function ProjectsPage() {
 													</div>
 												))}
 												{remaining > 0 && (
-													<div className="w-fit rounded-sm bg-ieee-dark-grey px-3 py-1 font-[subheading-font] text-sm text-white">
+													<div className="w-fit rounded-sm bg-ieee-dark-grey px-3 py-1 font-subheading text-sm text-white">
 														+{remaining} more
 													</div>
 												)}

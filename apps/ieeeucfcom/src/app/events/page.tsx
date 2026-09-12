@@ -32,10 +32,10 @@ export default function EventsPage() {
 
 				<div className="absolute z-3 my-30 flex w-screen flex-row justify-center p-40 px-10 md:px-20 lg:justify-end lg:px-40">
 					<div className="float flex flex-col items-center justify-center gap-y-5 self-end text-center lg:items-end lg:justify-end lg:text-right">
-						<div className="font-[heading-font] text-5xl text-ieee-bright-yellow sm:text-6xl">
+						<div className="font-heading text-5xl text-ieee-bright-yellow sm:text-6xl">
 							EVENTS
 						</div>
-						<div className="w-3/4 font-[body-font] text-xl text-white lg:text-2xl">
+						<div className="w-3/4 font-body text-xl text-white lg:text-2xl">
 							From technical workshops to career-building sessions to social
 							gatherings to community service opportunities, there is unlimited
 							opportunity to expand networks and grow skills in IEEE @ UCF.

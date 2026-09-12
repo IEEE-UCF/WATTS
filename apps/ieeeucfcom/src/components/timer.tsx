@@ -103,10 +103,10 @@ const Timer: React.FC = () => {
 				{/* ── Left: countdown ── */}
 				<div className="flex w-full flex-col items-center justify-center py-4 text-center lg:w-1/2">
 					<div className="w-full p-4">
-						<h2 className="font-[subheading-font] text-4xl text-white">
+						<h2 className="font-subheading text-4xl text-white">
 							{nextGbm ? nextGbm.title.toUpperCase() : 'NEXT GENERAL BODY MEETING'}
 						</h2>
-						<p className="mt-2 font-[body-font] text-2xl text-white">
+						<p className="mt-2 font-body text-2xl text-white">
 							{nextGbm
 								? `Join IEEE @ UCF — ${nextGbm.location}`
 								: 'Join IEEE @ UCF for the upcoming GBM in Room TBD!'}
@@ -116,7 +116,7 @@ const Timer: React.FC = () => {
 						    the Events system. The manual date editor below is the fallback. */}
 						{isAdmin && nextGbm && (
 							<div className="mt-4 flex flex-wrap items-center justify-center gap-3">
-								<span className="font-[body-font] text-sm text-muted-foreground">
+								<span className="font-body text-sm text-muted-foreground">
 									{new Date(nextGbm.startTimeRaw ?? '').toLocaleString('en-US', {
 										month: 'long',
 										day: 'numeric',
@@ -128,7 +128,7 @@ const Timer: React.FC = () => {
 								</span>
 								<Link
 									href="/admin/events"
-									className="rounded border border-ieee-bright-yellow px-3 py-1 font-[heading-font] text-xs text-ieee-bright-yellow transition-all hover:bg-ieee-bright-yellow hover:text-black"
+									className="rounded border border-ieee-bright-yellow px-3 py-1 font-heading text-xs text-ieee-bright-yellow transition-all hover:bg-ieee-bright-yellow hover:text-black"
 								>
 									MANAGE IN EVENTS
 								</Link>
@@ -139,7 +139,7 @@ const Timer: React.FC = () => {
 							<div className="mt-4">
 								{!isEditing ? (
 									<div className="flex flex-wrap items-center justify-center gap-3">
-										<span className="font-[body-font] text-sm text-muted-foreground">
+										<span className="font-body text-sm text-muted-foreground">
 											{new Date(gbmDate).toLocaleString('en-US', {
 												month: 'long',
 												day: 'numeric',
@@ -151,12 +151,12 @@ const Timer: React.FC = () => {
 										</span>
 										<button
 											onClick={() => setIsEditing(true)}
-											className="cursor-pointer rounded border border-ieee-bright-yellow px-3 py-1 font-[heading-font] text-xs text-ieee-bright-yellow transition-all hover:bg-ieee-bright-yellow hover:text-black"
+											className="cursor-pointer rounded border border-ieee-bright-yellow px-3 py-1 font-heading text-xs text-ieee-bright-yellow transition-all hover:bg-ieee-bright-yellow hover:text-black"
 										>
 											EDIT DATE
 										</button>
 										{saveMsg && (
-											<span className="font-[body-font] text-xs text-green-400">
+											<span className="font-body text-xs text-green-400">
 												{saveMsg}
 											</span>
 										)}
@@ -167,18 +167,18 @@ const Timer: React.FC = () => {
 											type="datetime-local"
 											value={inputValue}
 											onChange={(e) => setInputValue(e.target.value)}
-											className="rounded border border-white/30 bg-black px-3 py-2 font-[body-font] text-sm text-white focus:border-ieee-bright-yellow focus:outline-none"
+											className="rounded border border-white/30 bg-black px-3 py-2 font-body text-sm text-white focus:border-ieee-bright-yellow focus:outline-none"
 										/>
 										<div className="flex gap-2">
 											<button
 												onClick={handleSave}
-												className="cursor-pointer rounded bg-ieee-bright-yellow px-3 py-2 font-[heading-font] text-xs text-black transition-all hover:opacity-90"
+												className="cursor-pointer rounded bg-ieee-bright-yellow px-3 py-2 font-heading text-xs text-black transition-all hover:opacity-90"
 											>
 												SAVE
 											</button>
 											<button
 												onClick={handleCancel}
-												className="cursor-pointer rounded border border-white/30 px-3 py-2 font-[heading-font] text-xs text-white transition-all hover:border-white"
+												className="cursor-pointer rounded border border-white/30 px-3 py-2 font-heading text-xs text-white transition-all hover:border-white"
 											>
 												CANCEL
 											</button>
@@ -202,16 +202,16 @@ const Timer: React.FC = () => {
 							).map((unit, i, arr) => (
 								<React.Fragment key={unit.label}>
 									<div className="text-center text-white">
-										<span className="font-[heading-font] text-5xl">
+										<span className="font-heading text-5xl">
 											{pad(unit.value)}
 										</span>
 										<br />
-										<span className="font-[body-font] text-sm text-white">
+										<span className="font-body text-sm text-white">
 											{unit.label}
 										</span>
 									</div>
 									{i < arr.length - 1 && (
-										<span className="font-[subheading-font] text-3xl text-white">
+										<span className="font-subheading text-3xl text-white">
 											:
 										</span>
 									)}
