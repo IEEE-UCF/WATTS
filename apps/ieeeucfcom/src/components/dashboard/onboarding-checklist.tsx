@@ -5,6 +5,10 @@ export interface OnboardingChecklistProps {
 	ieeeMembershipNumber: string | null;
 	knightConnectLinked: boolean;
 	resumeUploadedAt: Date | null;
+	/** storage.resumeUploadPolicy's canUpload — résumé upload is audience-gated
+	 * (RESUME_UPLOAD_AUDIENCE, currently officers + a pilot cohort), so most members
+	 * can't act on this item yet. It's only included below if it's actually reachable. */
+	canUploadResume: boolean;
 	biography: string | null;
 	linkedinURL: string | null;
 	githubURL: string | null;
@@ -72,11 +76,18 @@ export function OnboardingChecklist(props: OnboardingChecklistProps) {
 			label: 'Connect on KnightConnect',
 			cta: { href: '/settings', text: 'Settings →' },
 		},
-		{
-			done: Boolean(props.resumeUploadedAt),
-			label: 'Upload a résumé',
-			cta: { href: '/settings', text: 'Settings →' },
-		},
+		// Only a real item for someone who can actually act on it — if upload isn't open
+		// to them yet, an already-uploaded résumé still counts as done, but "not yet
+		// uploaded + can't upload" isn't a to-do, it's just not applicable.
+		...(props.canUploadResume || props.resumeUploadedAt
+			? [
+					{
+						done: Boolean(props.resumeUploadedAt),
+						label: 'Upload a résumé',
+						cta: { href: '/settings', text: 'Settings →' },
+					},
+				]
+			: []),
 		{
 			done: hasPersonalDetails,
 			label: 'Fill out your personal details',

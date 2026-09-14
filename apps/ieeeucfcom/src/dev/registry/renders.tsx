@@ -339,7 +339,10 @@ export const renders: Record<string, Render> = {
 	},
 	'dashboard/resume-status': (p) => (
 		<div className="max-w-xs">
-			<ResumeStatus resumeUploadedAt={p.uploaded ? new Date() : null} />
+			<ResumeStatus
+				resumeUploadedAt={p.uploaded ? new Date() : null}
+				canUploadResume={Boolean(p.canUpload ?? true)}
+			/>
 		</div>
 	),
 	'dashboard/onboarding-checklist': (p) => (
@@ -349,6 +352,7 @@ export const renders: Record<string, Render> = {
 				ieeeMembershipNumber={p.ieeeNumber ? '12345' : null}
 				knightConnectLinked={Boolean(p.knightConnect)}
 				resumeUploadedAt={p.resume ? new Date() : null}
+				canUploadResume={Boolean(p.canUploadResume ?? true)}
 				biography={p.personalDetails ? 'bio' : null}
 				linkedinURL={null}
 				githubURL={null}

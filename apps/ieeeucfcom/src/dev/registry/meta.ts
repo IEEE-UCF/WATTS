@@ -317,7 +317,11 @@ export const entriesMeta: EntryMeta[] = [
 		group: 'dashboard',
 		status: 'ok',
 		source: '@/components/dashboard/resume-status',
-		controls: [{ name: 'uploaded', type: 'boolean', default: true }],
+		notes: "Renders nothing if there is nothing on file and upload is not open to this viewer (RESUME_UPLOAD_AUDIENCE) — matches ResumeUpload's own gate on /settings.",
+		controls: [
+			{ name: 'uploaded', type: 'boolean', default: true },
+			{ name: 'canUpload', type: 'boolean', default: true },
+		],
 	},
 	{
 		slug: 'dashboard/onboarding-checklist',
@@ -325,12 +329,13 @@ export const entriesMeta: EntryMeta[] = [
 		group: 'dashboard',
 		status: 'ok',
 		source: '@/components/dashboard/onboarding-checklist',
-		notes: 'Six real column checks. Renders nothing once all six are true.',
+		notes: "Up to six real column checks — the résumé item only appears if it's reachable (canUploadResume, or already uploaded). Renders nothing once every applicable item is true.",
 		controls: [
 			{ name: 'discordLinked', type: 'boolean', default: true },
 			{ name: 'ieeeNumber', type: 'boolean', default: false },
 			{ name: 'knightConnect', type: 'boolean', default: false },
 			{ name: 'resume', type: 'boolean', default: true },
+			{ name: 'canUploadResume', type: 'boolean', default: true },
 			{ name: 'personalDetails', type: 'boolean', default: false },
 			{ name: 'hasOrg', type: 'boolean', default: false },
 		],
