@@ -27,7 +27,10 @@ export function DashboardShellView({ children, pathname, auth }: DashboardShellV
 	const crumbs = pathname.split('/').filter(Boolean);
 
 	return (
-		<SidebarProvider style={{ '--sidebar-width': '15rem' } as React.CSSProperties}>
+		<SidebarProvider
+			defaultOpen={false}
+			style={{ '--sidebar-width': '15rem' } as React.CSSProperties}
+		>
 			<Sidebar>
 				<SidebarHeader>
 					<Link href="/" className="flex items-center gap-2 border-b border-border pb-4">
