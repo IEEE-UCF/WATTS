@@ -42,7 +42,11 @@ const AvatarMenu: React.FC<AvatarMenuProps> = ({ image, name, email, role }) => 
 						/>
 					</NavigationMenuTrigger>
 
-					<NavigationMenuContent>
+					{/* The primitive's default `left-0` anchors the content's left edge to the
+					trigger and opens rightward — fine for a trigger with room to its right, but
+					this one always sits in the top-right corner, so it needs to open leftward
+					instead or it runs off the viewport edge. */}
+					<NavigationMenuContent className="right-0 left-auto">
 						<div className="w-56 overflow-hidden rounded-md bg-ieee-dark-yellow">
 							<div className="border-b border-black/15 px-3 py-2.5">
 								<div className="truncate font-subheading text-sm text-black">
