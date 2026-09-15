@@ -682,7 +682,7 @@ export default function ComponentShowcase() {
 												Jane Doe
 											</h4>
 											<p className="mb-4 text-center font-body text-sm text-ieee-light-grey">
-												President • Computer Science
+												Chair • Computer Science
 											</p>
 											<div className="flex gap-2">
 												<Button

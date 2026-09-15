@@ -40,7 +40,7 @@ export default function AboutHeader() {
 										</div>
 										<div className="font-body text-base sm:text-xl">
 											Located at the University of Central Florida, our IEEE
-											student chapter is one of the largest in the nation and
+											student branch is one of the largest in the nation and
 											boasts over 300 active members. We foster technical
 											experience through a collaborative environment,
 											ultimately paving the way for successful careers in

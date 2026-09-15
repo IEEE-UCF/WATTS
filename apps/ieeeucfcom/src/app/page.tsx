@@ -79,7 +79,7 @@ export default function Home() {
 											IEEE @ UCF
 										</div>
 										<div className="font-subheading text-4xl text-white lg:text-5xl">
-											STUDENT CHAPTER
+											STUDENT BRANCH
 										</div>
 										<div className="my-3 flex w-fit flex-wrap font-body-italic text-sm text-white md:text-xl lg:text-2xl">
 											<div className="typewriter flex flex-wrap break-words whitespace-normal">

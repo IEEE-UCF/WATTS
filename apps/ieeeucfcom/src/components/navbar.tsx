@@ -63,7 +63,7 @@ const Navbar: React.FC = () => {
 							width={70}
 							height={70}
 						/>
-						IEEE @ UCF Student Chapter
+						IEEE @ UCF Student Branch
 					</Link>
 				</div>
 
@@ -178,13 +178,13 @@ const MobileMenu: React.FC<{ toggleMenu: () => void }> = ({ toggleMenu }) => {
 						width={70}
 						height={70}
 					/>
-					IEEE @ UCF Student Chapter
+					IEEE @ UCF Student Branch
 				</div>
 
 				{/* <div className="flex w-full justify-between m-6">
 				<div className="flex justify-start items-center">
 					<Link href={"/"} className="text-white font-body flex-row flex align-middle justify-center items-center gap-x-5 text-xl lg:text-2xl hover:text-ieee-dark-yellow transition">
-						<Image className="object-contain" src="/iconography/ieeeucficon.png" alt="IEEE UCF Logo" width={70} height={70} />IEEE @ UCF Student Chapter
+						<Image className="object-contain" src="/iconography/ieeeucficon.png" alt="IEEE UCF Logo" width={70} height={70} />IEEE @ UCF Student Branch
 					</Link>
 				</div> */}
 				{auth?.isMember ? (

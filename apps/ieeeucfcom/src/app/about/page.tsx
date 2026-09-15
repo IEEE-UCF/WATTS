@@ -9,7 +9,7 @@ import AboutOfficers from '@/components/pg/aboutofficers';
 
 const pageTitle = 'About | IEEE UCF';
 const pageDescription =
-	'IEEE UCF is one of the largest IEEE student chapters in the nation, fostering collaboration, technical growth, and career success for over 300 members in diverse engineering fields.';
+	'IEEE UCF is one of the largest IEEE student branches in the nation, fostering collaboration, technical growth, and career success for over 300 members in diverse engineering fields.';
 
 export const metadata: Metadata = {
 	title: pageTitle,
