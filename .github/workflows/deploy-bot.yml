@@ -1,0 +1,14 @@
+name: Deploy Discord Bot
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+
+jobs:
+  deploy:
+    runs-on: [self-hosted, wattsbot-vps]
+
+    steps:
+      - name: Run deploy script
+        run: /opt/watts/deploy.sh
