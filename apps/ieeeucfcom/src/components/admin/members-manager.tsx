@@ -5,6 +5,16 @@ import { useSession } from 'next-auth/react';
 import { trpc } from '@/lib/trpc/client';
 import { officerRoleEnum } from '@watts/db/schema';
 import { CAPABILITIES, CAPABILITY_KEYS, type Capability } from '@watts/permissions';
+import {
+	Table,
+	TableHeader,
+	TableBody,
+	TableRow,
+	TableHead,
+	TableCell,
+	TableEmpty,
+} from '@watts/ui/table';
+import { TogglePill } from '@/components/ui/toggle-pill';
 
 type RoleFilter = 'all' | 'admin' | 'officer' | 'none';
 type OfficerRole = (typeof officerRoleEnum.enumValues)[number];
@@ -123,16 +133,16 @@ export function MembersManager() {
 	}
 
 	return (
-		<div className="text-gray-100">
+		<div className="text-foreground">
 			{isAdmin && (
-				<div className="mb-4 rounded-lg border border-gray-800 bg-gray-900/50 p-3 text-sm">
+				<div className="mb-4 rounded-lg border border-border bg-card/50 p-3 text-sm">
 					<div className="mb-1 flex items-center gap-2">
-						<span className="font-semibold text-gray-200">Officer delegation</span>
+						<span className="font-semibold text-foreground">Officer delegation</span>
 						{delegationMsg && (
 							<span
 								className={`text-xs ${
 									delegationMsg === 'saving…'
-										? 'text-gray-400'
+										? 'text-muted-foreground'
 										: delegationMsg === 'saved ✓'
 											? 'text-green-400'
 											: 'text-red-400'
@@ -142,9 +152,9 @@ export function MembersManager() {
 							</span>
 						)}
 					</div>
-					<p className="mb-2 text-xs text-gray-400">
-						Capabilities officers may grant to regular members. Officers can never change
-						admin/officer roles, and can only act on members who are not staff.
+					<p className="mb-2 text-xs text-muted-foreground">
+						Capabilities officers may grant to regular members. Officers can never
+						change admin/officer roles, and can only act on members who are not staff.
 					</p>
 					<div className="flex flex-wrap gap-4">
 						{delegableCaps.map((cap) => (
@@ -156,11 +166,13 @@ export function MembersManager() {
 									onChange={(e) => toggleDelegable(cap, e.target.checked)}
 								/>
 								<span>{CAPABILITIES[cap as Capability]?.label ?? cap}</span>
-								<code className="text-[10px] text-gray-500">{cap}</code>
+								<code className="text-[10px] text-muted-foreground-dim">{cap}</code>
 							</label>
 						))}
 						{delegableCaps.length === 0 && (
-							<span className="text-xs text-gray-500">No delegable capabilities.</span>
+							<span className="text-xs text-muted-foreground-dim">
+								No delegable capabilities.
+							</span>
 						)}
 					</div>
 				</div>
@@ -171,12 +183,12 @@ export function MembersManager() {
 					value={q}
 					onChange={(e) => setQ(e.target.value)}
 					placeholder="Search name / email / major…"
-					className="rounded-md border border-gray-700 bg-gray-900 px-3 py-2"
+					className="rounded-md border border-input bg-card px-3 py-2"
 				/>
 				<select
 					value={role}
 					onChange={(e) => setRole(e.target.value as RoleFilter)}
-					className="rounded-md border border-gray-700 bg-gray-900 px-2 py-2"
+					className="rounded-md border border-input bg-card px-2 py-2"
 				>
 					<option value="all">All roles</option>
 					<option value="admin">Admins</option>
@@ -184,220 +196,248 @@ export function MembersManager() {
 					<option value="none">Members only</option>
 				</select>
 				<label className="flex items-center gap-2">
-					<input type="checkbox" checked={onlyActive} onChange={(e) => setOnlyActive(e.target.checked)} />
+					<input
+						type="checkbox"
+						checked={onlyActive}
+						onChange={(e) => setOnlyActive(e.target.checked)}
+					/>
 					active only
 				</label>
-				<span className="ml-auto text-gray-400">
+				<span className="ml-auto text-muted-foreground">
 					{counts.total} members · {counts.admins} admins · {counts.officers} officers
 					{rows.length !== counts.total && ` · ${rows.length} shown`}
 				</span>
 			</div>
 
 			{isLoading ? (
-				<p className="text-sm text-gray-400">Loading…</p>
+				<p className="text-sm text-muted-foreground">Loading…</p>
 			) : (
-				<div className="overflow-x-auto rounded-lg border border-gray-800">
-					<table className="w-full text-left text-sm">
-						<thead className="bg-gray-900 text-gray-300">
-							<tr>
-								<th className="px-3 py-2">Name</th>
-								<th className="px-3 py-2">Email</th>
-								<th className="px-3 py-2">Major / Year</th>
-								<th className="px-3 py-2">Admin</th>
-								<th className="px-3 py-2">Officer</th>
-								<th className="px-3 py-2">Capabilities</th>
-								<th className="px-3 py-2">Dues</th>
-								<th className="px-3 py-2">Résumé</th>
-								<th className="px-3 py-2">Committees</th>
-								<th className="px-3 py-2">Discord</th>
-							</tr>
-						</thead>
-						<tbody>
-							{rows.map((m) => {
-								const isSelf = m.id === myMemberId;
-								const st = status[m.id];
-								return (
-									<tr key={m.id} className={`border-t border-gray-800 ${m.active ? '' : 'opacity-50'}`}>
-										<td className="px-3 py-2 whitespace-nowrap">
-											{m.firstName} {m.lastName}
-											{isSelf && (
-												<span className="ml-1 text-xs text-[var(--ieee-dark-yellow)]">(you)</span>
-											)}
-											{st && (
-												<div
-													className={`text-xs ${
-														st === 'saving'
-															? 'text-gray-400'
-															: st === 'saved'
-																? 'text-green-400'
-																: 'text-red-400'
-													}`}
-												>
-													{st === 'saving' ? 'saving…' : st === 'saved' ? 'saved ✓' : st}
-												</div>
-											)}
-										</td>
-										<td className="px-3 py-2 text-gray-400">
-											<div>{m.ucfEmail}</div>
-											{m.personalEmail && <div className="text-xs">{m.personalEmail}</div>}
-										</td>
-										<td className="px-3 py-2 text-gray-400">
-											<div className="max-w-[220px] truncate">{m.major}</div>
-											<div className="text-xs">{m.graduationYear}</div>
-										</td>
-
-										{/* Admin */}
-										<td className="px-3 py-2">
-											{isAdmin ? (
-												<button
-													type="button"
-													disabled={isSelf || st === 'saving'}
-													onClick={() => runAdmin(m.id, !m.administrator)}
-													title={isSelf ? "You can't change your own admin access" : undefined}
-													className={`rounded px-2 py-1 text-xs font-semibold disabled:opacity-40 ${
-														m.administrator
-															? 'bg-[var(--ieee-dark-yellow)] text-black'
-															: 'border border-gray-600 text-gray-300 hover:border-gray-400'
-													}`}
-												>
-													{m.administrator ? 'Admin' : 'Make admin'}
-												</button>
-											) : (
-												<span className="text-xs text-gray-400">{m.administrator ? 'Admin' : '—'}</span>
-											)}
-										</td>
-
-										{/* Officer */}
-										<td className="px-3 py-2">
-											{isAdmin ? (
-												<div className="flex items-center gap-2">
-													<button
-														type="button"
-														disabled={st === 'saving'}
-														onClick={() =>
-															runOfficer(m.id, !m.officerStatus, m.officerStatus ? null : asOfficerRole(m.officerRole ?? ''))
-														}
-														className={`rounded px-2 py-1 text-xs font-semibold disabled:opacity-40 ${
-															m.officerStatus
-																? 'bg-blue-600 text-white'
-																: 'border border-gray-600 text-gray-300 hover:border-gray-400'
-														}`}
-													>
-														{m.officerStatus ? 'Officer' : 'Make officer'}
-													</button>
-													<select
-														value={m.officerRole ?? ''}
-														disabled={!m.officerStatus || st === 'saving'}
-														onChange={(e) => runOfficer(m.id, true, asOfficerRole(e.target.value))}
-														className="rounded border border-gray-700 bg-gray-800 px-1 py-0.5 text-xs disabled:opacity-40"
-													>
-														<option value="">— role —</option>
-														{officerRoleEnum.enumValues.map((r) => (
-															<option key={r} value={r}>
-																{r}
-															</option>
-														))}
-													</select>
-												</div>
-											) : (
-												<span className="text-xs text-gray-400">
-													{m.officerStatus
-														? `Officer${m.officerRole ? ` · ${m.officerRole}` : ''}`
-														: '—'}
-												</span>
-											)}
-										</td>
-
-										{/* Capabilities — implied for admins/officers, else per-grant toggles */}
-										<td className="px-3 py-2">
-											{m.administrator || m.officerStatus ? (
-												<span className="text-xs text-gray-500">all (via {m.administrator ? 'admin' : 'officer'})</span>
-											) : (
-												<div className="flex max-w-[260px] flex-wrap gap-1">
-													{CAPABILITY_KEYS.map((cap) => {
-														const on = m.permissions.includes(cap);
-														const allowed = canToggleCap(cap);
-														return (
-															<button
-																key={cap}
-																type="button"
-																disabled={st === 'saving' || !allowed}
-																onClick={() => runPermission(m.id, cap, !on)}
-																title={
-																	allowed
-																		? CAPABILITIES[cap].label
-																		: `${CAPABILITIES[cap].label} — only an admin can grant this`
-																}
-																className={`rounded px-1.5 py-0.5 text-xs disabled:opacity-40 ${
-																	on
-																		? 'bg-green-700 text-white'
-																		: 'border border-gray-600 text-gray-400 hover:border-gray-400'
-																}`}
-															>
-																{cap}
-															</button>
-														);
-													})}
-												</div>
-											)}
-										</td>
-
-										<td className="px-3 py-2 text-gray-400">{m.duesPaid ? 'paid' : '—'}</td>
-										<td className="px-3 py-2 text-gray-400">
-											{m.hasResume && m.resumeUrl ? (
-												<a
-													href={m.resumeUrl}
-													target="_blank"
-													rel="noreferrer"
-													className="text-[var(--ieee-dark-yellow)] hover:underline"
-												>
-													{m.resumeUploadedAt
-														? new Date(m.resumeUploadedAt).toLocaleDateString()
-														: 'view'}
-												</a>
-											) : (
-												'—'
-											)}
-										</td>
-										<td className="px-3 py-2">
-											<div className="flex max-w-[200px] flex-wrap gap-1">
-												{m.committees.length === 0 && <span className="text-gray-600">—</span>}
-												{m.committees.map((c) => (
-													<span
-														key={c.id}
-														className={`rounded px-1.5 py-0.5 text-xs ${
-															c.isChair
-																? 'bg-[var(--ieee-dark-yellow)] text-black'
-																: 'bg-gray-800 text-gray-300'
-														}`}
-														title={c.isChair ? `${c.title} (chair)` : c.title}
-													>
-														{c.slug ?? c.title}
-														{c.isChair ? '★' : ''}
-													</span>
-												))}
+				<Table>
+					<TableHeader>
+						<TableRow>
+							<TableHead>Name</TableHead>
+							<TableHead>Email</TableHead>
+							<TableHead>Major / Year</TableHead>
+							<TableHead>Admin</TableHead>
+							<TableHead>Officer</TableHead>
+							<TableHead>Capabilities</TableHead>
+							<TableHead>Dues</TableHead>
+							<TableHead>Résumé</TableHead>
+							<TableHead>Committees</TableHead>
+							<TableHead>Discord</TableHead>
+						</TableRow>
+					</TableHeader>
+					<TableBody>
+						{rows.map((m) => {
+							const isSelf = m.id === myMemberId;
+							const st = status[m.id];
+							return (
+								<TableRow key={m.id} inactive={!m.active}>
+									<TableCell className="whitespace-nowrap">
+										{m.firstName} {m.lastName}
+										{isSelf && (
+											<span className="ml-1 text-xs text-ieee-dark-yellow">
+												(you)
+											</span>
+										)}
+										{st && (
+											<div
+												className={`text-xs ${
+													st === 'saving'
+														? 'text-muted-foreground'
+														: st === 'saved'
+															? 'text-green-400'
+															: 'text-red-400'
+												}`}
+											>
+												{st === 'saving'
+													? 'saving…'
+													: st === 'saved'
+														? 'saved ✓'
+														: st}
 											</div>
-										</td>
-										<td className="px-3 py-2 text-xs text-gray-400">
-											{m.discordLinked ? (
-												(m.userName ?? 'linked')
-											) : (
-												<span className="text-gray-600">not linked</span>
+										)}
+									</TableCell>
+									<TableCell className="text-muted-foreground">
+										<div>{m.ucfEmail}</div>
+										{m.personalEmail && (
+											<div className="text-xs">{m.personalEmail}</div>
+										)}
+									</TableCell>
+									<TableCell className="text-muted-foreground">
+										<div className="max-w-[220px] truncate">{m.major}</div>
+										<div className="text-xs">{m.graduationYear}</div>
+									</TableCell>
+
+									{/* Admin */}
+									<TableCell>
+										{isAdmin ? (
+											<TogglePill
+												selected={m.administrator}
+												disabled={isSelf || st === 'saving'}
+												onClick={() => runAdmin(m.id, !m.administrator)}
+												title={
+													isSelf
+														? "You can't change your own admin access"
+														: undefined
+												}
+											>
+												{m.administrator ? 'Admin' : 'Make admin'}
+											</TogglePill>
+										) : (
+											<span className="text-xs text-muted-foreground">
+												{m.administrator ? 'Admin' : '—'}
+											</span>
+										)}
+									</TableCell>
+
+									{/* Officer */}
+									<TableCell>
+										{isAdmin ? (
+											<div className="flex items-center gap-2">
+												<TogglePill
+													selected={m.officerStatus}
+													tone="info"
+													disabled={st === 'saving'}
+													onClick={() =>
+														runOfficer(
+															m.id,
+															!m.officerStatus,
+															m.officerStatus
+																? null
+																: asOfficerRole(
+																		m.officerRole ?? '',
+																	),
+														)
+													}
+												>
+													{m.officerStatus ? 'Officer' : 'Make officer'}
+												</TogglePill>
+												<select
+													value={m.officerRole ?? ''}
+													disabled={!m.officerStatus || st === 'saving'}
+													onChange={(e) =>
+														runOfficer(
+															m.id,
+															true,
+															asOfficerRole(e.target.value),
+														)
+													}
+													className="rounded border border-input bg-secondary px-1 py-0.5 text-xs disabled:opacity-40"
+												>
+													<option value="">— role —</option>
+													{officerRoleEnum.enumValues.map((r) => (
+														<option key={r} value={r}>
+															{r}
+														</option>
+													))}
+												</select>
+											</div>
+										) : (
+											<span className="text-xs text-muted-foreground">
+												{m.officerStatus
+													? `Officer${m.officerRole ? ` · ${m.officerRole}` : ''}`
+													: '—'}
+											</span>
+										)}
+									</TableCell>
+
+									{/* Capabilities — implied for admins/officers, else per-grant toggles */}
+									<TableCell>
+										{m.administrator || m.officerStatus ? (
+											<span className="text-xs text-muted-foreground-dim">
+												all (via {m.administrator ? 'admin' : 'officer'})
+											</span>
+										) : (
+											<div className="flex max-w-[260px] flex-wrap gap-1">
+												{CAPABILITY_KEYS.map((cap) => {
+													const on = m.permissions.includes(cap);
+													const allowed = canToggleCap(cap);
+													return (
+														<TogglePill
+															key={cap}
+															selected={on}
+															tone="success"
+															size="xs"
+															disabled={st === 'saving' || !allowed}
+															onClick={() =>
+																runPermission(m.id, cap, !on)
+															}
+															title={
+																allowed
+																	? CAPABILITIES[cap].label
+																	: `${CAPABILITIES[cap].label} — only an admin can grant this`
+															}
+														>
+															{cap}
+														</TogglePill>
+													);
+												})}
+											</div>
+										)}
+									</TableCell>
+
+									<TableCell className="text-muted-foreground">
+										{m.duesPaid ? 'paid' : '—'}
+									</TableCell>
+									<TableCell className="text-muted-foreground">
+										{m.hasResume && m.resumeUrl ? (
+											<a
+												href={m.resumeUrl}
+												target="_blank"
+												rel="noreferrer"
+												className="text-ieee-dark-yellow hover:underline"
+											>
+												{m.resumeUploadedAt
+													? new Date(
+															m.resumeUploadedAt,
+														).toLocaleDateString()
+													: 'view'}
+											</a>
+										) : (
+											'—'
+										)}
+									</TableCell>
+									<TableCell>
+										<div className="flex max-w-[200px] flex-wrap gap-1">
+											{m.committees.length === 0 && (
+												<span className="text-muted-foreground-dim">—</span>
 											)}
-										</td>
-									</tr>
-								);
-							})}
-							{rows.length === 0 && (
-								<tr>
-									<td colSpan={10} className="px-3 py-6 text-center text-gray-500">
-										No matching members.
-									</td>
-								</tr>
-							)}
-						</tbody>
-					</table>
-				</div>
+											{m.committees.map((c) => (
+												<span
+													key={c.id}
+													className={`rounded px-1.5 py-0.5 text-xs ${
+														c.isChair
+															? 'bg-ieee-dark-yellow text-black'
+															: 'bg-secondary text-muted-foreground'
+													}`}
+													title={
+														c.isChair ? `${c.title} (chair)` : c.title
+													}
+												>
+													{c.slug ?? c.title}
+													{c.isChair ? '★' : ''}
+												</span>
+											))}
+										</div>
+									</TableCell>
+									<TableCell className="text-xs text-muted-foreground">
+										{m.discordLinked ? (
+											(m.userName ?? 'linked')
+										) : (
+											<span className="text-muted-foreground-dim">
+												not linked
+											</span>
+										)}
+									</TableCell>
+								</TableRow>
+							);
+						})}
+						{rows.length === 0 && (
+							<TableEmpty colSpan={10}>No matching members.</TableEmpty>
+						)}
+					</TableBody>
+				</Table>
 			)}
 		</div>
 	);

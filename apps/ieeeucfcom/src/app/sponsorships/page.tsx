@@ -4,6 +4,7 @@ import { Navbar } from '@/components/navbar';
 import { Footer } from '@/components/footer';
 import { Metadata } from 'next';
 import { MailTo, SponsorsCarousel, PDFViewer } from '@/components/pg/sponsorshipsclient';
+import { GlowButton } from '@/components/ui/glow-button';
 
 const pageTitle = 'Sponsorships | IEEE UCF';
 const pageDescription =
@@ -22,41 +23,42 @@ export const metadata: Metadata = {
 
 export default function SponsorshipsPage() {
 	return (
-		<div className="flex flex-col max-w-screen overflow-hidden bg-black">
+		<div className="flex max-w-screen flex-col overflow-hidden bg-black">
 			{/* Hero */}
-			<div className="relative w-full h-[120vh]">
-				<div className="absolute z-4 w-full h-fit inset-0 items-center px-5">
+			<div className="relative h-[120vh] w-full">
+				<div className="absolute inset-0 z-4 h-fit w-full items-center px-5">
 					<Navbar />
 				</div>
 
-				<div className="absolute top-0 left-0 w-full h-full animated-background bg-gradient-to-r inset-0 items-center px-5 [background:radial-gradient(125%_125%_at_50%_10%,#0c0a09_5%,transparent_100%)] z-2" />
+				<div className="animated-background absolute inset-0 top-0 left-0 z-2 h-full w-full items-center bg-gradient-to-r px-5 [background:radial-gradient(125%_125%_at_50%_10%,var(--color-ieee-near-black)_5%,transparent_100%)]" />
 
-				<div className="flex flex-row my-20 p-40 justify-center absolute z-3 w-screen">
-					<div className="flex flex-col items-center justify-center self-center text-center gap-y-5 float">
-						<div className="font-[heading-font] text-[var(--ieee-bright-yellow)] text-5xl sm:text-6xl">
+				<div className="absolute z-3 my-20 flex w-screen flex-row justify-center p-40">
+					<div className="float flex flex-col items-center justify-center gap-y-5 self-center text-center">
+						<div className="font-heading text-5xl text-ieee-bright-yellow sm:text-6xl">
 							SPONSORSHIPS
 						</div>
-						<div className="font-[body-font] text-white text-xl lg:text-2xl w-3/4">
+						<div className="w-3/4 font-body text-xl text-white lg:text-2xl">
 							Without sponsors, nothing would be possible for IEEE @ UCF. To inquire
 							about supporting IEEE @ UCF, view the sponsorship package below or click
 							the button to send a direct email.
 						</div>
-						<div className="relative group cursor-pointer">
-							<div className="absolute -inset-1 bg-gradient-to-r from-[var(--ieee-bright-yellow)] to-[var(--ieee-bright-yellow)] rounded-lg blur opacity-25 group-hover:opacity-100 transition duration-1000 group-hover:duration-200" />
-							<div className="relative px-10 py-7 bg-[#0c0a09] ring-1 ring-gray-900/5 rounded-lg leading-none flex items-top justify-start space-x-6">
-								<div className="space-y-2 text-white font-bold text-2xl">
-									<MailTo email="ieee@ucf.edu" subject="Sponsorship Inquiry" body="Hello IEEE at UCF,">
-										INQUIRE ABOUT SPONSORING
-									</MailTo>
-								</div>
+						<GlowButton innerClassName="justify-start px-10 py-7">
+							<div className="text-2xl font-bold text-white">
+								<MailTo
+									email="ieee@ucf.edu"
+									subject="Sponsorship Inquiry"
+									body="Hello IEEE at UCF,"
+								>
+									INQUIRE ABOUT SPONSORING
+								</MailTo>
 							</div>
-						</div>
+						</GlowButton>
 					</div>
 				</div>
 
-				<div className="bg-black h-full w-full">
+				<div className="h-full w-full bg-black">
 					<Image
-						className="absolute h-full w-full object-cover z-0 opacity-50"
+						className="absolute z-0 h-full w-full object-cover opacity-50"
 						src="/committees/socialgif2.gif"
 						alt="About Us Photo"
 						width={2000}
@@ -66,12 +68,17 @@ export default function SponsorshipsPage() {
 			</div>
 
 			{/* Wave divider */}
-			<div className="relative -translate-y-20 w-full overflow-hidden leading-none">
-				<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 120" preserveAspectRatio="none" className="w-full h-20">
+			<div className="relative w-full -translate-y-20 overflow-hidden leading-none">
+				<svg
+					xmlns="http://www.w3.org/2000/svg"
+					viewBox="0 0 1200 120"
+					preserveAspectRatio="none"
+					className="h-20 w-full"
+				>
 					<defs>
 						<radialGradient id="bg-gradient" cx="40%" cy="120%" r="125%">
-							<stop offset="50%" stopColor="#000000" />
-							<stop offset="100%" stopColor="#000000" />
+							<stop offset="50%" style={{ stopColor: 'var(--color-ieee-black)' }} />
+							<stop offset="100%" style={{ stopColor: 'var(--color-ieee-black)' }} />
 						</radialGradient>
 					</defs>
 					<path
@@ -83,12 +90,12 @@ export default function SponsorshipsPage() {
 			</div>
 
 			{/* Sponsors carousel */}
-			<div className="px-10 bg-black border-b border-white/10">
+			<div className="border-b border-white/10 bg-black px-10">
 				<SponsorsCarousel />
 			</div>
 
 			{/* PDF section — PDFViewer handles mobile vs desktop internally */}
-			<div className="p-6 md:p-10 bg-black m-4 md:m-10 rounded-xl">
+			<div className="m-4 rounded-xl bg-black p-6 md:m-10 md:p-10">
 				<PDFViewer />
 			</div>
 

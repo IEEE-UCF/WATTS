@@ -5,6 +5,7 @@ import { eventRouter } from './routers/event';
 import { eventLabelRouter } from './routers/event-label';
 import { officerRouter } from './routers/officer';
 import { projectRouter } from './routers/project';
+import { committeeRouter } from './routers/committee';
 import { awardRouter } from './routers/award';
 import { meetingTimeRouter } from './routers/meetingTime';
 import { storageRouter } from './routers/storage';
@@ -17,6 +18,7 @@ export const appRouter = createTRPCRouter({
 	eventLabel: eventLabelRouter,
 	officer: officerRouter,
 	project: projectRouter,
+	committee: committeeRouter,
 	award: awardRouter,
 	meetingTime: meetingTimeRouter,
 	storage: storageRouter,

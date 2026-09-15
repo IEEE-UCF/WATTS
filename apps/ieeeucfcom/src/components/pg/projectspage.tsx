@@ -15,7 +15,6 @@ import type { Project } from '@watts/db/schema';
 
 type ProjectWithLead = Project & { lead: string | null };
 
-
 gsap.registerPlugin(ScrollTrigger);
 
 export default function ProjectsPage() {
@@ -48,31 +47,38 @@ export default function ProjectsPage() {
 	const closeSidebar = () => setSelectedProject(null);
 
 	const parseSkills = (info: string | null): string[] =>
-		info ? info.split(',').map((s) => s.trim()).filter(Boolean) : [];
+		info
+			? info
+					.split(',')
+					.map((s) => s.trim())
+					.filter(Boolean)
+			: [];
 
 	return (
 		<SidebarProvider
-			className="flex flex-col max-w-screen overflow-hidden"
+			className="flex max-w-screen flex-col overflow-hidden"
 			defaultOpen={false}
 			open={selectedProject !== null}
-			onOpenChange={(open) => { if (!open) setSelectedProject(null); }}
+			onOpenChange={(open) => {
+				if (!open) setSelectedProject(null);
+			}}
 		>
 			<div
-				className={`flex flex-col max-w-screen overflow-hidden bg-transparent transition-all duration-300 ${
+				className={`flex max-w-screen flex-col overflow-hidden bg-transparent transition-all duration-300 ${
 					selectedProject ? 'blur-sm' : 'blur-none'
 				}`}
 			>
-				<div className="relative w-full h-[120vh]">
-					<div className="absolute z-4 w-full h-fit inset-0 items-center px-5">
+				<div className="relative h-[120vh] w-full">
+					<div className="absolute inset-0 z-4 h-fit w-full items-center px-5">
 						<Navbar />
 					</div>
-					<div className="absolute top-0 left-0 w-full h-full animated-background bg-gradient-to-r inset-0 items-center px-5 [background:radial-gradient(125%_125%_at_50%_10%,#0c0a09_5%,transparent_100%)] z-2"></div>
-					<div className="flex flex-row my-30 p-40 px-10 md:px-20 lg:px-40 justify-center lg:justify-end absolute z-3 w-screen">
-						<div className="flex flex-col items-center lg:items-start text-center lg:text-left gap-y-5 w-full">
-							<div className="font-[heading-font] text-[var(--ieee-bright-yellow)] text-5xl sm:text-6xl">
+					<div className="animated-background absolute inset-0 top-0 left-0 z-2 h-full w-full items-center bg-gradient-to-r px-5 [background:radial-gradient(125%_125%_at_50%_10%,var(--color-ieee-near-black)_5%,transparent_100%)]"></div>
+					<div className="absolute z-3 my-30 flex w-screen flex-row justify-center p-40 px-10 md:px-20 lg:justify-end lg:px-40">
+						<div className="flex w-full flex-col items-center gap-y-5 text-center lg:items-start lg:text-left">
+							<div className="font-heading text-5xl text-ieee-bright-yellow sm:text-6xl">
 								PROJECTS
 							</div>
-							<div className="font-[body-font] text-white text-xl lg:text-2xl w-full lg:w-3/4">
+							<div className="w-full font-body text-xl text-white lg:w-3/4 lg:text-2xl">
 								Tackle real-world challenges by joining or leading IEEE @ UCF's
 								hands-on projects. Members of all skill levels and backgrounds can
 								get involved to develop technical experience, collaborate with
@@ -80,9 +86,9 @@ export default function ProjectsPage() {
 							</div>
 						</div>
 					</div>
-					<div className="relative bg-black h-full w-full">
+					<div className="relative h-full w-full bg-black">
 						<Image
-							className="absolute h-full w-full object-cover object-center z-0 opacity-100"
+							className="absolute z-0 h-full w-full object-cover object-center opacity-100"
 							src="/projects/sechardwaregif2.gif"
 							alt="Projects Photo"
 							width={2000}
@@ -91,67 +97,101 @@ export default function ProjectsPage() {
 					</div>
 				</div>
 
-				<div className="relative -translate-y-20 w-full overflow-hidden leading-none">
-					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 120" preserveAspectRatio="none" className="w-full h-20">
+				<div className="relative w-full -translate-y-20 overflow-hidden leading-none">
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						viewBox="0 0 1200 120"
+						preserveAspectRatio="none"
+						className="h-20 w-full"
+					>
 						<defs>
 							<radialGradient id="bg-gradient" cx="40%" cy="120%" r="125%">
-								<stop offset="50%" stopColor="#000000" />
-								<stop offset="100%" stopColor="#000000" />
+								<stop
+									offset="50%"
+									style={{ stopColor: 'var(--color-ieee-black)' }}
+								/>
+								<stop
+									offset="100%"
+									style={{ stopColor: 'var(--color-ieee-black)' }}
+								/>
 							</radialGradient>
 						</defs>
-						<path d="M321.39,56.44c58-10.79,114.16-30.13,172-41.86, 82.39-16.72,168.19-17.73,250.45-.39C823.78,31,906.67,72,985.66,92.83c70.05,18.48,146.53, 26.09,214.34,3V0H0V27.35A600.21,600.21,0,0,0,321.39,56.44Z" fill="url(#bg-gradient)" transform="scale(1,-1) translate(0,-120)" />
+						<path
+							d="M321.39,56.44c58-10.79,114.16-30.13,172-41.86, 82.39-16.72,168.19-17.73,250.45-.39C823.78,31,906.67,72,985.66,92.83c70.05,18.48,146.53, 26.09,214.34,3V0H0V27.35A600.21,600.21,0,0,0,321.39,56.44Z"
+							fill="url(#bg-gradient)"
+							transform="scale(1,-1) translate(0,-120)"
+						/>
 					</svg>
 				</div>
 
-				<div className="justify-start flex flex-row flex-wrap py-20 px-3 bg-black -translate-y-20">
+				<div className="flex -translate-y-20 flex-row flex-wrap justify-start bg-black px-3 py-20">
 					{projectData.map((project, index) => {
-						const hwSkills = parseSkills(project.hardwareInfo).map((s) => ({ label: s, type: 'hw' }));
-						const swSkills = parseSkills(project.softwareInfo).map((s) => ({ label: s, type: 'sw' }));
+						const hwSkills = parseSkills(project.hardwareInfo).map((s) => ({
+							label: s,
+							type: 'hw',
+						}));
+						const swSkills = parseSkills(project.softwareInfo).map((s) => ({
+							label: s,
+							type: 'sw',
+						}));
 						const allSkills = [...hwSkills, ...swSkills];
 						const maxVisible = 6;
 						const visibleSkills = allSkills.slice(0, maxVisible - 1);
-						const remaining = allSkills.length > maxVisible ? allSkills.length - visibleSkills.length : 0;
-						const photoUrl = Array.isArray(project.photoUrls) ? (project.photoUrls[0] ?? null) : (project.photoUrls ?? null);
+						const remaining =
+							allSkills.length > maxVisible
+								? allSkills.length - visibleSkills.length
+								: 0;
+						const photoUrl = Array.isArray(project.photoUrls)
+							? (project.photoUrls[0] ?? null)
+							: (project.photoUrls ?? null);
 
 						return (
 							<div
 								key={project.id}
-								ref={(el) => { if (el) cardsRef.current[index] = el; }}
-								className="flex flex-col h-fit w-full md:basis-1/2 lg:basis-1/3 hover:scale-102 transition p-3 opacity-0"
+								ref={(el) => {
+									if (el) cardsRef.current[index] = el;
+								}}
+								className="flex h-fit w-full flex-col p-3 opacity-0 transition hover:scale-102 md:basis-1/2 lg:basis-1/3"
 							>
-								<div className="relative group cursor-pointer hover:scale-102 transition-transform">
-									<div className="absolute -inset-0.5 bg-gradient-to-r from-[var(--ieee-bright-yellow)] to-[var(--ieee-bright-yellow)] rounded-sm blur opacity-25 group-hover:opacity-100 transition duration-300 group-hover:duration-200"></div>
-									<Card className="relative bg-black border-0 h-fit">
+								<div className="group relative cursor-pointer transition-transform hover:scale-102">
+									<div className="absolute -inset-0.5 rounded-sm bg-gradient-to-r from-ieee-bright-yellow to-ieee-bright-yellow opacity-25 blur transition duration-300 group-hover:opacity-100 group-hover:duration-200"></div>
+									<Card className="relative h-fit border-0 bg-black">
 										<CardContent>
 											<Image
-												className="object-center object-cover w-full h-80 rounded-sm mb-4 border-white"
+												className="mb-4 h-80 w-full rounded-sm border-white object-cover object-center"
 												src={photoUrl ?? '/larry.png'}
 												alt={project.title}
 												width={2000}
 												height={2000}
 											/>
-											<div className="text-white text-xl font-bold mb-2">{project.title}</div>
+											<div className="mb-2 text-xl font-bold text-white">
+												{project.title}
+											</div>
 											{project.lead && (
-												<div className="text-gray-300 mb-2">Project Lead: {project.lead}</div>
+												<div className="mb-2 text-muted-foreground">
+													Project Lead: {project.lead}
+												</div>
 											)}
-											<div className="text-gray-400 mb-4">{project.overview?.slice(0, 120)}...</div>
-											<div className="flex flex-wrap gap-2 mb-4">
+											<div className="mb-4 text-muted-foreground">
+												{project.overview?.slice(0, 120)}...
+											</div>
+											<div className="mb-4 flex flex-wrap gap-2">
 												{visibleSkills.map((skill, idx) => (
 													<div
 														key={idx}
-														className={`text-white rounded-sm w-fit px-3 py-1 text-sm ${skill.type === 'hw' ? 'bg-[var(--ieee-light-grey)]' : 'bg-[var(--ieee-grey)]'}`}
+														className={`w-fit rounded-sm px-3 py-1 text-sm text-white ${skill.type === 'hw' ? 'bg-ieee-light-grey' : 'bg-ieee-grey'}`}
 													>
 														{skill.label}
 													</div>
 												))}
 												{remaining > 0 && (
-													<div className="text-white rounded-sm w-fit px-3 py-1 bg-[var(--ieee-dark-grey)] text-sm font-[subheading-font]">
+													<div className="w-fit rounded-sm bg-ieee-dark-grey px-3 py-1 font-subheading text-sm text-white">
 														+{remaining} more
 													</div>
 												)}
 											</div>
 											<div
-												className="relative cursor-pointer flex flex-row justify-between w-full hover:scale-103 transition text-white hover:text-amber-300"
+												className="relative flex w-full cursor-pointer flex-row justify-between text-white transition hover:scale-103 hover:text-amber-300"
 												onClick={() => viewSidebar(project)}
 											>
 												LEARN MORE
@@ -167,56 +207,79 @@ export default function ProjectsPage() {
 			</div>
 
 			{selectedProject && (
-				<div className="fixed inset-0 flex items-center justify-center z-[200]">
-					<div className="h-full flex flex-col w-full max-w-[95vw] sm:max-w-md bg-black rounded-sm p-4 overflow-y-auto">
-						<div className="flex items-center justify-between mb-4">
-							<div className="text-xl text-[var(--ieee-bright-yellow)]">
+				<div className="fixed inset-0 z-[200] flex items-center justify-center">
+					<div className="flex h-full w-full max-w-[95vw] flex-col overflow-y-auto rounded-sm bg-black p-4 sm:max-w-md">
+						<div className="mb-4 flex items-center justify-between">
+							<div className="text-xl text-ieee-bright-yellow">
 								{selectedProject.title?.toUpperCase()}
 							</div>
-							<Button onClick={closeSidebar} className="hover:scale-150 text-white cursor-pointer bg-transparent transition-transform hover:bg-transparent">
+							<Button
+								onClick={closeSidebar}
+								className="cursor-pointer bg-transparent text-white transition-transform hover:scale-150 hover:bg-transparent"
+							>
 								<X size={24} />
 							</Button>
 						</div>
 						<div className="mb-6">
 							<Image
-								className="w-full h-48 rounded-sm mb-4 object-cover"
+								className="mb-4 h-48 w-full rounded-sm object-cover"
 								src={
-									(Array.isArray(selectedProject.photoUrls) ? (selectedProject.photoUrls[0] ?? '/larry.png') : (selectedProject.photoUrls ?? '/larry.png'))
+									Array.isArray(selectedProject.photoUrls)
+										? (selectedProject.photoUrls[0] ?? '/larry.png')
+										: (selectedProject.photoUrls ?? '/larry.png')
 								}
 								alt={selectedProject.title}
 								width={600}
 								height={400}
 							/>
 						</div>
-						<div className="space-y-4 flex-1 overflow-auto">
+						<div className="flex-1 space-y-4 overflow-auto">
 							<div>
-								<div className="text-lg font-semibold mb-2 text-[var(--ieee-bright-yellow)]">Overview</div>
+								<div className="mb-2 text-lg font-semibold text-ieee-bright-yellow">
+									Overview
+								</div>
 								<div className="text-white">{selectedProject.overview}</div>
 							</div>
 							{selectedProject.lead && (
 								<div>
-									<div className="text-lg font-semibold mb-2 text-[var(--ieee-bright-yellow)]">Project Lead</div>
+									<div className="mb-2 text-lg font-semibold text-ieee-bright-yellow">
+										Project Lead
+									</div>
 									<div className="text-white">{selectedProject.lead}</div>
 								</div>
 							)}
 							<div>
-								<h3 className="text-lg text-white font-semibold mb-2">Hardware</h3>
+								<h3 className="mb-2 text-lg font-semibold text-white">Hardware</h3>
 								<div className="flex flex-wrap gap-2 text-white">
 									{parseSkills(selectedProject.hardwareInfo).length ? (
 										parseSkills(selectedProject.hardwareInfo).map((item, i) => (
-											<div key={i} className="px-3 py-1 bg-[var(--ieee-light-grey)] rounded-sm text-sm">{item}</div>
+											<div
+												key={i}
+												className="rounded-sm bg-ieee-light-grey px-3 py-1 text-sm"
+											>
+												{item}
+											</div>
 										))
-									) : <p>No hardware specified</p>}
+									) : (
+										<p>No hardware specified</p>
+									)}
 								</div>
 							</div>
 							<div>
-								<h3 className="text-lg text-white font-semibold mb-2">Software</h3>
+								<h3 className="mb-2 text-lg font-semibold text-white">Software</h3>
 								<div className="flex flex-wrap gap-2 text-white">
 									{parseSkills(selectedProject.softwareInfo).length ? (
 										parseSkills(selectedProject.softwareInfo).map((item, i) => (
-											<div key={i} className="px-3 py-1 bg-[var(--ieee-grey)] rounded-sm text-sm">{item}</div>
+											<div
+												key={i}
+												className="rounded-sm bg-ieee-grey px-3 py-1 text-sm"
+											>
+												{item}
+											</div>
 										))
-									) : <p>No software specified</p>}
+									) : (
+										<p>No software specified</p>
+									)}
 								</div>
 							</div>
 						</div>

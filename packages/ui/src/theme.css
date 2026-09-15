@@ -1,0 +1,200 @@
+/* ============================================================================
+ * @watts/ui — design tokens
+ *
+ * Ported from the IEEE-Website repo's `styling` branch (never merged before the
+ * WATTS monorepo consolidation) — see apps/ieeeucfcom/docs/styling/ for the full
+ * write-up. Four layers, same model as that branch:
+ *
+ *   1. @theme            raw IEEE brand tokens — Tailwind turns these into
+ *                         utilities: bg-ieee-*, text-ieee-*, font-heading, …
+ *   2. :root (aliases)   the old unprefixed `var(--ieee-*)` names, kept working
+ *                         for the app pages that still reference them directly
+ *   3. @theme inline      the semantic-token bridge for @watts/ui primitives:
+ *                         bg-card, text-muted-foreground, border-input, …
+ *   4. :root / .dark      default (unused) light values, then the single
+ *                         active dark mapping — this site is dark everywhere,
+ *                         there is no light mode and no separate "marketing"
+ *                         scope. `apps/ieeeucfcom/src/app/layout.tsx` sets
+ *                         `<html className="dark">`.
+ *
+ * Consume it from the app's Tailwind entry:
+ *     @import 'tailwindcss';
+ *     @import '@watts/ui/theme.css';
+ *     @source '...';   // the host still owns its own content globs
+ * ========================================================================== */
+
+/* Makes `dark:` utilities inside @watts/ui respond to the `.dark` class rather
+ * than the OS's prefers-color-scheme (Tailwind v4 default). Since `.dark` is
+ * always on here, this is what makes components' `dark:` variants do anything. */
+@custom-variant dark (&:is(.dark *));
+
+/* ── 1. Brand tokens — raw IEEE palette + fonts ─────────────────────────── */
+/* If the brand palette changes, this is the first section to update. */
+@theme {
+	--color-ieee-black: #000000;
+	--color-ieee-near-black: #0c0a09;
+	--color-ieee-warm-dark: #3d3110;
+	--color-ieee-dark-grey: #2d2d2d;
+	--color-ieee-grey: #75787b;
+	--color-ieee-light-grey: #acb1b6;
+	--color-ieee-white: #ffffff;
+	--color-ieee-dark-yellow: #ffc72c;
+	--color-ieee-bright-yellow: #ffd100;
+
+	/* font-display, font-heading, font-subheading, font-body (+ -italic) */
+	--font-display: display-font, sans-serif;
+	--font-display-italic: display-italic-font, sans-serif;
+	--font-heading: heading-font, sans-serif;
+	--font-heading-italic: heading-italic-font, sans-serif;
+	--font-subheading: subheading-font, sans-serif;
+	--font-subheading-italic: subheading-italic-font, sans-serif;
+	--font-body: body-font, sans-serif;
+	--font-body-italic: body-italic-font, sans-serif;
+}
+
+/* ── 2. Legacy unprefixed aliases ────────────────────────────────────────── */
+/* Existing page code reaches for these as arbitrary values, e.g.
+ * `text-[var(--ieee-bright-yellow)]`. @theme above registers the Tailwind-facing
+ * name as `--color-ieee-bright-yellow`; these aliases keep the old unprefixed
+ * name resolving until a page migrates to the `text-ieee-bright-yellow` utility. */
+:root {
+	--ieee-black: var(--color-ieee-black);
+	--ieee-dark-grey: var(--color-ieee-dark-grey);
+	--ieee-grey: var(--color-ieee-grey);
+	--ieee-light-grey: var(--color-ieee-light-grey);
+	--ieee-white: var(--color-ieee-white);
+	--ieee-dark-yellow: var(--color-ieee-dark-yellow);
+	--ieee-bright-yellow: var(--color-ieee-bright-yellow);
+}
+
+/* ── 3. Shadcn/ui — maps runtime CSS vars to Tailwind's color system ────── */
+/* Lets reusable components use bg-card / text-foreground / border-input
+ * instead of hardcoding IEEE colors directly inside every shared primitive. */
+@theme inline {
+	--radius-sm: calc(var(--radius) - 4px);
+	--radius-md: calc(var(--radius) - 2px);
+	--radius-lg: var(--radius);
+	--radius-xl: calc(var(--radius) + 4px);
+	--color-background: var(--background);
+	--color-foreground: var(--foreground);
+	--color-card: var(--card);
+	--color-card-foreground: var(--card-foreground);
+	--color-popover: var(--popover);
+	--color-popover-foreground: var(--popover-foreground);
+	--color-primary: var(--primary);
+	--color-primary-hover: var(--primary-hover);
+	--color-primary-foreground: var(--primary-foreground);
+	--color-secondary: var(--secondary);
+	--color-secondary-foreground: var(--secondary-foreground);
+	--color-muted: var(--muted);
+	--color-muted-foreground: var(--muted-foreground);
+	--color-muted-foreground-dim: var(--muted-foreground-dim);
+	--color-accent: var(--accent);
+	--color-accent-foreground: var(--accent-foreground);
+	--color-destructive: var(--destructive);
+	--color-destructive-foreground: var(--destructive-foreground);
+	--color-border: var(--border);
+	--color-input: var(--input);
+	--color-ring: var(--ring);
+	--color-chart-1: var(--chart-1);
+	--color-chart-2: var(--chart-2);
+	--color-chart-3: var(--chart-3);
+	--color-chart-4: var(--chart-4);
+	--color-chart-5: var(--chart-5);
+	--color-sidebar: var(--sidebar);
+	--color-sidebar-foreground: var(--sidebar-foreground);
+	--color-sidebar-primary: var(--sidebar-primary);
+	--color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+	--color-sidebar-accent: var(--sidebar-accent);
+	--color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+	--color-sidebar-border: var(--sidebar-border);
+	--color-sidebar-ring: var(--sidebar-ring);
+}
+
+/* ── 4a. Semantic defaults (unused — this app has no light mode) ────────── */
+/* Kept as the shadcn baseline / a future light-mode starting point. The app
+ * never reads these directly; .dark below is always active. */
+:root {
+	--radius: 0.625rem;
+	--background: oklch(1 0 0);
+	--foreground: oklch(0.147 0.004 49.25);
+	--card: oklch(1 0 0);
+	--card-foreground: oklch(0.147 0.004 49.25);
+	--popover: oklch(1 0 0);
+	--popover-foreground: oklch(0.147 0.004 49.25);
+	--primary: oklch(0.216 0.006 56.043);
+	--primary-hover: oklch(0.27 0.008 56.043);
+	--primary-foreground: oklch(0.985 0.001 106.423);
+	--secondary: oklch(0.97 0.001 106.424);
+	--secondary-foreground: oklch(0.216 0.006 56.043);
+	--muted: oklch(0.97 0.001 106.424);
+	--muted-foreground: oklch(0.553 0.013 58.071);
+	--muted-foreground-dim: oklch(0.44 0.013 58.071);
+	--accent: oklch(0.97 0.001 106.424);
+	--accent-foreground: oklch(0.216 0.006 56.043);
+	--destructive: oklch(0.577 0.245 27.325);
+	--destructive-foreground: oklch(0.985 0.001 106.423);
+	--border: oklch(0.923 0.003 48.717);
+	--input: oklch(0.923 0.003 48.717);
+	--ring: oklch(0.709 0.01 56.259);
+	--chart-1: oklch(0.646 0.222 41.116);
+	--chart-2: oklch(0.6 0.118 184.704);
+	--chart-3: oklch(0.398 0.07 227.392);
+	--chart-4: oklch(0.828 0.189 84.429);
+	--chart-5: oklch(0.769 0.188 70.08);
+	--sidebar: oklch(0.985 0.001 106.423);
+	--sidebar-foreground: oklch(0.147 0.004 49.25);
+	--sidebar-primary: oklch(0.216 0.006 56.043);
+	--sidebar-primary-foreground: oklch(0.985 0.001 106.423);
+	--sidebar-accent: oklch(0.97 0.001 106.424);
+	--sidebar-accent-foreground: oklch(0.216 0.006 56.043);
+	--sidebar-border: oklch(0.923 0.003 48.717);
+	--sidebar-ring: oklch(0.709 0.01 56.259);
+}
+
+/* ── 4b. .dark — the mapping this app actually uses ──────────────────────── */
+/* apps/ieeeucfcom/src/app/layout.tsx sets <html className="dark">, so this is
+ * active everywhere, all the time — public pages and admin alike. Change this
+ * block when a semantic role (card / input / muted text / …) should point to a
+ * different IEEE brand color. */
+.dark {
+	--background: var(--color-ieee-black);
+	--foreground: var(--color-ieee-white);
+	--card: var(--color-ieee-near-black);
+	--card-foreground: var(--color-ieee-white);
+	--popover: var(--color-ieee-near-black);
+	--popover-foreground: var(--color-ieee-white);
+	--primary: var(--color-ieee-dark-yellow);
+	--primary-hover: var(--color-ieee-bright-yellow);
+	--primary-foreground: var(--color-ieee-black);
+	--secondary: var(--color-ieee-dark-grey);
+	--secondary-foreground: var(--color-ieee-white);
+	--muted: var(--color-ieee-dark-grey);
+	--muted-foreground: var(--color-ieee-light-grey);
+	/* Dimmer than muted-foreground — for hint/disabled/placeholder text that today
+	 * uses gray-500/gray-600, one step further from foreground than the "label" role
+	 * muted-foreground serves. Reuses the existing ieee-grey brand token (a mid-grey
+	 * that already sits between ieee-light-grey and ieee-dark-grey) rather than
+	 * inventing a new raw color. */
+	--muted-foreground-dim: var(--color-ieee-grey);
+	--accent: var(--color-ieee-dark-grey);
+	--accent-foreground: var(--color-ieee-white);
+	--destructive: oklch(0.704 0.191 22.216);
+	--destructive-foreground: var(--color-ieee-white);
+	--border: var(--color-ieee-dark-grey);
+	--input: var(--color-ieee-dark-grey);
+	--ring: var(--color-ieee-bright-yellow);
+	--chart-1: oklch(0.488 0.243 264.376);
+	--chart-2: oklch(0.696 0.17 162.48);
+	--chart-3: oklch(0.769 0.188 70.08);
+	--chart-4: oklch(0.627 0.265 303.9);
+	--chart-5: oklch(0.645 0.246 16.439);
+	--sidebar: var(--color-ieee-near-black);
+	--sidebar-foreground: var(--color-ieee-white);
+	--sidebar-primary: oklch(0.488 0.243 264.376);
+	--sidebar-primary-foreground: oklch(0.985 0.001 106.423);
+	--sidebar-accent: var(--color-ieee-dark-grey);
+	--sidebar-accent-foreground: var(--color-ieee-white);
+	--sidebar-border: var(--color-ieee-dark-grey);
+	--sidebar-ring: var(--color-ieee-bright-yellow);
+}

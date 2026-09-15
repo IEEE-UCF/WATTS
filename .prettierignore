@@ -1,0 +1,34 @@
+# Prettier is currently scoped to the website surface (apps/ieeeucfcom, packages/ui)
+# via the `format` / `format:check` scripts in the root package.json. This ignore file
+# is the safety net for ad-hoc `prettier .` runs. Other workspaces can adopt Prettier
+# incrementally — drop their paths from this list when they do.
+
+# Not yet formatted
+apps/dbot
+apps/jobs
+packages/api
+packages/auth
+packages/calendar
+packages/config
+packages/core
+packages/db
+packages/permissions
+packages/storage
+infra
+
+# Build output / generated / vendored
+**/.next
+**/.turbo
+**/dist
+**/build
+**/out
+**/coverage
+**/node_modules
+pnpm-lock.yaml
+**/drizzle/meta
+**/*.min.*
+
+# Env / logs
+**/.env
+**/.env.*
+**/*.log

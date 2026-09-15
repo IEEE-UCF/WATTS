@@ -22,20 +22,20 @@ export const metadata: Metadata = {
 
 export default function EventsPage() {
 	return (
-		<div className="flex flex-col max-w-screen overflow-hidden">
-			<div className="relative w-full h-[120vh]">
-				<div className="absolute z-4 w-full h-fit inset-0 items-center px-5">
+		<div className="flex max-w-screen flex-col overflow-hidden">
+			<div className="relative h-[120vh] w-full">
+				<div className="absolute inset-0 z-4 h-fit w-full items-center px-5">
 					<Navbar />
 				</div>
 
-				<div className="absolute top-0 left-0 w-full h-full animated-background bg-gradient-to-r   inset-0 items-center px-5 [background:radial-gradient(125%_125%_at_50%_10%,#0c0a09_5%,transparent_100%)] z-2"></div>
+				<div className="animated-background absolute inset-0 top-0 left-0 z-2 h-full w-full items-center bg-gradient-to-r px-5 [background:radial-gradient(125%_125%_at_50%_10%,var(--color-ieee-near-black)_5%,transparent_100%)]"></div>
 
-				<div className="flex flex-row my-30 p-40 px-10 md:px-20 lg:px-40 justify-center lg:justify-end absolute z-3 w-screen">
-					<div className="flex flex-col items-center lg:items-end justify-center lg:justify-end self-end text-center lg:text-right gap-y-5 float">
-						<div className="font-[heading-font] text-[var(--ieee-bright-yellow)] text-5xl sm:text-6xl">
+				<div className="absolute z-3 my-30 flex w-screen flex-row justify-center p-40 px-10 md:px-20 lg:justify-end lg:px-40">
+					<div className="float flex flex-col items-center justify-center gap-y-5 self-end text-center lg:items-end lg:justify-end lg:text-right">
+						<div className="font-heading text-5xl text-ieee-bright-yellow sm:text-6xl">
 							EVENTS
 						</div>
-						<div className="font-[body-font] text-white text-xl lg:text-2xl w-3/4">
+						<div className="w-3/4 font-body text-xl text-white lg:text-2xl">
 							From technical workshops to career-building sessions to social
 							gatherings to community service opportunities, there is unlimited
 							opportunity to expand networks and grow skills in IEEE @ UCF.
@@ -43,9 +43,9 @@ export default function EventsPage() {
 					</div>
 				</div>
 
-				<div className="bg-black h-full w-full">
+				<div className="h-full w-full bg-black">
 					<Image
-						className="absolute h-full w-full object-cover z-0 opacity-70"
+						className="absolute z-0 h-full w-full object-cover opacity-70"
 						src="/gbms/gbmgif.gif"
 						alt="Events Photo"
 						width={2000}
@@ -54,17 +54,17 @@ export default function EventsPage() {
 				</div>
 			</div>
 
-			<div className="relative -translate-y-20 w-full overflow-hidden leading-none">
+			<div className="relative w-full -translate-y-20 overflow-hidden leading-none">
 				<svg
 					xmlns="http://www.w3.org/2000/svg"
 					viewBox="0 0 1200 120"
 					preserveAspectRatio="none"
-					className="w-full h-20"
+					className="h-20 w-full"
 				>
 					<defs>
 						<radialGradient id="bg-gradient3" cx="40%" cy="120%" r="125%">
-							<stop offset="50%" stopColor="#000000" />
-							<stop offset="100%" stopColor="#000000" />
+							<stop offset="50%" style={{ stopColor: 'var(--color-ieee-black)' }} />
+							<stop offset="100%" style={{ stopColor: 'var(--color-ieee-black)' }} />
 						</radialGradient>
 					</defs>
 
@@ -77,7 +77,7 @@ export default function EventsPage() {
 			</div>
 			<div className="-translate-y-20">
 				<EventSidebar />
-				<div className="p-10 bg-black"></div>
+				<div className="bg-black p-10"></div>
 			</div>
 
 			<div className="-mt-20">

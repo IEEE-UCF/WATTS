@@ -1,6 +1,6 @@
-import { and, asc, eq } from 'drizzle-orm';
+import { and, asc, eq, gte } from 'drizzle-orm';
 import type { WattsDb } from '@watts/db';
-import { Events, EventAttendees, EventLabels, Members } from '@watts/db/schema';
+import { Events, EventAttendees, EventLabels, Members, RoomReservations } from '@watts/db/schema';
 import { DomainError } from './errors';
 
 export interface CreateEventInput {
@@ -36,30 +36,96 @@ export type UpdateEventInput = Partial<CreateEventInput>;
 /**
  * Every visible active event, oldest start first — the public/dashboard feed.
  * Excludes `hidden` events (holidays, breaks, anything staff flagged out).
+ * Left-joined with its room reservation (if any) — same shape as listAllEvents,
+ * so both feed the same API `toDisplay`/`withLabels` pipeline.
  */
 export async function listActiveEvents(db: WattsDb) {
-	return db
-		.select()
+	const rows = await db
+		.select({ event: Events, roomReservation: RoomReservations })
 		.from(Events)
+		.leftJoin(RoomReservations, eq(RoomReservations.eventId, Events.id))
 		.where(and(eq(Events.active, true), eq(Events.hidden, false)))
 		.orderBy(asc(Events.startTime));
+	return rows.map(({ event, roomReservation }) => ({ ...event, roomReservation }));
 }
 
-/** Every event including inactive/soft-deleted — for the staff management grid. */
+/** Every event including inactive/soft-deleted — for the staff management grid.
+ * Left-joined with its room reservation (if any) so the admin edit form can show
+ * the real needsRoomReservation / manuallyGivenRoom state instead of guessing. */
 export async function listAllEvents(db: WattsDb) {
-	return db.select().from(Events).orderBy(asc(Events.startTime));
+	const rows = await db
+		.select({ event: Events, roomReservation: RoomReservations })
+		.from(Events)
+		.leftJoin(RoomReservations, eq(RoomReservations.eventId, Events.id))
+		.orderBy(asc(Events.startTime));
+	return rows.map(({ event, roomReservation }) => ({ ...event, roomReservation }));
+}
+
+/**
+ * How many members checked into each event today, for the Staff Hub's Event Ops panel.
+ * "Today" is a UTC day boundary — close enough for a staff convenience count, not worth
+ * pulling in a timezone library here for the few hours of skew around midnight Eastern.
+ */
+export async function getTodaysCheckIns(db: WattsDb) {
+	const todayStart = new Date();
+	todayStart.setUTCHours(0, 0, 0, 0);
+
+	const rows = await db
+		.select({ eventId: Events.id, eventTitle: Events.title, timestamp: EventAttendees.timestamp })
+		.from(EventAttendees)
+		.innerJoin(Events, eq(Events.id, EventAttendees.eventId))
+		.where(gte(EventAttendees.timestamp, todayStart));
+
+	const byEvent = new Map<string, { eventId: string; eventTitle: string; count: number }>();
+	for (const row of rows) {
+		const existing = byEvent.get(row.eventId);
+		if (existing) existing.count += 1;
+		else byEvent.set(row.eventId, { eventId: row.eventId, eventTitle: row.eventTitle, count: 1 });
+	}
+	return [...byEvent.values()];
+}
+
+/**
+ * Upcoming, active events whose room reservation isn't confirmed yet — the web-side read of
+ * the same alert the bot's discordEventSync.ts already posts to Discord.
+ * `isNewSinceAnnounced` mirrors that reconciler's own comparison (status !== lastAnnouncedStatus)
+ * so staff can tell "still waiting" apart from "changed since anyone last saw it."
+ */
+export async function getRoomReservationAlerts(db: WattsDb) {
+	const events = await listActiveEvents(db);
+	const now = Date.now();
+	return events
+		.filter((e) => new Date(e.startTime).getTime() >= now)
+		.filter((e) => e.roomReservation && e.roomReservation.status !== 'confirmed')
+		.map((e) => ({
+			eventId: e.id,
+			eventTitle: e.title,
+			startTime: e.startTime,
+			status: e.roomReservation!.status,
+			isNewSinceAnnounced: e.roomReservation!.status !== e.roomReservation!.lastAnnouncedStatus,
+		}));
 }
 
 export async function getEventById(db: WattsDb, id: string) {
-	const [event] = await db.select().from(Events).where(eq(Events.id, id)).limit(1);
-	if (!event) throw new DomainError('NOT_FOUND', 'Event not found');
-	return event;
+	const [row] = await db
+		.select({ event: Events, roomReservation: RoomReservations })
+		.from(Events)
+		.leftJoin(RoomReservations, eq(RoomReservations.eventId, Events.id))
+		.where(eq(Events.id, id))
+		.limit(1);
+	if (!row) throw new DomainError('NOT_FOUND', 'Event not found');
+	return { ...row.event, roomReservation: row.roomReservation };
 }
 
 export async function getEventBySlug(db: WattsDb, slug: string) {
-	const [event] = await db.select().from(Events).where(eq(Events.slug, slug)).limit(1);
-	if (!event) throw new DomainError('NOT_FOUND', 'Event not found');
-	return event;
+	const [row] = await db
+		.select({ event: Events, roomReservation: RoomReservations })
+		.from(Events)
+		.leftJoin(RoomReservations, eq(RoomReservations.eventId, Events.id))
+		.where(eq(Events.slug, slug))
+		.limit(1);
+	if (!row) throw new DomainError('NOT_FOUND', 'Event not found');
+	return { ...row.event, roomReservation: row.roomReservation };
 }
 
 export async function createEvent(

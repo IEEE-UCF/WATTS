@@ -23,6 +23,17 @@ file is about how changes get from your machine into `main`.
   Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>
   ```
 
+## UI components
+
+- A new reusable component under `apps/ieeeucfcom/src/components/` (or a new
+  `@watts/ui` primitive) ships with a gallery entry: metadata in
+  `apps/ieeeucfcom/src/dev/registry/meta.ts` and a preview in `renders.tsx`. Run
+  `pnpm dev` and check `/dev` (admin-gated; dev-only). Keep the two files in sync.
+- `pnpm gen:component <name> --shared|--app` scaffolds the file and both registry
+  entries for you. See
+  [`apps/ieeeucfcom/docs/styling/ADDING-COMPONENTS.md`](apps/ieeeucfcom/docs/styling/ADDING-COMPONENTS.md)
+  for where a new component should live and the duplication patterns to avoid.
+
 ## Pull requests
 
 - One logical change per PR. Split unrelated cleanup into its own PR.

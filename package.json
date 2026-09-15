@@ -19,6 +19,8 @@
     "lint": "turbo run lint",
     "typecheck": "turbo run typecheck",
     "build": "turbo run build",
+    "format": "prettier --write \"apps/ieeeucfcom/src/**/*.{ts,tsx,css}\" \"apps/ieeeucfcom/next.config.ts\" \"packages/ui/src/**/*.{ts,tsx}\"",
+    "format:check": "prettier --check \"apps/ieeeucfcom/src/**/*.{ts,tsx,css}\" \"apps/ieeeucfcom/next.config.ts\" \"packages/ui/src/**/*.{ts,tsx}\"",
     "e2e": "pnpm --filter @watts/e2e test",
     "bootstrap": "node infra/scripts/bootstrap.mjs",
     "dev": "pnpm --filter @watts/web dev",
@@ -31,9 +33,13 @@
     "db:studio": "pnpm --filter @watts/db db:studio",
     "db:seed": "pnpm --filter @watts/seed seed",
     "db:reset": "pnpm infra:reset && pnpm infra:up && pnpm db:migrate && pnpm db:seed",
-    "seed:resumes": "node scripts/ieeeucfcom/seed-test-resumes.mjs"
+    "seed:resumes": "node scripts/ieeeucfcom/seed-test-resumes.mjs",
+    "gen:component": "node scripts/gen-component.mjs"
   },
   "devDependencies": {
+    "@watts/eslint-config": "workspace:*",
+    "prettier": "^3.9.6",
+    "prettier-plugin-tailwindcss": "^0.8.1",
     "turbo": "^2.10.12",
     "typescript": "^5.9.3"
   }

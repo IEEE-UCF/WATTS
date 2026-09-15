@@ -57,7 +57,7 @@ export function ResumeUpload() {
 
 	return (
 		<div className="mb-6">
-			<h2 className="text-2xl font-[heading-font] mb-4 border-b border-white/20 pb-2">RESUME</h2>
+			<h2 className="mb-4 border-b border-white/20 pb-2 font-heading text-2xl">RESUME</h2>
 
 			{hasResume ? (
 				<div className="flex flex-wrap items-center gap-3 text-white">
@@ -65,16 +65,18 @@ export function ResumeUpload() {
 						href={profile?.resumeURL ?? '#'}
 						target="_blank"
 						rel="noreferrer"
-						className="underline text-[var(--ieee-dark-yellow)]"
+						className="text-ieee-dark-yellow underline"
 					>
 						{profile?.resumeFileName ?? 'resume.pdf'}
 					</a>
-					{uploadedAt && <span className="text-sm text-white/60">uploaded {uploadedAt}</span>}
+					{uploadedAt && (
+						<span className="text-sm text-white/60">uploaded {uploadedAt}</span>
+					)}
 					<button
 						type="button"
 						onClick={() => inputRef.current?.click()}
 						disabled={busy}
-						className="rounded bg-[var(--ieee-dark-yellow)] px-3 py-1 text-sm text-black disabled:opacity-50"
+						className="rounded bg-ieee-dark-yellow px-3 py-1 text-sm text-black disabled:opacity-50"
 					>
 						{busy ? 'Working…' : 'Replace'}
 					</button>
@@ -82,7 +84,7 @@ export function ResumeUpload() {
 						type="button"
 						onClick={() => remove.mutate()}
 						disabled={busy || remove.isPending}
-						className="rounded bg-[var(--ieee-dark-grey)] px-3 py-1 text-sm text-white disabled:opacity-50"
+						className="rounded bg-ieee-dark-grey px-3 py-1 text-sm text-white disabled:opacity-50"
 					>
 						Remove
 					</button>
@@ -93,7 +95,7 @@ export function ResumeUpload() {
 						type="button"
 						onClick={() => inputRef.current?.click()}
 						disabled={busy}
-						className="rounded bg-[var(--ieee-dark-yellow)] px-4 py-2 text-black disabled:opacity-50"
+						className="rounded bg-ieee-dark-yellow px-4 py-2 text-black disabled:opacity-50"
 					>
 						{busy ? 'Uploading…' : 'Upload résumé (PDF)'}
 					</button>

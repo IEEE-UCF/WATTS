@@ -19,7 +19,6 @@ interface Officer {
 	bio?: string;
 }
 
-
 const OFFICERS: Officer[] = [
 	// Executive Board
 	{
@@ -30,7 +29,7 @@ const OFFICERS: Officer[] = [
 		year: '3rd Year',
 		linkedin: 'https://www.linkedin.com/in/matthew-giannacco/',
 		photo: '/officers/matthew.jpg',
-		bio: 'Matthew is a junior in Electrical Engineering at UCF with a strong focus on power electronics and analog systems. His interest in teaching emerged through his work as an Undergraduate Learning Assistant for Linear Circuits, where he developed a passion for service to others. This carried into his involvement with UCF\'s IEEE student branch, where he progressed from community service committee member to chair, and now serves as student branch president. In the coming year, he will be conducting research in Power Electronics and Radiation Effects. Outside the lab, Matthew spends his time hiking, cooking, working on cars, and staying active.',
+		bio: "Matthew is a junior in Electrical Engineering at UCF with a strong focus on power electronics and analog systems. His interest in teaching emerged through his work as an Undergraduate Learning Assistant for Linear Circuits, where he developed a passion for service to others. This carried into his involvement with UCF's IEEE student branch, where he progressed from community service committee member to chair, and now serves as student branch president. In the coming year, he will be conducting research in Power Electronics and Radiation Effects. Outside the lab, Matthew spends his time hiking, cooking, working on cars, and staying active.",
 	},
 	{
 		name: 'Jonathan David',
@@ -40,7 +39,7 @@ const OFFICERS: Officer[] = [
 		year: '3rd Year',
 		linkedin: 'https://www.linkedin.com/in/jonathanmichaeldavid99/',
 		photo: '/officers/jonathan.jpg',
-		bio: 'Junior studying Electrical Engineering. I\'ve been involved with IEEE UCF since 2025, starting as a committee member on the Professional Development team before serving as Pro Dev Chair in 2025–2026, where I led event planning, workshop development, and member outreach. Now serving as Vice President, I\'m focused on helping make this one of the chapter\'s strongest years.',
+		bio: "Junior studying Electrical Engineering. I've been involved with IEEE UCF since 2025, starting as a committee member on the Professional Development team before serving as Pro Dev Chair in 2025–2026, where I led event planning, workshop development, and member outreach. Now serving as Vice President, I'm focused on helping make this one of the chapter's strongest years.",
 	},
 	{
 		name: 'Kevin Maa',
@@ -98,7 +97,7 @@ const OFFICERS: Officer[] = [
 		year: '4th Year',
 		linkedin: 'https://www.linkedin.com/in/aldempido',
 		photo: '/officers/aldem.jpeg',
-		bio: 'EE Senior. I love making things, building and programming 10 different projects from hexapod robots to arcade machines. I\'ve interned at UCF STTC as an Embedded Engineer and Lockheed as a Systems Engineer. I\'m looking for full-time offers in either Hardware or Embedded after I graduate May 27.',
+		bio: "EE Senior. I love making things, building and programming 10 different projects from hexapod robots to arcade machines. I've interned at UCF STTC as an Embedded Engineer and Lockheed as a Systems Engineer. I'm looking for full-time offers in either Hardware or Embedded after I graduate May 27.",
 	},
 	{
 		name: 'Logan Martin',
@@ -208,17 +207,14 @@ export default function AboutOfficers() {
 	const renderOfficerCard = (officer: Officer, index: number) => (
 		<div
 			key={index}
-			className="w-70 h-110 m-2 relative rounded-sm border-1 border-white overflow-hidden shadow-lg transition-transform hover:scale-102"
+			className="relative m-2 h-110 w-70 overflow-hidden rounded-sm border border-white shadow-lg transition-transform hover:scale-102"
 		>
-			<OfficerImage
-				src={officer.photo}
-				alt={officer.name}
-			/>
-			<div className="absolute inset-0 hover:bg-black/0 transition-colors bg-black/40 flex flex-col justify-end p-4 text-white">
-				<span className="text-xl font-[heading-font]">{officer.name.toUpperCase()}</span>
-				<span className="text-md font-[heading-font]">{officer.role.toUpperCase()}</span>
-				<span className="text-sm font-[body-font]">{officer.year}</span>
-				<span className="text-sm font-[body-font]">{officer.major}</span>
+			<OfficerImage src={officer.photo} alt={officer.name} />
+			<div className="absolute inset-0 flex flex-col justify-end bg-black/40 p-4 text-white transition-colors hover:bg-black/0">
+				<span className="font-heading text-xl">{officer.name.toUpperCase()}</span>
+				<span className="font-heading text-base">{officer.role.toUpperCase()}</span>
+				<span className="font-body text-sm">{officer.year}</span>
+				<span className="font-body text-sm">{officer.major}</span>
 				<Link href={officer.linkedin} className="mt-2 inline-block">
 					<FaLinkedin size={25} color="white" />
 				</Link>
@@ -229,7 +225,7 @@ export default function AboutOfficers() {
 	const renderRows = (officersList: Officer[]) => {
 		const rows = groupOfficers(officersList);
 		return rows.map((row, index) => (
-			<div key={index} className="officer-row flex flex-row flex-wrap justify-center w-full">
+			<div key={index} className="officer-row flex w-full flex-row flex-wrap justify-center">
 				{row.map(renderOfficerCard)}
 			</div>
 		));
@@ -239,21 +235,21 @@ export default function AboutOfficers() {
 	const chairs = OFFICERS.filter((o) => o.type === 'Chair');
 
 	return (
-		<div className="flex flex-col items-center justify-center p-10 w-full gap-10">
+		<div className="flex w-full flex-col items-center justify-center gap-10 p-10">
 			<div>
-				<div className="text-center text-white font-[heading-font] text-3xl my-5">
+				<div className="my-5 text-center font-heading text-3xl text-white md:text-4xl">
 					EXECUTIVE BOARD
 				</div>
-				<div ref={executiveRef} className="flex flex-col w-full gap-4">
+				<div ref={executiveRef} className="flex w-full flex-col gap-4">
 					{renderRows(executives)}
 				</div>
 			</div>
 
 			<div>
-				<div className="text-center text-white font-[heading-font] text-3xl my-5">
+				<div className="my-5 text-center font-heading text-3xl text-white md:text-4xl">
 					CHAIRS
 				</div>
-				<div ref={chairRef} className="flex flex-col w-full gap-4">
+				<div ref={chairRef} className="flex w-full flex-col gap-4">
 					{renderRows(chairs)}
 				</div>
 			</div>

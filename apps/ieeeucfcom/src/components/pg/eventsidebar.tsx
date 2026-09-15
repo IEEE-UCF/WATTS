@@ -17,8 +17,18 @@ interface Event {
 
 export default function EventSidebar() {
 	const monthNames = [
-		'January', 'February', 'March', 'April', 'May', 'June',
-		'July', 'August', 'September', 'October', 'November', 'December',
+		'January',
+		'February',
+		'March',
+		'April',
+		'May',
+		'June',
+		'July',
+		'August',
+		'September',
+		'October',
+		'November',
+		'December',
 	];
 	const currentMonthName = monthNames[new Date().getMonth()];
 	const [currentMonth] = useState(currentMonthName);
@@ -75,50 +85,51 @@ export default function EventSidebar() {
 
 	return (
 		<div className="">
-			<div className="bg-black w-full h-fit flex flex-col px-10 items-center">
-				<div className="p-20 bg-black items-center lg:items-start text-center lg:text-left lg:place-self-start place-self-center">
-					<div className="font-[heading-font] text-white text-4xl lg:text-5xl lg:text-left text-center py-3">
+			<div className="flex h-fit w-full flex-col items-center bg-black px-10">
+				<div className="items-center place-self-center bg-black p-20 text-center lg:items-start lg:place-self-start lg:text-left">
+					<div className="py-3 text-center font-heading text-3xl text-white md:text-4xl lg:text-left">
 						UPCOMING EVENTS
 					</div>
-					<div className="font-[body-font] text-white text-xl lg:text-2xl lg:text-left text-center">
+					<div className="text-center font-body text-xl text-white lg:text-left lg:text-2xl">
 						Experience IEEE @ UCF&rsquo;s exciting lineup of events this
-						<span className="font-[subheading-font] text-[var(--ieee-bright-yellow)]">
-							{' '}{currentMonth}{' '}
+						<span className="font-subheading text-ieee-bright-yellow">
+							{' '}
+							{currentMonth}{' '}
 						</span>
 						and beyond. Click on each event to learn more.
 					</div>
 				</div>
-				<div className="flex flex-row h-fit w-full justify-between items-start">
+				<div className="flex h-fit w-full flex-row items-start justify-between">
 					{/* Main event display */}
 					<div
 						ref={featuredRef}
-						className={`lg:block w-3/4 ${showEventOnMobile ? 'hidden' : 'hidden lg:block'}`}
+						className={`w-3/4 lg:block ${showEventOnMobile ? 'hidden' : 'hidden lg:block'}`}
 					>
 						{currentEvent ? (
-							<div className="relative group h-fit">
-								<div className="absolute -inset-1 bg-gradient-to-r from-[var(--ieee-bright-yellow)] to-[var(--ieee-bright-yellow)] rounded-sm blur opacity-50"></div>
-								<div className="relative h-full bg-[#0c0a09] ring-1 ring-gray-900/5 rounded-sm leading-none flex items-top justify-start space-x-6">
-									<div className="flex flex-row h-full rounded-sm p-10 gap-x-10 w-[70vw] xl:w-full">
+							<div className="group relative h-fit">
+								<div className="absolute -inset-1 rounded-sm bg-gradient-to-r from-ieee-bright-yellow to-ieee-bright-yellow opacity-50 blur"></div>
+								<div className="relative flex h-full items-start justify-start space-x-6 rounded-sm bg-ieee-near-black leading-none ring-1 ring-border/5">
+									<div className="flex h-full w-[70vw] flex-row gap-x-10 rounded-sm p-10 xl:w-full">
 										<Image
-											className="object-cover rounded-sm w-[40vh] sm:w-[50vh] h-100vh"
+											className="h-screen w-[40vh] rounded-sm object-cover sm:w-[50vh]"
 											src={currentEvent.eventFlyer ?? '/larry.png'}
 											alt="Event Flyer"
 											width={2000}
 											height={2000}
 										/>
 										<div className="m-5 flex flex-col gap-y-3">
-											<div className="font-bold text-3xl text-white">
+											<div className="text-3xl font-bold text-white">
 												{currentEvent.eventName}
 											</div>
 											<div className="text-xl text-white">
 												{currentEvent.eventDesc}
 											</div>
 											<div className="flex flex-col justify-between">
-												<div className="flex text-lg flex-row gap-x-2 text-white">
+												<div className="flex flex-row gap-x-2 text-lg text-white">
 													<Calendar1 />
 													{currentEvent.eventDate}
 												</div>
-												<div className="flex text-lg flex-row gap-x-2 text-white">
+												<div className="flex flex-row gap-x-2 text-lg text-white">
 													<MapPin />
 													{currentEvent.eventAddress}
 												</div>
@@ -128,7 +139,7 @@ export default function EventSidebar() {
 								</div>
 							</div>
 						) : (
-							<div className="flex flex-col items-center justify-center h-64">
+							<div className="flex h-64 flex-col items-center justify-center">
 								<span className="text-white">No event selected.</span>
 							</div>
 						)}
@@ -137,36 +148,36 @@ export default function EventSidebar() {
 					{/* Mobile event detail */}
 					{showEventOnMobile && currentEvent && (
 						<div className="w-full lg:hidden">
-							<div className="relative group h-fit">
+							<div className="group relative h-fit">
 								<Button
 									onClick={handleBackToSidebar}
-									className="hover:scale-150 text-white cursor-pointer bg-transparent transition-transform hover:bg-transparent absolute top-4 right-4 z-20"
+									className="absolute top-4 right-4 z-20 cursor-pointer bg-transparent text-white transition-transform hover:scale-150 hover:bg-transparent"
 								>
 									<X size={24} />
 								</Button>
-								<div className="absolute -inset-1 bg-gradient-to-r from-[var(--ieee-bright-yellow)] to-[var(--ieee-bright-yellow)] rounded-sm blur opacity-50"></div>
-								<div className="relative h-full bg-[#0c0a09] ring-1 ring-gray-900/5 rounded-sm leading-none flex items-top justify-start space-x-6">
-									<div className="flex flex-col lg:flex-row h-full rounded-sm p-6 lg:p-10 gap-6 lg:gap-x-10">
+								<div className="absolute -inset-1 rounded-sm bg-gradient-to-r from-ieee-bright-yellow to-ieee-bright-yellow opacity-50 blur"></div>
+								<div className="relative flex h-full items-start justify-start space-x-6 rounded-sm bg-ieee-near-black leading-none ring-1 ring-border/5">
+									<div className="flex h-full flex-col gap-6 rounded-sm p-6 lg:flex-row lg:gap-x-10 lg:p-10">
 										<Image
-											className="object-cover rounded-sm w-full lg:w-[50vh] h-fit lg:h-100vh mt-15"
+											className="mt-15 h-fit w-full rounded-sm object-cover lg:h-screen lg:w-[50vh]"
 											src={currentEvent.eventFlyer ?? '/larry.png'}
 											alt="Event Flyer"
 											width={2000}
 											height={2000}
 										/>
 										<div className="flex flex-col gap-y-3">
-											<div className="font-bold text-2xl lg:text-3xl text-white">
+											<div className="text-2xl font-bold text-white lg:text-3xl">
 												{currentEvent.eventName}
 											</div>
-											<div className="text-lg lg:text-xl text-white">
+											<div className="text-lg text-white lg:text-xl">
 												{currentEvent.eventDesc}
 											</div>
 											<div className="flex flex-col justify-between gap-y-2">
-												<div className="flex text-base lg:text-lg flex-row gap-x-2 text-white">
+												<div className="flex flex-row gap-x-2 text-base text-white lg:text-lg">
 													<Calendar1 />
 													{currentEvent.eventDate}
 												</div>
-												<div className="flex text-base lg:text-lg flex-row gap-x-2 text-white">
+												<div className="flex flex-row gap-x-2 text-base text-white lg:text-lg">
 													<MapPin />
 													{currentEvent.eventAddress}
 												</div>
@@ -181,37 +192,54 @@ export default function EventSidebar() {
 					{/* Sidebar list — height locked to featured panel, scrollable */}
 					<div
 						className={`flex flex-col overflow-y-auto p-6 ${showEventOnMobile ? 'hidden lg:flex' : 'w-full lg:w-auto'}`}
-						style={featuredHeight ? { height: `${featuredHeight}px` } : { height: 'auto' }}
+						style={
+							featuredHeight ? { height: `${featuredHeight}px` } : { height: 'auto' }
+						}
 					>
 						{eventData.map((item, idx) => (
 							<div
-								className="hover:scale-102 transition hover:opacity-80 hover:z-100"
+								className="transition hover:z-100 hover:scale-102 hover:opacity-80"
 								key={`${idx}-${item.eventName}`}
 							>
 								<div
-									className="group relative w-full overflow-hidden rounded-sm p-[3px] bg-transparent cursor-pointer transition-transform hover:scale-102"
+									className="group relative w-full cursor-pointer overflow-hidden rounded-sm bg-transparent p-[3px] transition-transform hover:scale-102"
 									onMouseEnter={(e) => {
-										const el = e.currentTarget.querySelector<HTMLDivElement>('.animated-border');
+										const el =
+											e.currentTarget.querySelector<HTMLDivElement>(
+												'.animated-border',
+											);
 										if (el) el.style.animationPlayState = 'running';
 									}}
 									onMouseLeave={(e) => {
-										const el = e.currentTarget.querySelector<HTMLDivElement>('.animated-border');
+										const el =
+											e.currentTarget.querySelector<HTMLDivElement>(
+												'.animated-border',
+											);
 										if (el) el.style.animationPlayState = 'paused';
 									}}
 								>
 									<div
-										className="animated-border pointer-events-none absolute inset-0 z-0 rounded-sm bg-[conic-gradient(var(--ieee-bright-yellow)_20deg,transparent_120deg)] opacity-0 scale-95 transition-all duration-300 group-hover:opacity-100 group-hover:scale-100 animate-spin"
-										style={{ animationPlayState: 'paused', animationDuration: '6s' }}
+										className="animated-border pointer-events-none absolute inset-0 z-0 scale-95 animate-spin rounded-sm bg-[conic-gradient(var(--ieee-bright-yellow)_20deg,transparent_120deg)] opacity-0 transition-all duration-300 group-hover:scale-100 group-hover:opacity-100"
+										style={{
+											animationPlayState: 'paused',
+											animationDuration: '6s',
+										}}
 									/>
 									<button
 										onClick={() => handleEventSelect(item)}
-										className="relative z-10 flex flex-row cursor-pointer bg-black rounded-sm w-full text-white hover:text-[var(--ieee-bright-yellow)]"
+										className="relative z-10 flex w-full cursor-pointer flex-row rounded-sm bg-black text-white hover:text-ieee-bright-yellow"
 									>
 										<div className="m-5 flex flex-col justify-center">
 											<div className="flex flex-col justify-between">
-												<div className="text-left font-bold text-lg">{item.eventName}</div>
-												<div className="flex text-left gap-x-2 text-md">{item.eventDate}</div>
-												<div className="flex text-left text-md">{item.eventAddress}</div>
+												<div className="text-left text-lg font-bold">
+													{item.eventName}
+												</div>
+												<div className="flex gap-x-2 text-left text-base">
+													{item.eventDate}
+												</div>
+												<div className="flex text-left text-base">
+													{item.eventAddress}
+												</div>
 											</div>
 										</div>
 									</button>

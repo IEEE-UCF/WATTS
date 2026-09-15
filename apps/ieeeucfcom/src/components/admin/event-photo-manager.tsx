@@ -3,6 +3,7 @@
 import { useMemo, useRef, useState } from 'react';
 import { trpc } from '@/lib/trpc/client';
 import { uploadEventPhoto } from '@watts/storage/client';
+import { Card } from '@watts/ui/card';
 
 interface UploadRow {
 	name: string;
@@ -60,7 +61,11 @@ export function EventPhotoManager() {
 				setRows((r) =>
 					r.map((row, i) =>
 						i === idx
-							? { ...row, status: 'error', message: err instanceof Error ? err.message : 'failed' }
+							? {
+									...row,
+									status: 'error',
+									message: err instanceof Error ? err.message : 'failed',
+								}
 							: row,
 					),
 				);
@@ -71,7 +76,7 @@ export function EventPhotoManager() {
 	}
 
 	return (
-		<div className="space-y-6 text-gray-100">
+		<div className="space-y-6 text-foreground">
 			<div>
 				<label className="mb-1 block text-sm font-medium">Event</label>
 				<select
@@ -80,7 +85,7 @@ export function EventPhotoManager() {
 						setEventId(e.target.value);
 						setRows([]);
 					}}
-					className="w-full rounded-md border border-gray-700 bg-gray-900 px-3 py-2 text-sm"
+					className="w-full rounded-md border border-input bg-card px-3 py-2 text-sm"
 				>
 					<option value="">Select an event…</option>
 					{sortedEvents.map((ev) => (
@@ -100,8 +105,9 @@ export function EventPhotoManager() {
 				>
 					{busy ? 'Uploading…' : 'Add photos'}
 				</button>
-				<span className="ml-3 text-xs text-gray-400">
-					JPEG / PNG / WebP. Resized to 1600px and stripped of location data before upload.
+				<span className="ml-3 text-xs text-muted-foreground">
+					JPEG / PNG / WebP. Resized to 1600px and stripped of location data before
+					upload.
 				</span>
 				<input
 					ref={fileRef}
@@ -123,7 +129,7 @@ export function EventPhotoManager() {
 									? 'text-red-400'
 									: r.status === 'done'
 										? 'text-green-400'
-										: 'text-gray-400'
+										: 'text-muted-foreground'
 							}
 						>
 							{r.name} — {r.status}
@@ -135,12 +141,15 @@ export function EventPhotoManager() {
 
 			{eventId && (
 				<div>
-					<h3 className="mb-3 text-sm font-semibold text-gray-300">
+					<h3 className="mb-3 text-sm font-semibold text-muted-foreground">
 						{photos?.length ?? 0} photo(s)
 					</h3>
 					<div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
 						{(photos ?? []).map((p) => (
-							<div key={p.id} className="rounded-lg border border-gray-800 bg-gray-900/60 p-2">
+							<Card
+								key={p.id}
+								className="gap-0 rounded-lg border-border bg-card/60 p-2"
+							>
 								{/* eslint-disable-next-line @next/next/no-img-element */}
 								<img
 									src={p.webUrl}
@@ -152,10 +161,13 @@ export function EventPhotoManager() {
 									placeholder="Caption"
 									onBlur={(e) => {
 										if (e.target.value !== (p.caption ?? '')) {
-											updatePhoto.mutate({ id: p.id, caption: e.target.value || null });
+											updatePhoto.mutate({
+												id: p.id,
+												caption: e.target.value || null,
+											});
 										}
 									}}
-									className="mb-1 w-full rounded border border-gray-700 bg-gray-800 px-2 py-1 text-xs"
+									className="mb-1 w-full rounded border border-input bg-secondary px-2 py-1 text-xs"
 								/>
 								<input
 									defaultValue={(p.tags ?? []).join(', ')}
@@ -167,19 +179,20 @@ export function EventPhotoManager() {
 											.filter(Boolean);
 										updatePhoto.mutate({ id: p.id, tags });
 									}}
-									className="mb-1 w-full rounded border border-gray-700 bg-gray-800 px-2 py-1 text-xs"
+									className="mb-1 w-full rounded border border-input bg-secondary px-2 py-1 text-xs"
 								/>
 								<div className="mb-1 flex items-center gap-2 text-xs">
-									<span className="text-gray-500">visibility</span>
+									<span className="text-muted-foreground-dim">visibility</span>
 									<select
 										defaultValue={p.visibility}
 										onChange={(e) =>
 											updatePhoto.mutate({
 												id: p.id,
-												visibility: e.target.value as 'public' | 'members' | 'private',
+												visibility: e.target.value as
+													'public' | 'members' | 'private',
 											})
 										}
-										className="flex-1 rounded border border-gray-700 bg-gray-800 px-1 py-0.5"
+										className="flex-1 rounded border border-input bg-secondary px-1 py-0.5"
 									>
 										<option value="private">private (officers only)</option>
 										<option value="members">members</option>
@@ -192,7 +205,10 @@ export function EventPhotoManager() {
 											type="checkbox"
 											defaultChecked={p.featured}
 											onChange={(e) =>
-												updatePhoto.mutate({ id: p.id, featured: e.target.checked })
+												updatePhoto.mutate({
+													id: p.id,
+													featured: e.target.checked,
+												})
 											}
 										/>
 										featured
@@ -200,14 +216,15 @@ export function EventPhotoManager() {
 									<button
 										type="button"
 										onClick={() => {
-											if (confirm('Delete this photo?')) deletePhoto.mutate({ id: p.id });
+											if (confirm('Delete this photo?'))
+												deletePhoto.mutate({ id: p.id });
 										}}
 										className="text-red-400 hover:underline"
 									>
 										delete
 									</button>
 								</div>
-							</div>
+							</Card>
 						))}
 					</div>
 				</div>

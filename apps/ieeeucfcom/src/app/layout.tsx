@@ -2,9 +2,10 @@ import type { Metadata } from 'next';
 import './globals.css';
 import { Providers } from './providers';
 
-// edit the seo...
-// pls dont forget um
+const siteUrl = process.env.NEXTAUTH_URL ?? 'https://ieeeucf.com';
+
 export const metadata: Metadata = {
+	metadataBase: new URL(siteUrl),
 	title: 'IEEE UCF Student Chapter',
 	description:
 		'IEEE UCF is the largest electrical engineering organization at UCF. We host EE and CS projects, workshops, and professional events.',
@@ -19,7 +20,7 @@ export default function RootLayout({
 	children: React.ReactNode;
 }>) {
 	return (
-		<html lang="en">
+		<html lang="en" className="dark">
 			<body>
 				<Providers>{children}</Providers>
 			</body>

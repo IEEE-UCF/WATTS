@@ -64,6 +64,13 @@
       "when": 1789173817118,
       "tag": "0008_room-reservation-updates",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1789248355109,
+      "tag": "0009_mature_colossus",
+      "breakpoints": true
     }
   ]
 }

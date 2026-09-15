@@ -49,6 +49,11 @@ want preview deploys to be functional):
 Optional S3 vars (`S3_*`) are only for `STORAGE_PROVIDER=local` / self-hosted MinIO —
 leave unset on Vercel.
 
+`NEXT_PUBLIC_ENABLE_DEV_GALLERY` — leave **unset** in production. The `/dev`
+component gallery 404s on any `NODE_ENV=production` build unless this is `1`. Set it
+to `1` only on a throwaway preview deploy if you need to look at the gallery outside
+`pnpm dev`. Declared in `turbo.json` (`build.env`).
+
 The Discord bot (`apps/dbot`, deployed separately — not Vercel) additionally reads
 `DISCORD_EVENT_SYNC_ENABLED` (`true` to mirror "global" events to the guild's
 scheduled events) and `DISCORD_EVENT_SYNC_INTERVAL_MINS` (default `15`). Bot-only —

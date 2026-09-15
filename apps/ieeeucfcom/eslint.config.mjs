@@ -1,4 +1,5 @@
 import watts from '@watts/eslint-config/next';
+import { tailwind } from '@watts/eslint-config/tailwind';
 
 /** @type {import('eslint').Linter.Config[]} */
 export default [
@@ -18,6 +19,7 @@ export default [
 		],
 	},
 	...watts,
+	...tailwind('src/app/globals.css'),
 	{
 		languageOptions: {
 			parserOptions: {

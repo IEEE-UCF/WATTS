@@ -24,24 +24,24 @@ export const metadata: Metadata = {
 
 export default function About() {
 	return (
-		<div className="flex flex-col max-w-screen overflow-hidden">
-			<div className="relative w-full h-[120vh]">
-				<div className="absolute z-4 w-full h-fit inset-0 items-center px-5">
+		<div className="flex max-w-screen flex-col overflow-hidden">
+			<div className="relative h-[120vh] w-full">
+				<div className="absolute inset-0 z-4 h-fit w-full items-center px-5">
 					<Navbar />
 				</div>
 				<AboutHeader />
 			</div>
-			<div className="relative -translate-y-20 w-full overflow-hidden leading-none">
+			<div className="relative w-full -translate-y-20 overflow-hidden leading-none">
 				<svg
 					xmlns="http://www.w3.org/2000/svg"
 					viewBox="0 0 1200 120"
 					preserveAspectRatio="none"
-					className="w-full h-20"
+					className="h-20 w-full"
 				>
 					<defs>
 						<radialGradient id="bg-gradient" cx="40%" cy="120%" r="125%">
-							<stop offset="50%" stopColor="#000000" />
-							<stop offset="100%" stopColor="#000000" />
+							<stop offset="50%" style={{ stopColor: 'var(--color-ieee-black)' }} />
+							<stop offset="100%" style={{ stopColor: 'var(--color-ieee-black)' }} />
 						</radialGradient>
 					</defs>
 
@@ -52,25 +52,31 @@ export default function About() {
 					/>
 				</svg>
 			</div>
-			<div className="flex -translate-y-20  flex-col w-full justify-center gap-x-3 bg-black">
-				<div className="h-auto p-10 sm:p-20 sm:w-10/12 text-white place-self-center">
-					<div className="font-[heading-font] text-[var(--ieee-bright-yellow)] text-4xl">
+			<div className="flex w-full -translate-y-20 flex-col justify-center gap-x-3 bg-black">
+				<div className="h-auto place-self-center p-10 text-white sm:w-10/12 sm:p-20">
+					<div className="font-heading text-3xl text-ieee-bright-yellow md:text-4xl">
 						IEEE @ UCF IN A NUTSHELL
 					</div>
 					<AboutIEEE />
 				</div>
 			</div>
-			<div className="relative -translate-y-40 w-full overflow-hidden leading-none">
+			<div className="relative w-full -translate-y-40 overflow-hidden leading-none">
 				<svg
 					xmlns="http://www.w3.org/2000/svg"
 					viewBox="0 0 1200 120"
 					preserveAspectRatio="none"
-					className="w-full h-20"
+					className="h-20 w-full"
 				>
 					<defs>
 						<radialGradient id="bg-gradient3" cx="40%" cy="120%" r="125%">
-							<stop offset="50%" stopColor="#262522" />
-							<stop offset="100%" stopColor="#262522" />
+							<stop
+								offset="50%"
+								style={{ stopColor: 'var(--color-ieee-dark-grey)' }}
+							/>
+							<stop
+								offset="100%"
+								style={{ stopColor: 'var(--color-ieee-dark-grey)' }}
+							/>
 						</radialGradient>
 					</defs>
 
@@ -81,7 +87,7 @@ export default function About() {
 					/>
 				</svg>
 			</div>
-			<div className="bg-[#262522] -translate-y-40 ">
+			<div className="-translate-y-40 bg-ieee-dark-grey">
 				<AboutOfficers />
 			</div>
 			<div className="-mt-40">

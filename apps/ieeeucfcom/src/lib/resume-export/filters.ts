@@ -80,7 +80,10 @@ export function matchesResumeFilter(row: ResumeFilterRow, f: ResumeExportFilter)
 export type SelectionReason = 'filter' | 'officer' | 'manual';
 
 /** Why a row is in the export set — for manifest rows and dashboard badges. */
-export function selectionReason(row: ResumeFilterRow, f: ResumeExportFilter): SelectionReason | null {
+export function selectionReason(
+	row: ResumeFilterRow,
+	f: ResumeExportFilter,
+): SelectionReason | null {
 	if (!row.hasResume) return null;
 	if (matchesResumeFilter(row, f)) return 'filter';
 	if (f.includeAllOfficers && row.officerStatus) return 'officer';
@@ -142,7 +145,11 @@ export function parseResumeFilter(params: URLSearchParams): ResumeExportFilter {
 /** One-line human description — used on the manifest and in the UI. */
 export function describeResumeFilter(f: ResumeExportFilter): string {
 	const parts: string[] = [];
-	parts.push(f.gradYears.length ? `Class of ${[...f.gradYears].sort().join(', ')}` : 'All graduation years');
+	parts.push(
+		f.gradYears.length
+			? `Class of ${[...f.gradYears].sort().join(', ')}`
+			: 'All graduation years',
+	);
 	if (f.duesPaidOnly) parts.push('dues-paid only');
 	if (f.includeAllOfficers) parts.push('+ all officers');
 	if (f.includeMemberIds.length) parts.push(`+ ${f.includeMemberIds.length} added individually`);

@@ -105,3 +105,42 @@ export async function deleteProject(db: WattsDb, id: string) {
 	const [deleted] = await db.delete(Projects).where(eq(Projects.id, id)).returning();
 	if (!deleted) throw new DomainError('NOT_FOUND', 'Project not found');
 }
+
+/** Members on a project, with lead status — for the rough Staff Committees & Projects panel. */
+export function listProjectMembers(db: WattsDb, projectId: string) {
+	return db
+		.select({
+			memberId: Members.id,
+			firstName: Members.firstName,
+			lastName: Members.lastName,
+			isLead: ProjectMembers.isLead,
+		})
+		.from(ProjectMembers)
+		.innerJoin(Members, eq(Members.id, ProjectMembers.memberId))
+		.where(eq(ProjectMembers.projectId, projectId));
+}
+
+export async function addProjectMember(db: WattsDb, projectId: string, memberId: string) {
+	const [row] = await db
+		.insert(ProjectMembers)
+		.values({ projectId, memberId })
+		.onConflictDoNothing()
+		.returning();
+	return row ?? null;
+}
+
+export async function removeProjectMember(db: WattsDb, projectId: string, memberId: string) {
+	await db
+		.delete(ProjectMembers)
+		.where(and(eq(ProjectMembers.projectId, projectId), eq(ProjectMembers.memberId, memberId)));
+}
+
+export async function setProjectLead(db: WattsDb, projectId: string, memberId: string, isLead: boolean) {
+	const [row] = await db
+		.update(ProjectMembers)
+		.set({ isLead })
+		.where(and(eq(ProjectMembers.projectId, projectId), eq(ProjectMembers.memberId, memberId)))
+		.returning();
+	if (!row) throw new DomainError('NOT_FOUND', 'That member is not on this project');
+	return row;
+}

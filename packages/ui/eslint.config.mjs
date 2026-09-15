@@ -1,4 +1,5 @@
 import { base } from '@watts/eslint-config';
+import prettierCompat from '@watts/eslint-config/prettier-compat';
 
 /** @type {import('eslint').Linter.Config[]} */
 export default [
@@ -9,4 +10,6 @@ export default [
 			parserOptions: { tsconfigRootDir: import.meta.dirname },
 		},
 	},
+	// Prettier owns formatting for @watts/ui — must stay last so it wins.
+	prettierCompat,
 ];

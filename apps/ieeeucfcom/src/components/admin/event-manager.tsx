@@ -4,6 +4,15 @@ import { useMemo, useRef, useState } from 'react';
 import { trpc } from '@/lib/trpc/client';
 import type { RouterOutputs } from '@watts/api';
 import { uploadEventFlyer } from '@watts/storage/client';
+import {
+	Table,
+	TableHeader,
+	TableBody,
+	TableRow,
+	TableHead,
+	TableCell,
+	TableEmpty,
+} from '@watts/ui/table';
 
 type AdminEvent = RouterOutputs['event']['getAllForAdmin'][number];
 type Label = RouterOutputs['eventLabel']['list'][number];
@@ -12,9 +21,9 @@ const GOOGLE_COLOR_IDS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11
 
 const SYNC_BADGE: Record<string, string> = {
 	synced: 'bg-green-900/70 text-green-300',
-	pending: 'bg-gray-800 text-gray-300',
+	pending: 'bg-secondary text-muted-foreground',
 	error: 'bg-red-900/70 text-red-300',
-	skipped: 'bg-gray-800 text-gray-400',
+	skipped: 'bg-secondary text-muted-foreground',
 };
 
 const COMMON_TZ = [
@@ -90,8 +99,8 @@ function fromEvent(ev: AdminEvent): FormState {
 		requiresDues: ev.requiresDues,
 		rsvpLink: ev.rsvpLink ?? '',
 		slug: ev.slug ?? '',
-		needsRoomReservation: false,
-		manuallyGivenRoom: false,
+		needsRoomReservation: ev.roomReservation !== null,
+		manuallyGivenRoom: ev.roomReservation?.isManualOverride ?? false,
 		pingCreatorOnUpdate: ev.pingCreatorOnUpdate ?? false,
 	};
 }
@@ -150,20 +159,20 @@ function EventForm({
 		else await create.mutateAsync(payload);
 	}
 
-	const field = 'w-full rounded-md border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-gray-100';
+	const field = 'w-full rounded-md border border-input bg-card px-3 py-2 text-sm text-foreground';
 
 	return (
 		<form
 			onSubmit={submit}
-			className="mb-8 space-y-4 rounded-lg border border-gray-800 bg-gray-900/50 p-5"
+			className="mb-8 space-y-4 rounded-lg border border-border bg-card/50 p-5"
 		>
-			<h3 className="text-sm font-semibold text-gray-200">
+			<h3 className="text-sm font-semibold text-foreground">
 				{editing ? `Edit “${editing.title}”` : 'New event'}
 			</h3>
 
 			<div className="grid gap-4 sm:grid-cols-2">
 				<label className="block">
-					<span className="mb-1 block text-xs text-gray-400">Title</span>
+					<span className="mb-1 block text-xs text-muted-foreground">Title</span>
 					<input
 						id="title"
 						required
@@ -173,7 +182,7 @@ function EventForm({
 					/>
 				</label>
 				<label className="block">
-					<span className="mb-1 block text-xs text-gray-400">Location</span>
+					<span className="mb-1 block text-xs text-muted-foreground">Location</span>
 					<input
 						id="location"
 						required
@@ -183,7 +192,7 @@ function EventForm({
 					/>
 				</label>
 				<label className="block">
-					<span className="mb-1 block text-xs text-gray-400">Start</span>
+					<span className="mb-1 block text-xs text-muted-foreground">Start</span>
 					<input
 						id="startTime"
 						type="datetime-local"
@@ -194,7 +203,7 @@ function EventForm({
 					/>
 				</label>
 				<label className="block">
-					<span className="mb-1 block text-xs text-gray-400">End</span>
+					<span className="mb-1 block text-xs text-muted-foreground">End</span>
 					<input
 						id="endTime"
 						type="datetime-local"
@@ -204,7 +213,7 @@ function EventForm({
 					/>
 				</label>
 				<label className="block">
-					<span className="mb-1 block text-xs text-gray-400">Category</span>
+					<span className="mb-1 block text-xs text-muted-foreground">Category</span>
 					<select
 						id="labelId"
 						value={form.labelId}
@@ -222,7 +231,7 @@ function EventForm({
 					</select>
 				</label>
 				<label className="block">
-					<span className="mb-1 block text-xs text-gray-400">Time zone</span>
+					<span className="mb-1 block text-xs text-muted-foreground">Time zone</span>
 					<select
 						id="timeZone"
 						value={form.timeZone}
@@ -239,7 +248,7 @@ function EventForm({
 			</div>
 
 			<label className="block">
-				<span className="mb-1 block text-xs text-gray-400">Description</span>
+				<span className="mb-1 block text-xs text-muted-foreground">Description</span>
 				<textarea
 					id="description"
 					required
@@ -252,7 +261,9 @@ function EventForm({
 
 			<div className="grid gap-4 sm:grid-cols-2">
 				<label className="block">
-					<span className="mb-1 block text-xs text-gray-400">RSVP link (optional)</span>
+					<span className="mb-1 block text-xs text-muted-foreground">
+						RSVP link (optional)
+					</span>
 					<input
 						id="rsvpLink"
 						value={form.rsvpLink}
@@ -261,7 +272,9 @@ function EventForm({
 					/>
 				</label>
 				<label className="block">
-					<span className="mb-1 block text-xs text-gray-400">Slug (optional)</span>
+					<span className="mb-1 block text-xs text-muted-foreground">
+						Slug (optional)
+					</span>
 					<input
 						id="slug"
 						value={form.slug}
@@ -271,7 +284,7 @@ function EventForm({
 				</label>
 			</div>
 
-			<div className="flex flex-wrap gap-6 text-sm text-gray-300">
+			<div className="flex flex-wrap gap-6 text-sm text-muted-foreground">
 				<label className="flex items-center gap-2">
 					<input
 						id="isGlobal"
@@ -326,7 +339,7 @@ function EventForm({
 					/>
 					Needs SU Room Reservation
 				</label>
-				<label className="flex items-center gap-2 text-indigo-300">
+				<label className="flex items-center gap-2 text-muted-foreground">
 					<input
 						id="manuallyGivenRoom"
 						type="checkbox"
@@ -350,7 +363,7 @@ function EventForm({
 				<button
 					type="button"
 					onClick={onDone}
-					className="rounded-md border border-gray-700 px-4 py-2 text-sm text-gray-300"
+					className="rounded-md border border-input px-4 py-2 text-sm text-muted-foreground"
 				>
 					Cancel
 				</button>
@@ -390,12 +403,12 @@ function LabelBar({ labels }: { labels: Label[] }) {
 	});
 
 	return (
-		<div className="mb-6 rounded-lg border border-gray-800 bg-gray-900/40 p-4">
+		<div className="mb-6 rounded-lg border border-border bg-card/40 p-4">
 			<div className="flex items-center justify-between">
 				<button
 					type="button"
 					onClick={() => setOpen((o) => !o)}
-					className="text-sm font-semibold text-gray-300"
+					className="text-sm font-semibold text-muted-foreground"
 				>
 					Categories ({labels.filter((l) => l.active).length}) {open ? '▾' : '▸'}
 				</button>
@@ -404,7 +417,7 @@ function LabelBar({ labels }: { labels: Label[] }) {
 						type="button"
 						disabled={pull.isPending}
 						onClick={() => pull.mutate()}
-						className="rounded border border-gray-700 px-2 py-1 text-xs text-gray-300 disabled:opacity-50"
+						className="rounded border border-input px-2 py-1 text-xs text-muted-foreground disabled:opacity-50"
 					>
 						{pull.isPending ? 'Pulling…' : 'Pull colours from Google'}
 					</button>
@@ -417,9 +430,15 @@ function LabelBar({ labels }: { labels: Label[] }) {
 						{labels.map((l) => (
 							<span
 								key={l.id}
-								title={l.googleLabelId ? 'Linked to a Google event label' : 'Not linked to Google'}
+								title={
+									l.googleLabelId
+										? 'Linked to a Google event label'
+										: 'Not linked to Google'
+								}
 								className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs ${
-									l.active ? 'border-gray-700 text-gray-200' : 'border-gray-800 text-gray-500 line-through'
+									l.active
+										? 'border-input text-foreground'
+										: 'border-border text-muted-foreground-dim line-through'
 								}`}
 							>
 								<span
@@ -427,11 +446,15 @@ function LabelBar({ labels }: { labels: Label[] }) {
 									style={{ backgroundColor: l.hex ?? '#888' }}
 								/>
 								{l.name}
-								{l.googleLabelId && <span className="text-[10px] text-green-400">G</span>}
+								{l.googleLabelId && (
+									<span className="text-[10px] text-green-400">G</span>
+								)}
 								<button
 									type="button"
-									onClick={() => setActive.mutate({ id: l.id, active: !l.active })}
-									className="text-gray-500 hover:text-gray-300"
+									onClick={() =>
+										setActive.mutate({ id: l.id, active: !l.active })
+									}
+									className="text-muted-foreground-dim hover:text-muted-foreground"
 								>
 									{l.active ? '×' : '↺'}
 								</button>
@@ -451,19 +474,19 @@ function LabelBar({ labels }: { labels: Label[] }) {
 							required
 							value={name}
 							onChange={(e) => setName(e.target.value)}
-							className="rounded border border-gray-700 bg-gray-900 px-2 py-1"
+							className="rounded border border-input bg-card px-2 py-1"
 						/>
 						<input
 							placeholder="slug"
 							required
 							value={slug}
 							onChange={(e) => setSlug(e.target.value)}
-							className="rounded border border-gray-700 bg-gray-900 px-2 py-1"
+							className="rounded border border-input bg-card px-2 py-1"
 						/>
 						<select
 							value={colorId}
 							onChange={(e) => setColorId(e.target.value)}
-							className="rounded border border-gray-700 bg-gray-900 px-2 py-1"
+							className="rounded border border-input bg-card px-2 py-1"
 						>
 							{GOOGLE_COLOR_IDS.map((c) => (
 								<option key={c} value={c}>
@@ -474,11 +497,13 @@ function LabelBar({ labels }: { labels: Label[] }) {
 						<button
 							type="submit"
 							disabled={create.isPending}
-							className="rounded bg-gray-700 px-3 py-1 text-gray-100 disabled:opacity-50"
+							className="rounded bg-secondary px-3 py-1 text-foreground disabled:opacity-50"
 						>
 							Add
 						</button>
-						{create.error && <span className="text-red-400">{create.error.message}</span>}
+						{create.error && (
+							<span className="text-red-400">{create.error.message}</span>
+						)}
 					</form>
 				</div>
 			)}
@@ -558,7 +583,10 @@ export function EventManager() {
 		try {
 			const preview = await importGoogle.mutateAsync({ dryRun: true });
 			if (!preview.enabled) {
-				setBanner({ kind: 'err', text: 'Google Calendar is not connected (no service-account credentials).' });
+				setBanner({
+					kind: 'err',
+					text: 'Google Calendar is not connected (no service-account credentials).',
+				});
 				return;
 			}
 			if (preview.imported === 0) {
@@ -570,7 +598,10 @@ export function EventManager() {
 			}
 			setImportPreview(preview);
 		} catch (err) {
-			setBanner({ kind: 'err', text: err instanceof Error ? err.message : 'Import preview failed' });
+			setBanner({
+				kind: 'err',
+				text: err instanceof Error ? err.message : 'Import preview failed',
+			});
 		}
 	}
 
@@ -622,14 +653,17 @@ export function EventManager() {
 			invalidate();
 			setBanner({ kind: 'ok', text: 'Flyer uploaded.' });
 		} catch (err) {
-			setBanner({ kind: 'err', text: err instanceof Error ? err.message : 'Flyer upload failed' });
+			setBanner({
+				kind: 'err',
+				text: err instanceof Error ? err.message : 'Flyer upload failed',
+			});
 		} finally {
 			setFlyerBusy(null);
 		}
 	}
 
 	return (
-		<div className="text-gray-100">
+		<div className="text-foreground">
 			<LabelBar labels={labels ?? []} />
 
 			{banner && (
@@ -641,7 +675,11 @@ export function EventManager() {
 					}`}
 				>
 					<span>{banner.text}</span>
-					<button type="button" onClick={() => setBanner(null)} className="text-xs opacity-70 hover:opacity-100">
+					<button
+						type="button"
+						onClick={() => setBanner(null)}
+						className="text-xs opacity-70 hover:opacity-100"
+					>
 						dismiss
 					</button>
 				</div>
@@ -651,7 +689,7 @@ export function EventManager() {
 				<button
 					type="button"
 					onClick={openCreate}
-					className="rounded-md bg-[var(--ieee-dark-yellow)] px-4 py-2 text-sm font-semibold text-black"
+					className="rounded-md bg-ieee-dark-yellow px-4 py-2 text-sm font-semibold text-black"
 				>
 					+ New event
 				</button>
@@ -659,12 +697,12 @@ export function EventManager() {
 					type="button"
 					disabled={importGoogle.isPending}
 					onClick={previewImport}
-					className="rounded-md border border-gray-700 px-4 py-2 text-sm text-gray-200 disabled:opacity-50"
+					className="rounded-md border border-input px-4 py-2 text-sm text-foreground disabled:opacity-50"
 				>
 					{importGoogle.isPending ? 'Working…' : 'Import from Google Calendar'}
 				</button>
 				{archivedCount > 0 && (
-					<label className="ml-auto flex items-center gap-2 text-xs text-gray-400">
+					<label className="ml-auto flex items-center gap-2 text-xs text-muted-foreground">
 						<input
 							type="checkbox"
 							checked={showArchived}
@@ -676,12 +714,14 @@ export function EventManager() {
 			</div>
 
 			{importPreview && (
-				<div className="mb-6 rounded-lg border border-gray-700 bg-gray-900/60 p-4 text-sm">
-					<p className="mb-2 font-semibold text-gray-200">
+				<div className="mb-6 rounded-lg border border-input bg-card/60 p-4 text-sm">
+					<p className="mb-2 font-semibold text-foreground">
 						Import {importPreview.imported} event(s) from Google Calendar?
 					</p>
-					<p className="mb-2 text-xs text-gray-400">{importPreview.skipped} already linked and will be left alone.</p>
-					<ul className="mb-3 max-h-40 overflow-y-auto text-xs text-gray-300">
+					<p className="mb-2 text-xs text-muted-foreground">
+						{importPreview.skipped} already linked and will be left alone.
+					</p>
+					<ul className="mb-3 max-h-40 overflow-y-auto text-xs text-muted-foreground">
 						{importPreview.results
 							.filter((r) => r.action === 'imported')
 							.map((r) => (
@@ -700,7 +740,7 @@ export function EventManager() {
 						<button
 							type="button"
 							onClick={() => setImportPreview(null)}
-							className="rounded-md border border-gray-700 px-4 py-2 text-sm text-gray-300"
+							className="rounded-md border border-input px-4 py-2 text-sm text-muted-foreground"
 						>
 							Cancel
 						</button>
@@ -727,177 +767,187 @@ export function EventManager() {
 			/>
 
 			{isLoading ? (
-				<p className="text-sm text-gray-400">Loading…</p>
+				<p className="text-sm text-muted-foreground">Loading…</p>
 			) : (
-				<div className="overflow-x-auto rounded-lg border border-gray-800">
-					<table className="w-full text-left text-sm">
-						<thead className="bg-gray-900/60 text-xs uppercase text-gray-400">
-							<tr>
-								<th className="px-3 py-2">Event</th>
-								<th className="px-3 py-2">Start</th>
-								<th className="px-3 py-2">Category</th>
-								<th className="px-3 py-2">Global</th>
-								<th className="px-3 py-2">Sync</th>
-								<th className="px-3 py-2">Flyer</th>
-								<th className="px-3 py-2" />
-							</tr>
-						</thead>
-						<tbody>
-							{visible.map((ev) => (
-								<tr
-									key={ev.id}
-									className={`border-t border-gray-800 ${ev.active ? '' : 'opacity-50'}`}
-								>
-									<td className="px-3 py-2">
-										<div className="font-medium">
-											{ev.title}
-											{!ev.active && (
-												<span className="ml-2 rounded bg-gray-800 px-1.5 py-0.5 text-[10px] uppercase text-gray-400">
-													archived
-												</span>
-											)}
-											{ev.hidden && (
-												<span className="ml-2 rounded bg-gray-800 px-1.5 py-0.5 text-[10px] uppercase text-amber-400">
-													hidden
-												</span>
-											)}
-										</div>
-										<div className="text-xs text-gray-500">{ev.location}</div>
-									</td>
-									<td className="px-3 py-2 text-xs text-gray-300">{ev.startTime}</td>
-									<td className="px-3 py-2">
-										{ev.label ? (
-											<span className="inline-flex items-center gap-1 text-xs">
-												<span
-													className="h-2.5 w-2.5 rounded-full"
-													style={{ backgroundColor: ev.label.hex ?? '#888' }}
-												/>
-												{ev.label.name}
+				<Table>
+					<TableHeader className="bg-card/60 text-xs uppercase">
+						<TableRow>
+							<TableHead>Event</TableHead>
+							<TableHead>Start</TableHead>
+							<TableHead>Category</TableHead>
+							<TableHead>Global</TableHead>
+							<TableHead>Sync</TableHead>
+							<TableHead>Flyer</TableHead>
+							<TableHead />
+						</TableRow>
+					</TableHeader>
+					<TableBody>
+						{visible.map((ev) => (
+							<TableRow key={ev.id} inactive={!ev.active}>
+								<TableCell>
+									<div className="font-medium">
+										{ev.title}
+										{!ev.active && (
+											<span className="ml-2 rounded bg-secondary px-1.5 py-0.5 text-[10px] text-muted-foreground uppercase">
+												archived
 											</span>
-										) : (
-											<span className="text-xs text-gray-600">—</span>
 										)}
-									</td>
-									<td className="px-3 py-2 text-xs">{ev.isGlobal ? '✓' : ''}</td>
-									<td className="px-3 py-2">
-										<span
-											className={`rounded px-2 py-0.5 text-xs ${SYNC_BADGE[ev.syncStatus] ?? SYNC_BADGE.pending}`}
-										>
-											{ev.syncStatus}
-										</span>
-									</td>
-									<td className="px-3 py-2">
-										{ev.flyerUrl ? (
-											// eslint-disable-next-line @next/next/no-img-element
-											<img
-												src={ev.flyerUrl}
-												alt="flyer"
-												className="h-10 w-10 rounded object-cover"
+										{ev.hidden && (
+											<span className="ml-2 rounded bg-secondary px-1.5 py-0.5 text-[10px] text-amber-400 uppercase">
+												hidden
+											</span>
+										)}
+									</div>
+									<div className="text-xs text-muted-foreground-dim">
+										{ev.location}
+									</div>
+								</TableCell>
+								<TableCell className="text-xs text-muted-foreground">
+									{ev.startTime}
+								</TableCell>
+								<TableCell>
+									{ev.label ? (
+										<span className="inline-flex items-center gap-1 text-xs">
+											<span
+												className="h-2.5 w-2.5 rounded-full"
+												style={{
+													backgroundColor: ev.label.hex ?? '#888',
+												}}
 											/>
-										) : (
-											<span className="text-xs text-gray-600">none</span>
+											{ev.label.name}
+										</span>
+									) : (
+										<span className="text-xs text-muted-foreground-dim">—</span>
+									)}
+								</TableCell>
+								<TableCell className="text-xs">{ev.isGlobal ? '✓' : ''}</TableCell>
+								<TableCell>
+									<span
+										className={`rounded px-2 py-0.5 text-xs ${SYNC_BADGE[ev.syncStatus] ?? SYNC_BADGE.pending}`}
+									>
+										{ev.syncStatus}
+									</span>
+								</TableCell>
+								<TableCell>
+									{ev.flyerUrl ? (
+										// eslint-disable-next-line @next/next/no-img-element
+										<img
+											src={ev.flyerUrl}
+											alt="flyer"
+											className="h-10 w-10 rounded object-cover"
+										/>
+									) : (
+										<span className="text-xs text-muted-foreground-dim">
+											none
+										</span>
+									)}
+								</TableCell>
+								<TableCell>
+									<div className="flex justify-end gap-3 text-xs">
+										<button
+											type="button"
+											onClick={() => openEdit(ev)}
+											className="text-blue-400 hover:underline"
+										>
+											edit
+										</button>
+										<button
+											type="button"
+											disabled={setHidden.isPending}
+											onClick={() =>
+												setHidden.mutate({
+													id: ev.id,
+													data: { hidden: !ev.hidden },
+												})
+											}
+											className="text-blue-400 hover:underline disabled:opacity-50"
+										>
+											{ev.hidden ? 'unhide' : 'hide'}
+										</button>
+										<button
+											type="button"
+											disabled={flyerBusy === ev.id}
+											onClick={() => pickFlyer(ev.id)}
+											className="text-blue-400 hover:underline disabled:opacity-50"
+										>
+											{flyerBusy === ev.id ? 'uploading…' : 'flyer'}
+										</button>
+										{ev.syncStatus === 'error' && (
+											<button
+												type="button"
+												disabled={resync.isPending}
+												onClick={() => resync.mutate({ id: ev.id })}
+												className="text-yellow-400 hover:underline disabled:opacity-50"
+											>
+												re-sync
+											</button>
 										)}
-									</td>
-									<td className="px-3 py-2">
-										<div className="flex justify-end gap-3 text-xs">
+										{ev.active ? (
 											<button
 												type="button"
-												onClick={() => openEdit(ev)}
-												className="text-blue-400 hover:underline"
+												onClick={() =>
+													setPendingDelete({ ev, mode: 'archive' })
+												}
+												className="text-red-400 hover:underline"
 											>
-												edit
+												delete
 											</button>
-											<button
-												type="button"
-												disabled={setHidden.isPending}
-												onClick={() => setHidden.mutate({ id: ev.id, data: { hidden: !ev.hidden } })}
-												className="text-blue-400 hover:underline disabled:opacity-50"
-											>
-												{ev.hidden ? 'unhide' : 'hide'}
-											</button>
-											<button
-												type="button"
-												disabled={flyerBusy === ev.id}
-												onClick={() => pickFlyer(ev.id)}
-												className="text-blue-400 hover:underline disabled:opacity-50"
-											>
-												{flyerBusy === ev.id ? 'uploading…' : 'flyer'}
-											</button>
-											{ev.syncStatus === 'error' && (
+										) : (
+											<>
 												<button
 													type="button"
-													disabled={resync.isPending}
-													onClick={() => resync.mutate({ id: ev.id })}
-													className="text-yellow-400 hover:underline disabled:opacity-50"
+													disabled={restore.isPending}
+													onClick={() => restore.mutate({ id: ev.id })}
+													className="text-green-400 hover:underline disabled:opacity-50"
 												>
-													re-sync
+													restore
 												</button>
-											)}
-											{ev.active ? (
 												<button
 													type="button"
-													onClick={() => setPendingDelete({ ev, mode: 'archive' })}
-													className="text-red-400 hover:underline"
+													onClick={() => {
+														setPurgeText('');
+														setPendingDelete({ ev, mode: 'purge' });
+													}}
+													className="text-red-500 hover:underline"
 												>
-													delete
+													delete permanently
 												</button>
-											) : (
-												<>
-													<button
-														type="button"
-														disabled={restore.isPending}
-														onClick={() => restore.mutate({ id: ev.id })}
-														className="text-green-400 hover:underline disabled:opacity-50"
-													>
-														restore
-													</button>
-													<button
-														type="button"
-														onClick={() => {
-															setPurgeText('');
-															setPendingDelete({ ev, mode: 'purge' });
-														}}
-														className="text-red-500 hover:underline"
-													>
-														delete permanently
-													</button>
-												</>
-											)}
-										</div>
-									</td>
-								</tr>
-							))}
-							{visible.length === 0 && (
-								<tr>
-									<td colSpan={7} className="px-3 py-6 text-center text-sm text-gray-500">
-										{sorted.length === 0 ? 'No events yet.' : 'No active events.'}
-									</td>
-								</tr>
-							)}
-						</tbody>
-					</table>
-				</div>
+											</>
+										)}
+									</div>
+								</TableCell>
+							</TableRow>
+						))}
+						{visible.length === 0 && (
+							<TableEmpty colSpan={7}>
+								{sorted.length === 0 ? 'No events yet.' : 'No active events.'}
+							</TableEmpty>
+						)}
+					</TableBody>
+				</Table>
 			)}
 
 			{pendingDelete && (
 				<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-					<div className="w-full max-w-md rounded-lg border border-gray-700 bg-gray-900 p-6">
+					<div className="w-full max-w-md rounded-lg border border-input bg-card p-6">
 						{pendingDelete.mode === 'archive' ? (
 							<>
-								<h3 className="mb-2 text-lg font-semibold text-gray-100">
+								<h3 className="mb-2 text-lg font-semibold text-foreground">
 									Archive “{pendingDelete.ev.title}”?
 								</h3>
-								<p className="mb-5 text-sm text-gray-400">
+								<p className="mb-5 text-sm text-muted-foreground">
 									It's removed from the website
-									{pendingDelete.ev.googleCalendarEventId ? ' and Google Calendar' : ''}, but kept
-									here with its attendee history. You can restore or permanently delete it from
-									“Show archived”.
+									{pendingDelete.ev.googleCalendarEventId
+										? ' and Google Calendar'
+										: ''}
+									, but kept here with its attendee history. You can restore or
+									permanently delete it from “Show archived”.
 								</p>
 								<div className="flex justify-end gap-3">
 									<button
 										type="button"
 										onClick={() => setPendingDelete(null)}
-										className="rounded-md border border-gray-700 px-4 py-2 text-sm text-gray-300"
+										className="rounded-md border border-input px-4 py-2 text-sm text-muted-foreground"
 									>
 										Cancel
 									</button>
@@ -916,32 +966,43 @@ export function EventManager() {
 								<h3 className="mb-2 text-lg font-semibold text-red-300">
 									Permanently delete “{pendingDelete.ev.title}”?
 								</h3>
-								<p className="mb-3 text-sm text-gray-400">
-									This cannot be undone. It removes the event, its attendee records
-									{pendingDelete.ev.googleCalendarEventId ? ', and its Google Calendar entry' : ''}.
+								<p className="mb-3 text-sm text-muted-foreground">
+									This cannot be undone. It removes the event, its attendee
+									records
+									{pendingDelete.ev.googleCalendarEventId
+										? ', and its Google Calendar entry'
+										: ''}
+									.
 								</p>
-								<label className="mb-1 block text-xs text-gray-400">
-									Type <span className="font-mono text-gray-200">{pendingDelete.ev.title}</span> to confirm
+								<label className="mb-1 block text-xs text-muted-foreground">
+									Type{' '}
+									<span className="font-mono text-foreground">
+										{pendingDelete.ev.title}
+									</span>{' '}
+									to confirm
 								</label>
 								<input
 									autoFocus
 									aria-label="Confirm event title"
 									value={purgeText}
 									onChange={(e) => setPurgeText(e.target.value)}
-									className="mb-5 w-full rounded-md border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-gray-100"
+									className="mb-5 w-full rounded-md border border-input bg-secondary px-3 py-2 text-sm text-foreground"
 								/>
 
 								<div className="flex justify-end gap-3">
 									<button
 										type="button"
 										onClick={() => setPendingDelete(null)}
-										className="rounded-md border border-gray-700 px-4 py-2 text-sm text-gray-300"
+										className="rounded-md border border-input px-4 py-2 text-sm text-muted-foreground"
 									>
 										Cancel
 									</button>
 									<button
 										type="button"
-										disabled={deleteBusy || purgeText.trim() !== pendingDelete.ev.title.trim()}
+										disabled={
+											deleteBusy ||
+											purgeText.trim() !== pendingDelete.ev.title.trim()
+										}
 										onClick={confirmDelete}
 										className="rounded-md bg-red-700 px-4 py-2 text-sm font-semibold text-white disabled:opacity-40"
 									>

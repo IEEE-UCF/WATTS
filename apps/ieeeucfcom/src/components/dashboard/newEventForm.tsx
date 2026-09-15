@@ -8,7 +8,6 @@ interface EventFormData {
 	title: string;
 	location: string;
 	hostType: HostType;
-	hostId: string;
 	startTime: string;
 	endTime: string;
 	requiresDues: boolean;
@@ -35,7 +34,6 @@ export const FormPopup: React.FC = () => {
 		title: '',
 		location: '',
 		hostType: '',
-		hostId: '',
 		startTime: '',
 		endTime: '',
 		requiresDues: false,
@@ -54,10 +52,17 @@ export const FormPopup: React.FC = () => {
 			void utils.event.getAll.invalidate();
 			setIsOpen(false);
 			setFormData({
-				title: '', location: '', hostType: '', hostId: '',
-				startTime: '', endTime: '', requiresDues: false,
-				description: '', flyerUrl: '', rsvpLink: '',
-				needsRoomReservation: false, manuallyGivenRoom: false,
+				title: '',
+				location: '',
+				hostType: '',
+				startTime: '',
+				endTime: '',
+				requiresDues: false,
+				description: '',
+				flyerUrl: '',
+				rsvpLink: '',
+				needsRoomReservation: false,
+				manuallyGivenRoom: false,
 				pingCreatorOnUpdate: false,
 			});
 		},
@@ -75,7 +80,6 @@ export const FormPopup: React.FC = () => {
 			title: 'Demo Event - Test Insertion',
 			location: 'Virtual / Online',
 			hostType: 'committee',
-			hostId: '',
 			startTime: formatDateTimeLocal(tomorrow.toISOString()),
 			endTime: formatDateTimeLocal(dayAfter.toISOString()),
 			requiresDues: false,
@@ -108,7 +112,6 @@ export const FormPopup: React.FC = () => {
 			location: formData.location,
 			startTime: new Date(formData.startTime).toISOString(),
 			endTime: formData.endTime ? new Date(formData.endTime).toISOString() : undefined,
-			committeeId: formData.hostType === 'committee' && formData.hostId ? formData.hostId : undefined,
 			flyerUrl: formData.flyerUrl || undefined,
 			rsvpLink: formData.rsvpLink || undefined,
 			requiresDues: formData.requiresDues,
@@ -122,26 +125,66 @@ export const FormPopup: React.FC = () => {
 		<div>
 			<button
 				onClick={togglePopup}
-				className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+				className="rounded bg-blue-500 px-4 py-2 font-bold text-white hover:bg-blue-700"
 			>
 				Create Event
 			</button>
 			{isOpen && (
-				<div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm flex justify-center items-center z-50">
-					<div className="bg-white p-8 rounded-lg text-black max-w-lg w-full max-h-[90vh] overflow-y-auto">
-						<h2 className="text-2xl mb-4">Create Event</h2>
+				// Slide-over drawer, not a centered dialog — keeps the event list in place
+				// behind it instead of swapping the whole screen for the form.
+				<div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm">
+					<div className="absolute inset-y-0 right-0 h-full w-full max-w-lg overflow-y-auto border-l border-border bg-card p-8 text-foreground shadow-2xl shadow-black/60">
+						<h2 className="mb-4 text-2xl">Create Event</h2>
 						<form onSubmit={handleSubmit}>
 							<div className="mb-4">
-								<label htmlFor="title" className="block text-sm font-medium text-gray-700">Title</label>
-								<input type="text" name="title" id="title" value={formData.title} onChange={handleChange} required className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm sm:text-sm" />
+								<label
+									htmlFor="title"
+									className="block text-sm font-medium text-muted-foreground"
+								>
+									Title
+								</label>
+								<input
+									type="text"
+									name="title"
+									id="title"
+									value={formData.title}
+									onChange={handleChange}
+									required
+									className="mt-1 block w-full rounded-md border border-input bg-card px-3 py-2 text-foreground shadow-sm sm:text-sm"
+								/>
 							</div>
 							<div className="mb-4">
-								<label htmlFor="location" className="block text-sm font-medium text-gray-700">Location</label>
-								<input type="text" name="location" id="location" value={formData.location} onChange={handleChange} required className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm sm:text-sm" />
+								<label
+									htmlFor="location"
+									className="block text-sm font-medium text-muted-foreground"
+								>
+									Location
+								</label>
+								<input
+									type="text"
+									name="location"
+									id="location"
+									value={formData.location}
+									onChange={handleChange}
+									required
+									className="mt-1 block w-full rounded-md border border-input bg-card px-3 py-2 text-foreground shadow-sm sm:text-sm"
+								/>
 							</div>
 							<div className="mb-4">
-								<label htmlFor="hostType" className="block text-sm font-medium text-gray-700">Host Type</label>
-								<select name="hostType" id="hostType" value={formData.hostType} onChange={handleChange} required className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm sm:text-sm">
+								<label
+									htmlFor="hostType"
+									className="block text-sm font-medium text-muted-foreground"
+								>
+									Host Type
+								</label>
+								<select
+									name="hostType"
+									id="hostType"
+									value={formData.hostType}
+									onChange={handleChange}
+									required
+									className="mt-1 block w-full rounded-md border border-input bg-card px-3 py-2 text-foreground shadow-sm sm:text-sm"
+								>
 									<option value="">Select Host Type</option>
 									<option value="club">Club</option>
 									<option value="committee">Committee</option>
@@ -150,54 +193,177 @@ export const FormPopup: React.FC = () => {
 								</select>
 							</div>
 							<div className="mb-4">
-								<label htmlFor="startTime" className="block text-sm font-medium text-gray-700">Start Time</label>
-								<input type="datetime-local" name="startTime" id="startTime" value={formData.startTime} onChange={handleChange} required className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm sm:text-sm" />
+								<label
+									htmlFor="startTime"
+									className="block text-sm font-medium text-muted-foreground"
+								>
+									Start Time
+								</label>
+								<input
+									type="datetime-local"
+									name="startTime"
+									id="startTime"
+									value={formData.startTime}
+									onChange={handleChange}
+									required
+									className="mt-1 block w-full rounded-md border border-input bg-card px-3 py-2 text-foreground shadow-sm sm:text-sm"
+								/>
 							</div>
 							<div className="mb-4">
-								<label htmlFor="endTime" className="block text-sm font-medium text-gray-700">End Time</label>
-								<input type="datetime-local" name="endTime" id="endTime" value={formData.endTime} onChange={handleChange} className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm sm:text-sm" />
+								<label
+									htmlFor="endTime"
+									className="block text-sm font-medium text-muted-foreground"
+								>
+									End Time
+								</label>
+								<input
+									type="datetime-local"
+									name="endTime"
+									id="endTime"
+									value={formData.endTime}
+									onChange={handleChange}
+									className="mt-1 block w-full rounded-md border border-input bg-card px-3 py-2 text-foreground shadow-sm sm:text-sm"
+								/>
 							</div>
 							<div className="mb-4">
-								<label htmlFor="description" className="block text-sm font-medium text-gray-700">Description</label>
-								<textarea name="description" id="description" value={formData.description} onChange={handleChange} rows={3} className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm sm:text-sm" />
+								<label
+									htmlFor="description"
+									className="block text-sm font-medium text-muted-foreground"
+								>
+									Description
+								</label>
+								<textarea
+									name="description"
+									id="description"
+									value={formData.description}
+									onChange={handleChange}
+									rows={3}
+									className="mt-1 block w-full rounded-md border border-input bg-card px-3 py-2 text-foreground shadow-sm sm:text-sm"
+								/>
 							</div>
 							<div className="mb-4">
-								<label htmlFor="flyerUrl" className="block text-sm font-medium text-gray-700">Flyer URL</label>
-								<input type="text" name="flyerUrl" id="flyerUrl" value={formData.flyerUrl} onChange={handleChange} className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm sm:text-sm" />
+								<label
+									htmlFor="flyerUrl"
+									className="block text-sm font-medium text-muted-foreground"
+								>
+									Flyer URL
+								</label>
+								<input
+									type="text"
+									name="flyerUrl"
+									id="flyerUrl"
+									value={formData.flyerUrl}
+									onChange={handleChange}
+									className="mt-1 block w-full rounded-md border border-input bg-card px-3 py-2 text-foreground shadow-sm sm:text-sm"
+								/>
 							</div>
 							<div className="mb-4">
-								<label htmlFor="rsvpLink" className="block text-sm font-medium text-gray-700">RSVP Link</label>
-								<input type="text" name="rsvpLink" id="rsvpLink" value={formData.rsvpLink} onChange={handleChange} className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm sm:text-sm" />
+								<label
+									htmlFor="rsvpLink"
+									className="block text-sm font-medium text-muted-foreground"
+								>
+									RSVP Link
+								</label>
+								<input
+									type="text"
+									name="rsvpLink"
+									id="rsvpLink"
+									value={formData.rsvpLink}
+									onChange={handleChange}
+									className="mt-1 block w-full rounded-md border border-input bg-card px-3 py-2 text-foreground shadow-sm sm:text-sm"
+								/>
 							</div>
-							<div className="flex items-center mb-4">
-								<input type="checkbox" name="needsRoomReservation" id="needsRoomReservation" checked={formData.needsRoomReservation} onChange={handleChange} className="h-4 w-4 text-indigo-600 border-gray-300 rounded" />
-								<label htmlFor="needsRoomReservation" className="ml-2 block text-sm text-gray-900">Needs SU Room Reservation</label>
+							<div className="mb-4 flex items-center">
+								<input
+									type="checkbox"
+									name="needsRoomReservation"
+									id="needsRoomReservation"
+									checked={formData.needsRoomReservation}
+									onChange={handleChange}
+									className="h-4 w-4 rounded border-input bg-card text-indigo-600"
+								/>
+								<label
+									htmlFor="needsRoomReservation"
+									className="ml-2 block text-sm text-foreground"
+								>
+									Needs SU Room Reservation
+								</label>
 							</div>
 							{formData.needsRoomReservation && (
-								<div className="flex items-center mb-4 ml-6">
-									<input type="checkbox" name="manuallyGivenRoom" id="manuallyGivenRoom" checked={formData.manuallyGivenRoom} onChange={handleChange} className="h-4 w-4 text-indigo-600 border-gray-300 rounded" />
-									<label htmlFor="manuallyGivenRoom" className="ml-2 block text-sm text-gray-900">Room is already confirmed (Skip Tracking)</label>
+								<div className="mb-4 ml-6 flex items-center">
+									<input
+										type="checkbox"
+										name="manuallyGivenRoom"
+										id="manuallyGivenRoom"
+										checked={formData.manuallyGivenRoom}
+										onChange={handleChange}
+										className="h-4 w-4 rounded border-input bg-card text-indigo-600"
+									/>
+									<label
+										htmlFor="manuallyGivenRoom"
+										className="ml-2 block text-sm text-foreground"
+									>
+										Room is already confirmed (Skip Tracking)
+									</label>
 								</div>
 							)}
-							<div className="flex items-center mb-4">
-								<input type="checkbox" name="requiresDues" id="requiresDues" checked={formData.requiresDues} onChange={handleChange} className="h-4 w-4 text-indigo-600 border-gray-300 rounded" />
-								<label htmlFor="requiresDues" className="ml-2 block text-sm text-gray-900">Requires Dues</label>
+							<div className="mb-4 flex items-center">
+								<input
+									type="checkbox"
+									name="requiresDues"
+									id="requiresDues"
+									checked={formData.requiresDues}
+									onChange={handleChange}
+									className="h-4 w-4 rounded border-input bg-card text-indigo-600"
+								/>
+								<label
+									htmlFor="requiresDues"
+									className="ml-2 block text-sm text-foreground"
+								>
+									Requires Dues
+								</label>
 							</div>
-							<div className="flex items-center mb-4">
-								<input type="checkbox" name="pingCreatorOnUpdate" id="pingCreatorOnUpdate" checked={formData.pingCreatorOnUpdate} onChange={handleChange} className="h-4 w-4 text-indigo-600 border-gray-300 rounded" />
-								<label htmlFor="pingCreatorOnUpdate" className="ml-2 block text-sm text-gray-900">Ping Creator on Discord for updates</label>
+							<div className="mb-4 flex items-center">
+								<input
+									type="checkbox"
+									name="pingCreatorOnUpdate"
+									id="pingCreatorOnUpdate"
+									checked={formData.pingCreatorOnUpdate}
+									onChange={handleChange}
+									className="h-4 w-4 rounded border-input bg-card text-indigo-600"
+								/>
+								<label
+									htmlFor="pingCreatorOnUpdate"
+									className="ml-2 block text-sm text-foreground"
+								>
+									Ping Creator on Discord for updates
+								</label>
 							</div>
 							{createEvent.isError && (
-								<p className="text-red-600 text-sm mb-4">{createEvent.error.message}</p>
+								<p className="mb-4 text-sm text-red-400">
+									{createEvent.error.message}
+								</p>
 							)}
 							<div className="flex justify-end">
-								<button type="button" onClick={loadDemoData} className="bg-indigo-600 text-white px-4 py-2 rounded-md mr-30">
+								<button
+									type="button"
+									onClick={loadDemoData}
+									className="mr-3 rounded-md bg-indigo-600 px-4 py-2 text-white"
+								>
 									Load Demo Data
 								</button>
-								<button type="button" onClick={togglePopup} className="bg-gray-500 text-white px-4 py-2 rounded-md mr-2">
+								<button
+									type="button"
+									onClick={togglePopup}
+									className="mr-2 rounded-md bg-muted-foreground-dim px-4 py-2 text-white"
+								>
 									Close
 								</button>
-								<button type="submit" disabled={createEvent.isPending} className="bg-indigo-600 text-white px-4 py-2 rounded-md disabled:opacity-50">
+								<button
+									type="submit"
+									disabled={createEvent.isPending}
+									className="rounded-md bg-indigo-600 px-4 py-2 text-white disabled:opacity-50"
+								>
 									{createEvent.isPending ? 'Submitting...' : 'Submit'}
 								</button>
 							</div>

@@ -17,6 +17,10 @@ import {
 	setMemberCapability,
 	setMemberAdmin,
 	setMemberOfficer,
+	getMemberCommittees,
+	getMemberProjects,
+	getMemberAttendance,
+	getOrgMemberStats,
 } from "@watts/core/members";
 import { mapDomainError } from "../map-domain-error";
 
@@ -46,6 +50,8 @@ const memberUpdateSchema = z.object({
 	linkedinURL: z.string().url().optional(),
 	githubURL: z.string().url().optional(),
 	websiteURL: z.string().url().optional(),
+	ieeeMembershipNumber: z.string().max(32).optional(),
+	knightConnectLinked: z.boolean().optional(),
 });
 
 export const memberRouter = createTRPCRouter({
@@ -165,5 +171,22 @@ export const memberRouter = createTRPCRouter({
 		} catch (error) {
 			mapDomainError(error);
 		}
+	}),
+
+	// Everything the member dashboard needs in one call — same "one call" shape as
+	// auth.getAuthStatus. ctx.member is already the full row (memberProcedure fetches it
+	// for the gate), so this adds only the three joins nothing else needed yet.
+	getMyDashboard: memberProcedure.query(async ({ ctx }) => {
+		const [committees, projects, attendance] = await Promise.all([
+			getMemberCommittees(ctx.db, ctx.member.id),
+			getMemberProjects(ctx.db, ctx.member.id),
+			getMemberAttendance(ctx.db, ctx.member.id),
+		]);
+		return { member: ctx.member, committees, projects, attendance };
+	}),
+
+	// Chapter-wide counts for the admin overview.
+	getOrgStats: adminProcedure.query(async ({ ctx }) => {
+		return getOrgMemberStats(ctx.db);
 	}),
 });

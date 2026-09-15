@@ -263,6 +263,10 @@ export const Members = pgTable('members', {
 	linkedinURL: text('linkedin_url'),
 	githubURL: text('github_url'),
 	websiteURL: text('website_url'),
+	// Self-reported onboarding signals — neither is verified against an external API
+	// (IEEE / KnightConnect), they're just what the member says on /settings.
+	ieeeMembershipNumber: varchar('ieee_membership_number', { length: 32 }),
+	knightConnectLinked: boolean('knight_connect_linked').notNull().default(false),
 	active: boolean('active').notNull().default(true),
 	createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 	updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow().$onUpdate(() => sql`now()`),
