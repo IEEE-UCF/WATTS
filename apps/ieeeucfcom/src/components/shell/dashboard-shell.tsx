@@ -13,7 +13,30 @@ import {
 } from '@watts/ui/sidebar';
 import { trpc } from '@/lib/trpc/client';
 import { AvatarMenu } from '@/components/avatarmenu';
+import { Navbar } from '@/components/navbar';
 import { visibleNavGroups, type NavAuthStatus } from './nav-config';
+
+/**
+ * Hotswap flag — the sidebar shell below is built, wired, and verified, but temporarily
+ * switched off in favor of the old per-page Navbar while it's evaluated further. Every
+ * consumer (admin/layout.tsx, /dashboard, /staff, /settings) already renders
+ * `<DashboardShell>` and nothing else — flipping this back to `true` is the entire
+ * swap-back, no consumer needs to change.
+ */
+const USE_SIDEBAR_SHELL = false;
+
+/** The pre-shell look: just the marketing Navbar on top of the page content, no sidebar.
+ * Matches what every one of these pages rendered individually before the shell existed. */
+function LegacyShell({ children }: { children: React.ReactNode }) {
+	return (
+		<div className="flex min-h-screen flex-col bg-black">
+			<div className="w-full px-5">
+				<Navbar />
+			</div>
+			<main className="flex-1">{children}</main>
+		</div>
+	);
+}
 
 interface AvatarInfo {
 	discordAvatar: string | null;
@@ -133,8 +156,15 @@ export function DashboardShellView({ children, pathname, auth }: DashboardShellV
 /** Wraps a member/staff/admin page: fetches the viewer's role facts once via the same
  * `getAuthStatus` call the navbar already uses, and filters the sidebar accordingly. */
 export function DashboardShell({ children }: { children: React.ReactNode }) {
+	// Hooks stay unconditional even in the legacy branch below (Rules of Hooks) — no real
+	// waste, since <Navbar> inside LegacyShell calls this same query itself and React Query
+	// dedupes identical queries, same as before the shell existed.
 	const { data } = trpc.auth.getAuthStatus.useQuery();
 	const pathname = usePathname();
+
+	if (!USE_SIDEBAR_SHELL) {
+		return <LegacyShell>{children}</LegacyShell>;
+	}
 
 	// Read once, ahead of any narrowing on `data.member` below — avoids TS collapsing
 	// `data.user`'s type to `never` in the branch where `data.member` is falsy.
