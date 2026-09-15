@@ -69,6 +69,10 @@ import { ResumeStatus } from '@/components/dashboard/resume-status';
 import { OnboardingChecklist } from '@/components/dashboard/onboarding-checklist';
 import { AdminOverview } from '@/components/admin/overview';
 import { CommitteesProjectsPanel } from '@/components/staff/committees-projects-panel';
+import { GlowButton } from '@/components/ui/glow-button';
+import { QREventScanner } from '@/components/admin/qr_event_scanner';
+import { FormPopup } from '@/components/dashboard/newEventForm';
+import { ThemePlayground } from '@/components/theme-playground';
 
 type Render = ComponentType<Record<string, unknown>>;
 
@@ -400,5 +404,17 @@ export const renders: Record<string, Render> = {
 				Routed page content renders here.
 			</div>
 		</DashboardShellView>
+	),
+	'marketing/glow-button': (p) => (
+		<GlowButton innerClassName={(p.innerClassName as string) || undefined}>
+			<span className="font-heading text-white">
+				{(p.children as string) || 'Get Involved'}
+			</span>
+		</GlowButton>
+	),
+	'qr/event-scanner': () => <QREventScanner />,
+	'admin/create-event-form': () => <FormPopup />,
+	'misc/theme-playground': (p) => (
+		<ThemePlayground pageName={(p.pageName as string) || 'Component gallery'} />
 	),
 };

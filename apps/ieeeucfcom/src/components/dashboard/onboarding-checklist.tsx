@@ -95,7 +95,7 @@ export function OnboardingChecklist(props: OnboardingChecklistProps) {
 		},
 		{
 			done: props.hasOrg,
-			label: 'Join a committee or project',
+			label: 'Join a committee or project (Coming Soon!)',
 			cta: { href: '/connect', text: 'Connect →' },
 		},
 	];

@@ -415,6 +415,53 @@ export const entriesMeta: EntryMeta[] = [
 			{ name: 'size', type: 'select', options: ['sm', 'xs', 'pill'], default: 'sm' },
 		],
 	},
+
+	// ---- previously only on /component-showcase, not registered here ---------
+	{
+		slug: 'marketing/glow-button',
+		name: 'GlowButton',
+		group: 'marketing',
+		status: 'ok',
+		source: '@/components/ui/glow-button',
+		surface: 'marketing',
+		notes: 'Two-layer glow CTA — halo + surface. Used for hero/marquee actions. Wrap in Link/a to navigate.',
+		controls: [
+			{ name: 'children', type: 'text', default: 'Get Involved' },
+			{ name: 'innerClassName', type: 'text', default: '' },
+		],
+	},
+	{
+		slug: 'qr/event-scanner',
+		name: 'QREventScanner',
+		group: 'qr',
+		status: 'ok',
+		source: '@/components/admin/qr_event_scanner',
+		notes: 'Staff check-in tool — event.getAll is public so the selector renders real events with no session. Camera scanning needs a real camera; the check-in mutation needs staff auth to succeed. Used on the Staff Hub Event Ops panel and /test/demos.',
+	},
+	{
+		slug: 'admin/create-event-form',
+		name: 'FormPopup (create event)',
+		group: 'admin',
+		status: 'ok',
+		source: '@/components/dashboard/newEventForm',
+		notes: 'Slide-over "Create Event" form, opens/closes with no session. Includes a "Load Demo Data" button. The submit mutation (event.create) needs an authorized session to actually succeed. Only wired into /test/demos today — admin/event-manager is the current production create-event flow.',
+	},
+	{
+		slug: 'misc/theme-playground',
+		name: 'ThemePlayground',
+		group: 'misc',
+		status: 'ok',
+		source: '@/components/theme-playground',
+		notes: 'Fixed bottom-right "Theme Lab" — live-edits CSS custom properties on :root (brand/semantic colors, font roles) and persists overrides to localStorage. Currently mounted on / (marketing home) and /style-guide. Renders closed by default; click "Open Theme Lab" to see the panel.',
+		controls: [
+			{
+				name: 'pageName',
+				label: 'Page name shown in panel',
+				type: 'text',
+				default: 'Component gallery',
+			},
+		],
+	},
 ];
 
 export function getMeta(slug: string): EntryMeta | undefined {
