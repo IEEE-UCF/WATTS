@@ -15,10 +15,17 @@ import { trpc } from '@/lib/trpc/client';
 import { AvatarMenu } from '@/components/avatarmenu';
 import { visibleNavGroups, type NavAuthStatus } from './nav-config';
 
+interface AvatarInfo {
+	discordAvatar: string | null;
+	name: string;
+	email: string | null;
+	role: string | null;
+}
+
 interface DashboardShellViewProps {
 	children: React.ReactNode;
 	pathname: string;
-	auth: (NavAuthStatus & { discordAvatar: string | null }) | undefined;
+	auth: (NavAuthStatus & AvatarInfo) | undefined;
 }
 
 /** Presentational half — no data fetching, so the /dev gallery can render it with mock auth. */
@@ -100,7 +107,12 @@ export function DashboardShellView({ children, pathname, auth }: DashboardShellV
 					</span>
 					<div className="ml-auto flex items-center gap-3">
 						{auth?.isMember && auth.discordAvatar ? (
-							<AvatarMenu image={auth.discordAvatar} />
+							<AvatarMenu
+								image={auth.discordAvatar}
+								name={auth.name}
+								email={auth.email}
+								role={auth.role}
+							/>
 						) : (
 							<Link
 								href="/auth/signin"
@@ -120,8 +132,38 @@ export function DashboardShellView({ children, pathname, auth }: DashboardShellV
 /** Wraps a member/staff/admin page: fetches the viewer's role facts once via the same
  * `getAuthStatus` call the navbar already uses, and filters the sidebar accordingly. */
 export function DashboardShell({ children }: { children: React.ReactNode }) {
-	const { data: auth } = trpc.auth.getAuthStatus.useQuery();
+	const { data } = trpc.auth.getAuthStatus.useQuery();
 	const pathname = usePathname();
+
+	// Read once, ahead of any narrowing on `data.member` below — avoids TS collapsing
+	// `data.user`'s type to `never` in the branch where `data.member` is falsy.
+	const memberFirstName = data?.member?.firstName;
+	const memberLastName = data?.member?.lastName;
+	const memberEmail = data?.member?.ucfEmail;
+	const sessionUserName = data?.user?.name;
+	const sessionUserEmail = data?.user?.email;
+
+	const auth = data
+		? {
+				isMember: data.isMember,
+				isOfficer: data.isOfficer,
+				isAdmin: data.isAdmin,
+				hasStaffAccess: data.hasStaffAccess,
+				permissions: data.permissions,
+				discordAvatar: data.discordAvatar,
+				name: memberFirstName
+					? `${memberFirstName} ${memberLastName}`
+					: (sessionUserName ?? 'Member'),
+				email: memberEmail ?? sessionUserEmail ?? null,
+				role: data.isAdmin
+					? 'Administrator'
+					: data.isOfficer
+						? data.officerRole
+							? `Officer · ${data.officerRole}`
+							: 'Officer'
+						: null,
+			}
+		: undefined;
 
 	return (
 		<DashboardShellView pathname={pathname ?? ''} auth={auth}>

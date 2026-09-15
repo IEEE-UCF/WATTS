@@ -258,7 +258,14 @@ export const renders: Record<string, Render> = {
 
 	'layout/navbar': () => <Navbar />,
 	'layout/footer': () => <Footer />,
-	'layout/avatar-menu': (p) => <AvatarMenu image={(p.image as string) || ''} />,
+	'layout/avatar-menu': (p) => (
+		<AvatarMenu
+			image={(p.image as string) || 'https://cdn.discordapp.com/embed/avatars/1.png'}
+			name={(p.name as string) || 'Amara Okafor'}
+			email={(p.email as string) || 'aokafor@knights.ucf.edu'}
+			role={(p.role as string) || null}
+		/>
+	),
 	'marketing/signin-block': () => <Signinblock />,
 	'marketing/timer': () => <Timer />,
 	'marketing/calendar': (p) => <Calendar className={(p.className as string) || 'h-96 w-full'} />,
@@ -377,6 +384,9 @@ export const renders: Record<string, Render> = {
 				hasStaffAccess: true,
 				permissions: ['manage_events', 'manage_event_photos', 'review_resumes'],
 				discordAvatar: 'https://cdn.discordapp.com/embed/avatars/1.png',
+				name: 'Amara Okafor',
+				email: 'aokafor@knights.ucf.edu',
+				role: (p.isAdmin ?? true) ? 'Administrator' : 'Officer · Workshop Chair',
 			}}
 		>
 			<div className="rounded-lg border border-dashed border-border p-6 text-sm text-muted-foreground">

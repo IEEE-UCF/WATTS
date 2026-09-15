@@ -36,6 +36,13 @@ const adminRoutes: { title: string; href: string; image: string }[] = [
 const Navbar: React.FC = () => {
 	const { data: auth } = trpc.auth.getAuthStatus.useQuery();
 	const [menuOpen, setMenuOpen] = useState(false);
+	// Read once, ahead of any narrowing on `auth.member` below — avoids TS collapsing
+	// `auth.user`'s type to `never` in the branch where `auth.member` is falsy.
+	const memberFirstName = auth?.member?.firstName;
+	const memberLastName = auth?.member?.lastName;
+	const memberEmail = auth?.member?.ucfEmail;
+	const sessionUserName = auth?.user?.name;
+	const sessionUserEmail = auth?.user?.email;
 
 	const toggleMenu = () => {
 		setMenuOpen(!menuOpen);
@@ -99,7 +106,24 @@ const Navbar: React.FC = () => {
 
 					{auth?.isMember && auth?.discordAvatar ? (
 						<div className="ml-3 flex items-center">
-							<AvatarMenu image={auth?.discordAvatar} />
+							<AvatarMenu
+								image={auth.discordAvatar}
+								name={
+									memberFirstName
+										? `${memberFirstName} ${memberLastName}`
+										: (sessionUserName ?? 'Member')
+								}
+								email={memberEmail ?? sessionUserEmail ?? null}
+								role={
+									auth.isAdmin
+										? 'Administrator'
+										: auth.isOfficer
+											? auth.officerRole
+												? `Officer · ${auth.officerRole}`
+												: 'Officer'
+											: null
+								}
+							/>
 						</div>
 					) : (
 						<div className="ml-3 flex items-center">

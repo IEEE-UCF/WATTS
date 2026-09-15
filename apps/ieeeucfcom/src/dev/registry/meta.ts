@@ -187,7 +187,13 @@ export const entriesMeta: EntryMeta[] = [
 		status: 'ok',
 		source: '@/components/avatarmenu',
 		surface: 'marketing',
-		controls: [{ name: 'image', type: 'text', default: '' }],
+		notes: 'Opens on hover (Radix NavigationMenu default). Account card — name/email/role — plus Settings and Sign out. Used on the marketing navbar and the dashboard shell topbar.',
+		controls: [
+			{ name: 'image', type: 'text', default: '' },
+			{ name: 'name', type: 'text', default: '' },
+			{ name: 'email', type: 'text', default: '' },
+			{ name: 'role', type: 'text', default: '' },
+		],
 	},
 	{
 		slug: 'layout/dashboard-shell',

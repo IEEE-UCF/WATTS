@@ -2,6 +2,7 @@
 import Link from 'next/link';
 import React from 'react';
 import Image from 'next/image';
+import { signOut } from 'next-auth/react';
 import {
 	NavigationMenu,
 	NavigationMenuContent,
@@ -13,10 +14,20 @@ import {
 } from '@watts/ui/navigation-menu';
 
 interface AvatarMenuProps {
-	image: string; // Define the type for the image prop
+	image: string;
+	name: string;
+	email?: string | null;
+	/** Display label — "Administrator", "Officer · Workshop Chair", or omitted for a plain member. */
+	role?: string | null;
 }
 
-const AvatarMenu: React.FC<AvatarMenuProps> = ({ image }) => {
+/**
+ * Account menu behind the Discord pfp — opens on hover (a Radix NavigationMenu default,
+ * not a click-triggered dropdown). Used on the marketing navbar (the only account access
+ * on public pages) and the dashboard shell's topbar. Settings + Sign out is the one place
+ * sign-out lives outside the bottom of the full /settings form.
+ */
+const AvatarMenu: React.FC<AvatarMenuProps> = ({ image, name, email, role }) => {
 	return (
 		<div className="z-100">
 			<NavigationMenu viewport={false}>
@@ -32,25 +43,37 @@ const AvatarMenu: React.FC<AvatarMenuProps> = ({ image }) => {
 					</NavigationMenuTrigger>
 
 					<NavigationMenuContent>
-						<div className="grid w-fit gap-4 rounded-md bg-ieee-dark-yellow">
-							<div className="flex flex-col">
-								<NavigationMenuLink asChild>
-									<Link
-										href="/dashboard"
-										className="m-1 flex-row items-center gap-2 font-subheading text-white transition-all hover:bg-ieee-bright-yellow"
-									>
-										DASHBOARD
-									</Link>
-								</NavigationMenuLink>
-
+						<div className="w-56 overflow-hidden rounded-md bg-ieee-dark-yellow">
+							<div className="border-b border-black/15 px-3 py-2.5">
+								<div className="truncate font-subheading text-sm text-black">
+									{name}
+								</div>
+								{email && (
+									<div className="truncate text-xs text-black/70">{email}</div>
+								)}
+								{role && (
+									<span className="mt-1.5 inline-block rounded bg-black/10 px-1.5 py-0.5 text-[10px] font-semibold tracking-wide text-black uppercase">
+										{role}
+									</span>
+								)}
+							</div>
+							<div className="flex flex-col p-1">
 								<NavigationMenuLink asChild>
 									<Link
 										href="/settings"
-										className="m-1 flex-row items-center gap-2 font-subheading text-white transition-all hover:bg-ieee-bright-yellow"
+										className="rounded px-2 py-1.5 font-subheading text-sm text-black transition-all hover:bg-ieee-bright-yellow"
 									>
 										SETTINGS
 									</Link>
 								</NavigationMenuLink>
+
+								<button
+									type="button"
+									onClick={() => void signOut({ callbackUrl: '/' })}
+									className="rounded px-2 py-1.5 text-left font-subheading text-sm text-black transition-all hover:bg-ieee-bright-yellow"
+								>
+									SIGN OUT
+								</button>
 							</div>
 						</div>
 					</NavigationMenuContent>
