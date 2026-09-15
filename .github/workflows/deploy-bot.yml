@@ -11,4 +11,4 @@ jobs:
 
     steps:
       - name: Run deploy script
-        run: /opt/watts/deploy.sh
+        run: /root/WATTS/deploy.sh
