@@ -123,6 +123,13 @@ const Navbar: React.FC = () => {
 												: 'Officer'
 											: null
 								}
+								navAuth={{
+									isMember: auth.isMember,
+									isOfficer: auth.isOfficer,
+									isAdmin: auth.isAdmin,
+									hasStaffAccess: auth.hasStaffAccess,
+									permissions: auth.permissions,
+								}}
 							/>
 						</div>
 					) : (

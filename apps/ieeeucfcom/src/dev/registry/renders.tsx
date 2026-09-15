@@ -264,6 +264,13 @@ export const renders: Record<string, Render> = {
 			name={(p.name as string) || 'Amara Okafor'}
 			email={(p.email as string) || 'aokafor@knights.ucf.edu'}
 			role={(p.role as string) || null}
+			navAuth={{
+				isMember: true,
+				isOfficer: Boolean(p.isOfficer ?? true),
+				isAdmin: Boolean(p.isAdmin ?? true),
+				hasStaffAccess: true,
+				permissions: ['manage_events', 'manage_event_photos', 'review_resumes'],
+			}}
 		/>
 	),
 	'marketing/signin-block': () => <Signinblock />,

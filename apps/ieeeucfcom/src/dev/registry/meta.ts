@@ -187,12 +187,14 @@ export const entriesMeta: EntryMeta[] = [
 		status: 'ok',
 		source: '@/components/avatarmenu',
 		surface: 'marketing',
-		notes: 'Opens on hover (Radix NavigationMenu default). Account card — name/email/role — plus Settings and Sign out. Used on the marketing navbar and the dashboard shell topbar.',
+		notes: 'Opens on hover (Radix NavigationMenu default). Account card, then the same nav-config.ts groups the dashboard sidebar renders (filtered by navAuth), then Sign out. Used on the marketing navbar and the dashboard shell topbar — one nav source for both.',
 		controls: [
 			{ name: 'image', type: 'text', default: '' },
 			{ name: 'name', type: 'text', default: '' },
 			{ name: 'email', type: 'text', default: '' },
 			{ name: 'role', type: 'text', default: '' },
+			{ name: 'isOfficer', type: 'boolean', default: true },
+			{ name: 'isAdmin', type: 'boolean', default: true },
 		],
 	},
 	{

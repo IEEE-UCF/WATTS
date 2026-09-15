@@ -112,6 +112,7 @@ export function DashboardShellView({ children, pathname, auth }: DashboardShellV
 								name={auth.name}
 								email={auth.email}
 								role={auth.role}
+								navAuth={auth}
 							/>
 						) : (
 							<Link
