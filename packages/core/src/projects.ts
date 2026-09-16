@@ -5,17 +5,17 @@ import { DomainError } from './errors';
 
 export interface CreateProjectInput {
 	title: string;
-	slug?: string;
+	slug?: string | null;
 	overview: string;
-	projectLead?: string;
-	hardwareInfo?: string;
-	softwareInfo?: string;
-	skills?: string;
+	projectLead?: string | null;
+	hardwareInfo?: string | null;
+	softwareInfo?: string | null;
+	skills?: string | null;
 	photoUrls?: string[];
 	categoryId?: string | null;
-	discordRoleId?: string;
-	discordLeadRoleId?: string;
-	discordChannelId?: string;
+	discordRoleId?: string | null;
+	discordLeadRoleId?: string | null;
+	discordChannelId?: string | null;
 }
 
 export type UpdateProjectInput = Partial<CreateProjectInput>;
@@ -313,4 +313,22 @@ export async function listMyLeadRequests(db: WattsDb, memberId: string) {
 	return ledProjects
 		.map((p, i) => ({ projectId: p.projectId, title: p.title, requests: requestsByProject[i] }))
 		.filter((p) => p.requests.length > 0);
+}
+
+/**
+ * All projects `memberId` leads — unlike listMyLeadRequests, not filtered to ones with
+ * pending requests. Feeds the lead's "edit your project's info" dashboard panel.
+ */
+export function listProjectsLedBy(db: WattsDb, memberId: string) {
+	return db
+		.select({
+			id: Projects.id,
+			title: Projects.title,
+			hardwareInfo: Projects.hardwareInfo,
+			softwareInfo: Projects.softwareInfo,
+			skills: Projects.skills,
+		})
+		.from(ProjectMembers)
+		.innerJoin(Projects, eq(Projects.id, ProjectMembers.projectId))
+		.where(and(eq(ProjectMembers.memberId, memberId), eq(ProjectMembers.isLead, true)));
 }

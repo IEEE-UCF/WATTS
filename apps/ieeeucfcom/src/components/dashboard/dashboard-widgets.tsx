@@ -5,6 +5,7 @@ import { OnboardingChecklist } from '@/components/dashboard/onboarding-checklist
 import { MembershipStatus } from '@/components/dashboard/membership-status';
 import { CommitteesProjects } from '@/components/dashboard/committees-projects';
 import { LeadRequestsPanel } from '@/components/dashboard/lead-requests-panel';
+import { MyProjectInfoPanel } from '@/components/dashboard/my-project-info-panel';
 import { AttendanceSummary } from '@/components/dashboard/attendance-summary';
 import { ResumeStatus } from '@/components/dashboard/resume-status';
 import { OfficerQuickTools } from '@/components/dashboard/officer-quick-tools';
@@ -57,6 +58,7 @@ export function DashboardWidgets() {
 			</div>
 
 			<LeadRequestsPanel />
+			<MyProjectInfoPanel />
 
 			{auth && <OfficerQuickTools isOfficer={auth.isOfficer} isAdmin={auth.isAdmin} />}
 		</div>

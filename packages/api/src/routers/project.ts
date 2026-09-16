@@ -20,6 +20,7 @@ import {
 	approveProjectMembershipRequest,
 	denyProjectMembershipRequest,
 	listMyLeadRequests,
+	listProjectsLedBy,
 } from '@watts/core/projects';
 import { hasCapability } from '@watts/permissions';
 import { finalizeUpload } from '@watts/storage/finalize';
@@ -30,26 +31,33 @@ import { mapDomainError, mapUploadError } from '../map-domain-error';
 
 const manageProjects = capabilityProcedure('manage_projects');
 
-// Validation schemas
+// `.nullish()` (not `.optional()`) on every clearable text field: the admin form must be
+// able to send an explicit `null` to blank out a previously-set value. `undefined` means
+// "leave unchanged" (the field was omitted from the payload); `null` means "clear it" —
+// collapsing both to `undefined` client-side is what silently broke clearing before.
 const projectCreateSchema = z.object({
 	title: z.string().min(1, 'Project title is required').max(255),
-	slug: z.string().max(64).optional(),
+	slug: z.string().max(64).nullish(),
 	overview: z.string().min(1, 'Overview is required'),
-	projectLead: z.string().max(255).optional(), // Temporary plain-text field
-	hardwareInfo: z.string().optional(),
-	softwareInfo: z.string().optional(),
-	skills: z.string().optional(),
+	projectLead: z.string().max(255).nullish(), // Temporary plain-text field
+	hardwareInfo: z.string().nullish(),
+	softwareInfo: z.string().nullish(),
+	skills: z.string().nullish(),
 	photoUrls: z.array(z.string()).optional(),
 	categoryId: z.string().uuid().nullish(),
-	discordRoleId: z.string().max(64).optional(),
-	discordLeadRoleId: z.string().max(64).optional(),
-	discordChannelId: z.string().max(64).optional(),
+	discordRoleId: z.string().max(64).nullish(),
+	discordLeadRoleId: z.string().max(64).nullish(),
+	discordChannelId: z.string().max(64).nullish(),
 });
 
 const projectUpdateSchema = projectCreateSchema.partial();
 
-/** Officer/admin (manage_projects) OR this project's current lead may review requests. */
-async function assertCanReviewRequests(
+/**
+ * Officer/admin (manage_projects) OR this specific project's current lead — the one
+ * shared gate for everything a lead is allowed to do, but only for their own project(s):
+ * reviewing/approving membership requests, and editing their project's info below.
+ */
+async function assertIsOfficerOrProjectLead(
 	ctx: { db: WattsDb; getRoles: () => Promise<MemberRoles | null>; member: { id: string } },
 	projectId: string,
 ) {
@@ -58,6 +66,16 @@ async function assertCanReviewRequests(
 	if (await isProjectLead(ctx.db, projectId, ctx.member.id)) return;
 	throw new TRPCError({ code: 'FORBIDDEN', message: "Must be an officer or this project's lead" });
 }
+
+// The subset of a project's fields a non-officer lead may edit for their own project —
+// deliberately narrow: no title/overview/category/Discord linkage/lead reassignment,
+// just the hardware/software/skills tag lists. Officers use the full `update` procedure.
+const projectInfoSchema = z.object({
+	projectId: z.string().uuid(),
+	hardwareInfo: z.string().nullish(),
+	softwareInfo: z.string().nullish(),
+	skills: z.string().nullish(),
+});
 
 export const projectRouter = createTRPCRouter({
 	getAll: publicProcedure.query(async ({ ctx }) => {
@@ -201,14 +219,14 @@ export const projectRouter = createTRPCRouter({
 	listMembershipRequests: memberProcedure
 		.input(z.object({ projectId: z.string().uuid(), status: z.enum(['pending', 'approved', 'denied']).optional() }))
 		.query(async ({ ctx, input }) => {
-			await assertCanReviewRequests(ctx, input.projectId);
+			await assertIsOfficerOrProjectLead(ctx, input.projectId);
 			return listProjectMembershipRequests(ctx.db, input.projectId, input.status);
 		}),
 
 	approveRequest: memberProcedure
 		.input(z.object({ requestId: z.string().uuid(), projectId: z.string().uuid(), reviewNote: z.string().max(1000).optional() }))
 		.mutation(async ({ ctx, input }) => {
-			await assertCanReviewRequests(ctx, input.projectId);
+			await assertIsOfficerOrProjectLead(ctx, input.projectId);
 			try {
 				return await approveProjectMembershipRequest(ctx.db, input.requestId, ctx.member.id, input.reviewNote);
 			} catch (error) {
@@ -219,7 +237,7 @@ export const projectRouter = createTRPCRouter({
 	denyRequest: memberProcedure
 		.input(z.object({ requestId: z.string().uuid(), projectId: z.string().uuid(), reviewNote: z.string().max(1000).optional() }))
 		.mutation(async ({ ctx, input }) => {
-			await assertCanReviewRequests(ctx, input.projectId);
+			await assertIsOfficerOrProjectLead(ctx, input.projectId);
 			try {
 				return await denyProjectMembershipRequest(ctx.db, input.requestId, ctx.member.id, input.reviewNote);
 			} catch (error) {
@@ -232,4 +250,25 @@ export const projectRouter = createTRPCRouter({
 	myLeadRequests: memberProcedure.query(async ({ ctx }) => {
 		return listMyLeadRequests(ctx.db, ctx.member.id);
 	}),
+
+	// All projects the caller leads (unfiltered by pending requests) — feeds the lead's
+	// "edit your project's info" panel.
+	myLedProjects: memberProcedure.query(async ({ ctx }) => {
+		return listProjectsLedBy(ctx.db, ctx.member.id);
+	}),
+
+	// Narrow edit surface for a non-officer lead: hardware/software/skills only, scoped
+	// to a project THEY lead. Officers can also call it (assertIsOfficerOrProjectLead
+	// passes on manage_projects alone), but they'd normally use the full `update`.
+	updateOwnProjectInfo: memberProcedure
+		.input(projectInfoSchema)
+		.mutation(async ({ ctx, input }) => {
+			await assertIsOfficerOrProjectLead(ctx, input.projectId);
+			const { projectId, ...data } = input;
+			try {
+				return { success: true, ...(await updateProject(ctx.db, projectId, data)) };
+			} catch (error) {
+				mapDomainError(error);
+			}
+		}),
 });

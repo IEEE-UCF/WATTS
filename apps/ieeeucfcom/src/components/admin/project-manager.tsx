@@ -4,6 +4,7 @@ import { Fragment, useMemo, useRef, useState } from 'react';
 import { trpc } from '@/lib/trpc/client';
 import type { RouterOutputs } from '@watts/api';
 import { uploadProjectPhoto } from '@watts/storage/client';
+import { TagInput } from '@/components/tag-input';
 import {
 	Table,
 	TableHeader,
@@ -180,18 +181,21 @@ function ProjectForm({
 
 	async function submit(e: React.FormEvent) {
 		e.preventDefault();
+		// `null`, not `undefined` — a blanked-out field must explicitly clear the column.
+		// `undefined` means "omit this key," which both zod's `.nullish()` and Drizzle's
+		// `.set()` treat as "leave unchanged," so a cleared field would silently stick.
 		const payload = {
 			title: form.title,
-			slug: form.slug || undefined,
+			slug: form.slug.trim() || null,
 			overview: form.overview,
-			projectLead: form.projectLead || undefined,
-			hardwareInfo: form.hardwareInfo || undefined,
-			softwareInfo: form.softwareInfo || undefined,
-			skills: form.skills || undefined,
+			projectLead: form.projectLead.trim() || null,
+			hardwareInfo: form.hardwareInfo.trim() || null,
+			softwareInfo: form.softwareInfo.trim() || null,
+			skills: form.skills.trim() || null,
 			categoryId: form.categoryId || null,
-			discordRoleId: form.discordRoleId || undefined,
-			discordLeadRoleId: form.discordLeadRoleId || undefined,
-			discordChannelId: form.discordChannelId || undefined,
+			discordRoleId: form.discordRoleId.trim() || null,
+			discordLeadRoleId: form.discordLeadRoleId.trim() || null,
+			discordChannelId: form.discordChannelId.trim() || null,
 		};
 		if (editing) await update.mutateAsync({ id: editing.id, data: payload });
 		else await create.mutateAsync(payload);
@@ -241,20 +245,25 @@ function ProjectForm({
 			</label>
 
 			<div className="grid gap-4 sm:grid-cols-2">
-				<label className="block">
-					<span className="mb-1 block text-xs text-muted-foreground">Hardware info (optional)</span>
-					<textarea rows={2} value={form.hardwareInfo} onChange={(e) => set('hardwareInfo', e.target.value)} className={field} />
-				</label>
-				<label className="block">
-					<span className="mb-1 block text-xs text-muted-foreground">Software info (optional)</span>
-					<textarea rows={2} value={form.softwareInfo} onChange={(e) => set('softwareInfo', e.target.value)} className={field} />
-				</label>
+				<TagInput
+					label="Hardware skills/tags"
+					value={form.hardwareInfo}
+					onChange={(v) => set('hardwareInfo', v)}
+					placeholder="e.g. Soldering, then Enter"
+				/>
+				<TagInput
+					label="Software skills/tags"
+					value={form.softwareInfo}
+					onChange={(v) => set('softwareInfo', v)}
+					placeholder="e.g. Python, then Enter"
+				/>
 			</div>
 
-			<label className="block">
-				<span className="mb-1 block text-xs text-muted-foreground">Skills (comma-separated)</span>
-				<input value={form.skills} onChange={(e) => set('skills', e.target.value)} className={field} />
-			</label>
+			<TagInput
+				label="Other skills/tags"
+				value={form.skills}
+				onChange={(v) => set('skills', v)}
+			/>
 
 			<div className="grid gap-4 sm:grid-cols-3">
 				<label className="block">
