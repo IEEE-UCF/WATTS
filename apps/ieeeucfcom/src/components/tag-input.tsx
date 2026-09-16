@@ -80,7 +80,11 @@ export function TagInput({
 							setDraft(before);
 							if (before.trim()) {
 								const t = before.trim();
-								if (!tags.some((existing) => existing.toLowerCase() === t.toLowerCase())) {
+								if (
+									!tags.some(
+										(existing) => existing.toLowerCase() === t.toLowerCase(),
+									)
+								) {
 									commit([...tags, t]);
 								}
 								setDraft('');

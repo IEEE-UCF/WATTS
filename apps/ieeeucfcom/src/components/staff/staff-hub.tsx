@@ -229,8 +229,8 @@ export function StaffHub() {
 					<Panel title="Committees & Projects" cap="manage_projects">
 						<p className="mb-3 text-sm text-muted-foreground">
 							Create and edit projects, categories, and photos, and review join
-							requests from the full project manager. Committee membership and
-							quick project assignment are still handled below.
+							requests from the full project manager. Committee membership and quick
+							project assignment are still handled below.
 						</p>
 						<LinkCard href="/admin/projects" label="Open project manager" />
 						<div className="mt-4 border-t border-border pt-3">

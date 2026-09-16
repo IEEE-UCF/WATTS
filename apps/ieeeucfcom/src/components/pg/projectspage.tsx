@@ -59,7 +59,9 @@ function RequestInfoDropdown({ projectId }: { projectId: string }) {
 	}
 
 	if (requestMembership.isSuccess) {
-		return <p className="text-sm text-ieee-bright-yellow">Request sent — a lead will follow up.</p>;
+		return (
+			<p className="text-sm text-ieee-bright-yellow">Request sent — a lead will follow up.</p>
+		);
 	}
 
 	const errorMessage =
@@ -77,7 +79,9 @@ function RequestInfoDropdown({ projectId }: { projectId: string }) {
 				className="flex items-center gap-1 rounded-sm border border-white/20 px-3 py-1.5 text-sm text-white hover:border-ieee-bright-yellow hover:text-ieee-bright-yellow"
 			>
 				Get involved
-				<ChevronRight className={`h-3 w-3 transition-transform ${open ? 'rotate-90' : ''}`} />
+				<ChevronRight
+					className={`h-3 w-3 transition-transform ${open ? 'rotate-90' : ''}`}
+				/>
 			</button>
 			{open && (
 				<div className="absolute z-10 mt-1 w-56 rounded-sm border border-white/20 bg-black p-2 text-sm">

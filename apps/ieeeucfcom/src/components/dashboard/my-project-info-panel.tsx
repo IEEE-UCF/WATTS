@@ -35,8 +35,16 @@ function ProjectInfoEditor({ project }: { project: EditableProject }) {
 		<div className="rounded-md border border-input p-3">
 			<div className="mb-2 text-xs font-semibold text-muted-foreground">{project.title}</div>
 			<div className="flex flex-col gap-3">
-				<TagInput label="Hardware skills/tags" value={hardwareInfo} onChange={setHardwareInfo} />
-				<TagInput label="Software skills/tags" value={softwareInfo} onChange={setSoftwareInfo} />
+				<TagInput
+					label="Hardware skills/tags"
+					value={hardwareInfo}
+					onChange={setHardwareInfo}
+				/>
+				<TagInput
+					label="Software skills/tags"
+					value={softwareInfo}
+					onChange={setSoftwareInfo}
+				/>
 				<TagInput label="Other skills/tags" value={skills} onChange={setSkills} />
 			</div>
 			<div className="mt-3 flex items-center gap-3">
@@ -53,7 +61,9 @@ function ProjectInfoEditor({ project }: { project: EditableProject }) {
 				{update.isSuccess && !dirty && (
 					<span className="text-xs text-green-400">Saved</span>
 				)}
-				{update.error && <span className="text-xs text-red-400">{update.error.message}</span>}
+				{update.error && (
+					<span className="text-xs text-red-400">{update.error.message}</span>
+				)}
 			</div>
 		</div>
 	);

@@ -61,7 +61,9 @@ function CategoryBar({ categories }: { categories: Category[] }) {
 								{c.name}
 								<button
 									type="button"
-									onClick={() => setArchived.mutate({ id: c.id, archived: !c.archived })}
+									onClick={() =>
+										setArchived.mutate({ id: c.id, archived: !c.archived })
+									}
 									className="text-muted-foreground-dim hover:text-muted-foreground"
 								>
 									{c.archived ? '↺' : '×'}
@@ -98,7 +100,9 @@ function CategoryBar({ categories }: { categories: Category[] }) {
 						>
 							Add
 						</button>
-						{create.error && <span className="text-red-400">{create.error.message}</span>}
+						{create.error && (
+							<span className="text-red-400">{create.error.message}</span>
+						)}
 					</form>
 				</div>
 			)}
@@ -204,7 +208,10 @@ function ProjectForm({
 	const field = 'w-full rounded-md border border-input bg-card px-3 py-2 text-sm text-foreground';
 
 	return (
-		<form onSubmit={submit} className="mb-8 space-y-4 rounded-lg border border-border bg-card/50 p-5">
+		<form
+			onSubmit={submit}
+			className="mb-8 space-y-4 rounded-lg border border-border bg-card/50 p-5"
+		>
 			<h3 className="text-sm font-semibold text-foreground">
 				{editing ? `Edit "${editing.title}"` : 'New project'}
 			</h3>
@@ -212,15 +219,30 @@ function ProjectForm({
 			<div className="grid gap-4 sm:grid-cols-2">
 				<label className="block">
 					<span className="mb-1 block text-xs text-muted-foreground">Title</span>
-					<input required value={form.title} onChange={(e) => set('title', e.target.value)} className={field} />
+					<input
+						required
+						value={form.title}
+						onChange={(e) => set('title', e.target.value)}
+						className={field}
+					/>
 				</label>
 				<label className="block">
-					<span className="mb-1 block text-xs text-muted-foreground">Slug (optional)</span>
-					<input value={form.slug} onChange={(e) => set('slug', e.target.value)} className={field} />
+					<span className="mb-1 block text-xs text-muted-foreground">
+						Slug (optional)
+					</span>
+					<input
+						value={form.slug}
+						onChange={(e) => set('slug', e.target.value)}
+						className={field}
+					/>
 				</label>
 				<label className="block">
 					<span className="mb-1 block text-xs text-muted-foreground">Category</span>
-					<select value={form.categoryId} onChange={(e) => set('categoryId', e.target.value)} className={field}>
+					<select
+						value={form.categoryId}
+						onChange={(e) => set('categoryId', e.target.value)}
+						className={field}
+					>
 						<option value="">— none —</option>
 						{categories
 							.filter((c) => !c.archived || c.id === form.categoryId)
@@ -235,13 +257,23 @@ function ProjectForm({
 					<span className="mb-1 block text-xs text-muted-foreground">
 						Lead (plain-text, optional — prefer assigning a lead below)
 					</span>
-					<input value={form.projectLead} onChange={(e) => set('projectLead', e.target.value)} className={field} />
+					<input
+						value={form.projectLead}
+						onChange={(e) => set('projectLead', e.target.value)}
+						className={field}
+					/>
 				</label>
 			</div>
 
 			<label className="block">
 				<span className="mb-1 block text-xs text-muted-foreground">Overview</span>
-				<textarea required rows={3} value={form.overview} onChange={(e) => set('overview', e.target.value)} className={field} />
+				<textarea
+					required
+					rows={3}
+					value={form.overview}
+					onChange={(e) => set('overview', e.target.value)}
+					className={field}
+				/>
 			</label>
 
 			<div className="grid gap-4 sm:grid-cols-2">
@@ -267,16 +299,34 @@ function ProjectForm({
 
 			<div className="grid gap-4 sm:grid-cols-3">
 				<label className="block">
-					<span className="mb-1 block text-xs text-muted-foreground">Discord member role ID</span>
-					<input value={form.discordRoleId} onChange={(e) => set('discordRoleId', e.target.value)} className={field} />
+					<span className="mb-1 block text-xs text-muted-foreground">
+						Discord member role ID
+					</span>
+					<input
+						value={form.discordRoleId}
+						onChange={(e) => set('discordRoleId', e.target.value)}
+						className={field}
+					/>
 				</label>
 				<label className="block">
-					<span className="mb-1 block text-xs text-muted-foreground">Discord lead role ID</span>
-					<input value={form.discordLeadRoleId} onChange={(e) => set('discordLeadRoleId', e.target.value)} className={field} />
+					<span className="mb-1 block text-xs text-muted-foreground">
+						Discord lead role ID
+					</span>
+					<input
+						value={form.discordLeadRoleId}
+						onChange={(e) => set('discordLeadRoleId', e.target.value)}
+						className={field}
+					/>
 				</label>
 				<label className="block">
-					<span className="mb-1 block text-xs text-muted-foreground">Discord channel ID</span>
-					<input value={form.discordChannelId} onChange={(e) => set('discordChannelId', e.target.value)} className={field} />
+					<span className="mb-1 block text-xs text-muted-foreground">
+						Discord channel ID
+					</span>
+					<input
+						value={form.discordChannelId}
+						onChange={(e) => set('discordChannelId', e.target.value)}
+						className={field}
+					/>
 				</label>
 			</div>
 
@@ -328,9 +378,14 @@ function MembershipPanel({ projectId }: { projectId: string }) {
 	const approve = trpc.project.approveRequest.useMutation({ onSuccess: invalidateRequests });
 	const deny = trpc.project.denyRequest.useMutation({ onSuccess: invalidateRequests });
 
-	const memberIds = useMemo(() => new Set((members.data ?? []).map((m) => m.memberId)), [members.data]);
+	const memberIds = useMemo(
+		() => new Set((members.data ?? []).map((m) => m.memberId)),
+		[members.data],
+	);
 	const candidates = (allMembers.data ?? []).filter(
-		(m) => !memberIds.has(m.id) && `${m.firstName} ${m.lastName}`.toLowerCase().includes(query.toLowerCase()),
+		(m) =>
+			!memberIds.has(m.id) &&
+			`${m.firstName} ${m.lastName}`.toLowerCase().includes(query.toLowerCase()),
 	);
 
 	const add = () => {
@@ -350,12 +405,18 @@ function MembershipPanel({ projectId }: { projectId: string }) {
 							<div key={r.id} className="flex items-center justify-between text-xs">
 								<span className="text-foreground">
 									{r.firstName} {r.lastName}
-									{r.message && <span className="ml-1.5 text-muted-foreground-dim">— {r.message}</span>}
+									{r.message && (
+										<span className="ml-1.5 text-muted-foreground-dim">
+											— {r.message}
+										</span>
+									)}
 								</span>
 								<span className="flex gap-2">
 									<button
 										type="button"
-										onClick={() => approve.mutate({ requestId: r.id, projectId })}
+										onClick={() =>
+											approve.mutate({ requestId: r.id, projectId })
+										}
 										className="text-green-400 hover:underline"
 									>
 										approve
@@ -388,14 +449,22 @@ function MembershipPanel({ projectId }: { projectId: string }) {
 						<span className="flex items-center gap-2">
 							<button
 								type="button"
-								onClick={() => setLead.mutate({ projectId, memberId: m.memberId, isLead: !m.isLead })}
+								onClick={() =>
+									setLead.mutate({
+										projectId,
+										memberId: m.memberId,
+										isLead: !m.isLead,
+									})
+								}
 								className="text-muted-foreground hover:text-foreground"
 							>
 								{m.isLead ? 'remove lead' : 'make lead'}
 							</button>
 							<button
 								type="button"
-								onClick={() => removeMember.mutate({ projectId, memberId: m.memberId })}
+								onClick={() =>
+									removeMember.mutate({ projectId, memberId: m.memberId })
+								}
 								className="text-red-400 hover:underline"
 							>
 								remove
@@ -495,7 +564,10 @@ export function ProjectManager() {
 			invalidate();
 			setBanner({ kind: 'ok', text: 'Photo uploaded.' });
 		} catch (err) {
-			setBanner({ kind: 'err', text: err instanceof Error ? err.message : 'Photo upload failed' });
+			setBanner({
+				kind: 'err',
+				text: err instanceof Error ? err.message : 'Photo upload failed',
+			});
 		} finally {
 			setPhotoBusy(null);
 		}
@@ -514,7 +586,11 @@ export function ProjectManager() {
 					}`}
 				>
 					<span>{banner.text}</span>
-					<button type="button" onClick={() => setBanner(null)} className="text-xs opacity-70 hover:opacity-100">
+					<button
+						type="button"
+						onClick={() => setBanner(null)}
+						className="text-xs opacity-70 hover:opacity-100"
+					>
 						dismiss
 					</button>
 				</div>
@@ -539,7 +615,13 @@ export function ProjectManager() {
 				/>
 			)}
 
-			<input ref={photoRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={onPhotoFile} />
+			<input
+				ref={photoRef}
+				type="file"
+				accept="image/jpeg,image/png,image/webp"
+				className="hidden"
+				onChange={onPhotoFile}
+			/>
 
 			{isLoading ? (
 				<p className="text-sm text-muted-foreground">Loading…</p>
@@ -559,20 +641,33 @@ export function ProjectManager() {
 								<TableRow inactive={!p.active}>
 									<TableCell>
 										<div className="font-medium">{p.title}</div>
-										<div className="text-xs text-muted-foreground-dim">{p.overview.slice(0, 80)}</div>
+										<div className="text-xs text-muted-foreground-dim">
+											{p.overview.slice(0, 80)}
+										</div>
 									</TableCell>
-									<TableCell className="text-xs text-muted-foreground">{p.lead ?? '—'}</TableCell>
+									<TableCell className="text-xs text-muted-foreground">
+										{p.lead ?? '—'}
+									</TableCell>
 									<TableCell>
 										<div className="flex gap-1">
 											{(p.photoUrls ?? []).slice(0, 3).map((url) => (
 												// eslint-disable-next-line @next/next/no-img-element
-												<img key={url} src={url} alt="" className="h-8 w-8 rounded object-cover" />
+												<img
+													key={url}
+													src={url}
+													alt=""
+													className="h-8 w-8 rounded object-cover"
+												/>
 											))}
 										</div>
 									</TableCell>
 									<TableCell>
 										<div className="flex justify-end gap-3 text-xs">
-											<button type="button" onClick={() => openEdit(p)} className="text-blue-400 hover:underline">
+											<button
+												type="button"
+												onClick={() => openEdit(p)}
+												className="text-blue-400 hover:underline"
+											>
 												edit
 											</button>
 											<button
@@ -585,7 +680,9 @@ export function ProjectManager() {
 											</button>
 											<button
 												type="button"
-												onClick={() => setExpandedId(expandedId === p.id ? null : p.id)}
+												onClick={() =>
+													setExpandedId(expandedId === p.id ? null : p.id)
+												}
 												className="text-blue-400 hover:underline"
 											>
 												{expandedId === p.id ? 'hide members' : 'members'}
@@ -610,11 +707,20 @@ export function ProjectManager() {
 														{(p.photoUrls ?? []).map((url) => (
 															<div key={url} className="relative">
 																{/* eslint-disable-next-line @next/next/no-img-element */}
-																<img src={url} alt="" className="h-16 w-16 rounded object-cover" />
+																<img
+																	src={url}
+																	alt=""
+																	className="h-16 w-16 rounded object-cover"
+																/>
 																<button
 																	type="button"
-																	onClick={() => removePhoto.mutate({ projectId: p.id, photoUrl: url })}
-																	className="absolute -right-1 -top-1 rounded-full bg-red-600 px-1 text-[10px] text-white"
+																	onClick={() =>
+																		removePhoto.mutate({
+																			projectId: p.id,
+																			photoUrl: url,
+																		})
+																	}
+																	className="absolute -top-1 -right-1 rounded-full bg-red-600 px-1 text-[10px] text-white"
 																>
 																	×
 																</button>
@@ -628,7 +734,9 @@ export function ProjectManager() {
 								)}
 							</Fragment>
 						))}
-						{(projects ?? []).length === 0 && <TableEmpty colSpan={4}>No projects yet.</TableEmpty>}
+						{(projects ?? []).length === 0 && (
+							<TableEmpty colSpan={4}>No projects yet.</TableEmpty>
+						)}
 					</TableBody>
 				</Table>
 			)}

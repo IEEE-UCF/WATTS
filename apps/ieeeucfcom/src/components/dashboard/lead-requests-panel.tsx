@@ -26,7 +26,9 @@ export function LeadRequestsPanel() {
 			<div className="flex flex-col gap-3">
 				{data.map((p) => (
 					<div key={p.projectId}>
-						<div className="mb-1.5 text-xs font-semibold text-muted-foreground">{p.title}</div>
+						<div className="mb-1.5 text-xs font-semibold text-muted-foreground">
+							{p.title}
+						</div>
 						<div className="flex flex-col gap-1.5">
 							{p.requests.map((r) => (
 								<div
@@ -36,20 +38,32 @@ export function LeadRequestsPanel() {
 									<span className="text-foreground">
 										{r.firstName} {r.lastName}
 										{r.message && (
-											<span className="ml-1.5 text-muted-foreground-dim">— {r.message}</span>
+											<span className="ml-1.5 text-muted-foreground-dim">
+												— {r.message}
+											</span>
 										)}
 									</span>
 									<span className="flex gap-2">
 										<button
 											type="button"
-											onClick={() => approve.mutate({ requestId: r.id, projectId: p.projectId })}
+											onClick={() =>
+												approve.mutate({
+													requestId: r.id,
+													projectId: p.projectId,
+												})
+											}
 											className="text-green-400 hover:underline"
 										>
 											approve
 										</button>
 										<button
 											type="button"
-											onClick={() => deny.mutate({ requestId: r.id, projectId: p.projectId })}
+											onClick={() =>
+												deny.mutate({
+													requestId: r.id,
+													projectId: p.projectId,
+												})
+											}
 											className="text-red-400 hover:underline"
 										>
 											deny
