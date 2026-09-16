@@ -71,7 +71,7 @@ export const vercelAdapter: StorageAdapter = {
 	async head(opts): Promise<ObjectHead | null> {
 		try {
 			const meta = await blobHead(opts.key, { token: token(opts.bucket) });
-			return { size: meta.size, contentType: meta.contentType };
+			return { size: meta.size, contentType: meta.contentType, url: meta.url };
 		} catch {
 			return null;
 		}

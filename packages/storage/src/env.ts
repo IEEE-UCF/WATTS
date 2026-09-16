@@ -72,19 +72,30 @@ export function localEnv(): LocalStorageEnv {
 	};
 }
 
+/**
+ * Vercel dashboard env var values are stored literally — unlike a `.env` file, it does not
+ * strip surrounding quotes you paste in. A stray leading/trailing `"` still parses a valid
+ * store id (parseStoreIdFromReadWriteToken only reads one `_`-delimited segment) but silently
+ * corrupts the HMAC signing key, so uploads fail with a 403 from Vercel instead of a clear
+ * local error. Strip quotes/whitespace defensively so that mistake can't recur.
+ */
+function cleanToken(value: string | undefined): string | undefined {
+	return value?.trim().replace(/^['"]|['"]$/g, '') || undefined;
+}
+
 export function vercelEnv(): VercelStorageEnv {
 	// One Blob store today, holding all (private) media. Vercel names its token
 	// BLOB_READ_WRITE_TOKEN when you connect a store — use that by default.
 	// BLOB_RW_TOKEN_PRIVATE / _PUBLIC are optional overrides for a future two-store setup.
 	const privateToken =
-		process.env.BLOB_RW_TOKEN_PRIVATE ?? process.env.BLOB_READ_WRITE_TOKEN;
+		cleanToken(process.env.BLOB_RW_TOKEN_PRIVATE) ?? cleanToken(process.env.BLOB_READ_WRITE_TOKEN);
 	if (!privateToken) {
 		throw new Error(
 			'STORAGE_PROVIDER=vercel requires BLOB_READ_WRITE_TOKEN (or BLOB_RW_TOKEN_PRIVATE)',
 		);
 	}
 	return {
-		tokenPublic: process.env.BLOB_RW_TOKEN_PUBLIC ?? privateToken,
+		tokenPublic: cleanToken(process.env.BLOB_RW_TOKEN_PUBLIC) ?? privateToken,
 		tokenPrivate: privateToken,
 	};
 }

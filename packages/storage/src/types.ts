@@ -37,6 +37,8 @@ export interface GetObjectOptions {
 export interface ObjectHead {
 	size: number;
 	contentType?: string;
+	/** Real CDN URL for the object, when the provider returns one (vercel does; local doesn't). */
+	url?: string;
 }
 
 export interface ListedObject {
