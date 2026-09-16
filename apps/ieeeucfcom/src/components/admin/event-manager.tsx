@@ -34,7 +34,13 @@ const COMMON_TZ = [
 	'UTC',
 ];
 
-const ROOM_RESERVATION_STATUSES = ['none', 'unsubmitted', 'pending', 'confirmed', 'rejected'] as const;
+const ROOM_RESERVATION_STATUSES = [
+	'none',
+	'unsubmitted',
+	'pending',
+	'confirmed',
+	'rejected',
+] as const;
 type RoomReservationStatus = (typeof ROOM_RESERVATION_STATUSES)[number];
 const ROOM_RESERVATION_LABELS: Record<RoomReservationStatus, string> = {
 	none: 'Not needed',
@@ -165,9 +171,14 @@ function EventForm({
 			rsvpLink: form.rsvpLink || undefined,
 			slug: form.slug || undefined,
 			roomReservationStatus: form.roomReservationStatus,
-			roomReservationRoom: form.roomReservationStatus === 'none' ? undefined : form.roomReservationRoom || undefined,
+			roomReservationRoom:
+				form.roomReservationStatus === 'none'
+					? undefined
+					: form.roomReservationRoom || undefined,
 			roomReservationNumber:
-				form.roomReservationStatus === 'none' ? undefined : form.roomReservationNumber || undefined,
+				form.roomReservationStatus === 'none'
+					? undefined
+					: form.roomReservationNumber || undefined,
 			pingCreatorOnUpdate: form.pingCreatorOnUpdate,
 		};
 		if (editing) await update.mutateAsync({ id: editing.id, data: payload });
@@ -355,7 +366,9 @@ function EventForm({
 					<select
 						id="roomReservationStatus"
 						value={form.roomReservationStatus}
-						onChange={(e) => set('roomReservationStatus', e.target.value as RoomReservationStatus)}
+						onChange={(e) =>
+							set('roomReservationStatus', e.target.value as RoomReservationStatus)
+						}
 						className={field}
 					>
 						{ROOM_RESERVATION_STATUSES.map((s) => (

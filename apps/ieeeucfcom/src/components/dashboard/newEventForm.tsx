@@ -4,7 +4,13 @@ import { trpc } from '@/lib/trpc/client';
 
 type HostType = 'club' | 'committee' | 'project' | 'member' | '';
 
-const ROOM_RESERVATION_STATUSES = ['none', 'unsubmitted', 'pending', 'confirmed', 'rejected'] as const;
+const ROOM_RESERVATION_STATUSES = [
+	'none',
+	'unsubmitted',
+	'pending',
+	'confirmed',
+	'rejected',
+] as const;
 type RoomReservationStatus = (typeof ROOM_RESERVATION_STATUSES)[number];
 const ROOM_RESERVATION_LABELS: Record<RoomReservationStatus, string> = {
 	none: 'Not needed',
@@ -131,9 +137,13 @@ export const FormPopup: React.FC = () => {
 			requiresDues: formData.requiresDues,
 			roomReservationStatus: formData.roomReservationStatus,
 			roomReservationRoom:
-				formData.roomReservationStatus === 'none' ? undefined : formData.roomReservationRoom || undefined,
+				formData.roomReservationStatus === 'none'
+					? undefined
+					: formData.roomReservationRoom || undefined,
 			roomReservationNumber:
-				formData.roomReservationStatus === 'none' ? undefined : formData.roomReservationNumber || undefined,
+				formData.roomReservationStatus === 'none'
+					? undefined
+					: formData.roomReservationNumber || undefined,
 			pingCreatorOnUpdate: formData.pingCreatorOnUpdate,
 		});
 	};
