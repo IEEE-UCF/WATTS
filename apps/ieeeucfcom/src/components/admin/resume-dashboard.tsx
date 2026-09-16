@@ -27,6 +27,43 @@ export function ResumeDashboard() {
 	const [q, setQ] = useState('');
 	const [onlyWithResume, setOnlyWithResume] = useState(true);
 	const [preview, setPreview] = useState<string | null>(null);
+	const [previewObjectUrl, setPreviewObjectUrl] = useState<string | null>(null);
+	const [previewError, setPreviewError] = useState<string | null>(null);
+
+	// Fetch the PDF as bytes and frame a blob: URL instead of the authenticated route
+	// directly — X-Frame-Options: DENY (site-wide, apps/ieeeucfcom/next.config.ts) then
+	// stays intact everywhere, since a blob: URL was never served with that header and
+	// isn't a "sub-site" the way navigating a frame to the API route would be.
+	useEffect(() => {
+		if (!preview) {
+			setPreviewObjectUrl(null);
+			setPreviewError(null);
+			return;
+		}
+		let cancelled = false;
+		let objectUrl: string | null = null;
+		setPreviewObjectUrl(null);
+		setPreviewError(null);
+		fetch(preview)
+			.then((res) => {
+				if (!res.ok) throw new Error(`Couldn't load résumé (${res.status})`);
+				return res.blob();
+			})
+			.then((blob) => {
+				if (cancelled) return;
+				objectUrl = URL.createObjectURL(blob);
+				setPreviewObjectUrl(objectUrl);
+			})
+			.catch((err) => {
+				if (!cancelled) {
+					setPreviewError(err instanceof Error ? err.message : "Couldn't load résumé");
+				}
+			});
+		return () => {
+			cancelled = true;
+			if (objectUrl) URL.revokeObjectURL(objectUrl);
+		};
+	}, [preview]);
 	const [filter, setFilter] = useState<ResumeExportFilter>(EMPTY_RESUME_FILTER);
 
 	const allRows: FilterBarRow[] = useMemo(
@@ -220,11 +257,17 @@ export function ResumeDashboard() {
 
 			<Card className="gap-0 rounded-lg border-border bg-card/50 p-2">
 				{preview ? (
-					<iframe
-						title="résumé preview"
-						src={preview}
-						className="h-[70vh] w-full rounded"
-					/>
+					previewError ? (
+						<p className="p-6 text-sm text-destructive">{previewError}</p>
+					) : previewObjectUrl ? (
+						<iframe
+							title="résumé preview"
+							src={previewObjectUrl}
+							className="h-[70vh] w-full rounded"
+						/>
+					) : (
+						<p className="p-6 text-sm text-muted-foreground-dim">Loading…</p>
+					)
 				) : (
 					<p className="p-6 text-sm text-muted-foreground-dim">
 						Select “preview” to view a résumé here.
