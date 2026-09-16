@@ -167,6 +167,44 @@ export async function uploadEventFlyer(eventId: string, original: File): Promise
 	return { key };
 }
 
+/**
+ * Upload a photo to a project's public gallery (`projects.photo_urls`). Many photos
+ * per project, unlike the one-per-event flyer — mirrors uploadEventPhoto's
+ * compression step but the bucket is public and there's no EXIF/caption metadata.
+ */
+export async function uploadProjectPhoto(projectId: string, original: File): Promise<{ photoId: string }> {
+	const { default: imageCompression } = await import('browser-image-compression');
+	const web = await imageCompression(original, {
+		maxWidthOrHeight: 1600,
+		maxSizeMB: 1,
+		useWebWorker: true,
+		fileType: 'image/jpeg',
+	});
+
+	const photoId = crypto.randomUUID();
+	const intent = {
+		kind: 'project-photo' as const,
+		projectId,
+		photoId,
+		contentType: 'image/jpeg',
+		byteSize: web.size,
+		filename: original.name,
+	};
+
+	if (PROVIDER === 'vercel') {
+		const { upload } = await import('@vercel/blob/client');
+		await upload(`project-photos/${projectId}/${photoId}.jpg`, web, {
+			access: 'public',
+			handleUploadUrl: UPLOAD_URL,
+			clientPayload: JSON.stringify(intent),
+		});
+	} else {
+		await localPut(intent, web);
+	}
+
+	return { photoId };
+}
+
 async function imageDimensions(blob: Blob): Promise<{ width: number; height: number }> {
 	const url = URL.createObjectURL(blob);
 	try {

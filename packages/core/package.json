@@ -13,6 +13,7 @@
     "./meetings": "./src/meetings.ts",
     "./members": "./src/members.ts",
     "./officers": "./src/officers.ts",
+    "./project-categories": "./src/project-categories.ts",
     "./projects": "./src/projects.ts",
     "./settings": "./src/settings.ts"
   },

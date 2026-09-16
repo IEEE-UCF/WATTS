@@ -10,7 +10,9 @@ export type StorageBucket = 'public' | 'private';
 // resume / event-photo → private bucket, gated on the member/admin.
 // event-flyer → PUBLIC bucket, gated on the `manage_events` capability. One flyer
 // per event, overwritten in place; the object URL is stored on `events.flyer_url`.
-export type UploadKind = 'resume' | 'event-photo' | 'event-flyer';
+// project-photo → PUBLIC bucket, gated on the `manage_projects` capability. Many
+// photos per project, appended to `projects.photo_urls`.
+export type UploadKind = 'resume' | 'event-photo' | 'event-flyer' | 'project-photo';
 
 export interface PresignPutOptions {
 	key: string;

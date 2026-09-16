@@ -1,6 +1,7 @@
 'use client';
 
 import Image from 'next/image';
+import Link from 'next/link';
 import { Navbar } from '@/components/navbar';
 import { SidebarProvider } from '@watts/ui/sidebar';
 import { useState, useEffect, useRef } from 'react';
@@ -16,6 +17,91 @@ import type { Project } from '@watts/db/schema';
 type ProjectWithLead = Project & { lead: string | null };
 
 gsap.registerPlugin(ScrollTrigger);
+
+/**
+ * Deliberately minimal per-project "get involved" affordance — a dropdown with one
+ * action that fires the existing project.requestMembership mutation as a soft
+ * interest signal, not a real join flow yet. How this should actually be structured
+ * (a real join flow, a contact form, something else) is a later decision.
+ */
+function RequestInfoDropdown({ projectId }: { projectId: string }) {
+	const [open, setOpen] = useState(false);
+	const { data: auth } = trpc.auth.getAuthStatus.useQuery();
+	const requestMembership = trpc.project.requestMembership.useMutation();
+
+	if (!auth) return null;
+
+	if (!auth.isAuthenticated || !auth.isMember) {
+		return (
+			<div className="relative">
+				<button
+					type="button"
+					onClick={() => setOpen((o) => !o)}
+					className="flex items-center gap-1 rounded-sm border border-white/20 px-3 py-1.5 text-sm text-white hover:border-ieee-bright-yellow hover:text-ieee-bright-yellow"
+				>
+					Get involved
+					<ChevronRight
+						className={`h-3 w-3 transition-transform ${open ? 'rotate-90' : ''}`}
+					/>
+				</button>
+				{open && (
+					<div className="absolute z-10 mt-1 w-56 rounded-sm border border-white/20 bg-black p-2 text-sm">
+						<Link
+							href="/auth/signin"
+							className="block rounded-sm px-2 py-1.5 text-white hover:bg-white/10"
+						>
+							Sign in to request info
+						</Link>
+					</div>
+				)}
+			</div>
+		);
+	}
+
+	if (requestMembership.isSuccess) {
+		return (
+			<p className="text-sm text-ieee-bright-yellow">Request sent — a lead will follow up.</p>
+		);
+	}
+
+	const errorMessage =
+		requestMembership.error?.data?.code === 'CONFLICT'
+			? requestMembership.error.message
+			: requestMembership.error
+				? 'Something went wrong — try again.'
+				: null;
+
+	return (
+		<div className="relative">
+			<button
+				type="button"
+				onClick={() => setOpen((o) => !o)}
+				className="flex items-center gap-1 rounded-sm border border-white/20 px-3 py-1.5 text-sm text-white hover:border-ieee-bright-yellow hover:text-ieee-bright-yellow"
+			>
+				Get involved
+				<ChevronRight
+					className={`h-3 w-3 transition-transform ${open ? 'rotate-90' : ''}`}
+				/>
+			</button>
+			{open && (
+				<div className="absolute z-10 mt-1 w-56 rounded-sm border border-white/20 bg-black p-2 text-sm">
+					<button
+						type="button"
+						disabled={requestMembership.isPending}
+						onClick={() => {
+							requestMembership.mutate({ projectId });
+							setOpen(false);
+						}}
+						className="block w-full rounded-sm px-2 py-1.5 text-left text-white hover:bg-white/10 disabled:opacity-50"
+					>
+						{requestMembership.isPending ? 'Sending…' : 'Request to learn more'}
+					</button>
+				</div>
+			)}
+			{errorMessage && <p className="mt-1 text-xs text-red-400">{errorMessage}</p>}
+		</div>
+	);
+}
 
 export default function ProjectsPage() {
 	const [selectedProject, setSelectedProject] = useState<ProjectWithLead | null>(null);
@@ -232,6 +318,9 @@ export default function ProjectsPage() {
 								width={600}
 								height={400}
 							/>
+						</div>
+						<div className="mb-4">
+							<RequestInfoDropdown projectId={selectedProject.id} />
 						</div>
 						<div className="flex-1 space-y-4 overflow-auto">
 							<div>

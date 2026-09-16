@@ -1,0 +1,12 @@
+{
+	"version": "0.0.1",
+	"configurations": [
+		{
+			"name": "web",
+			"runtimeExecutable": "pnpm",
+			"runtimeArgs": ["--filter", "@watts/web", "dev"],
+			"port": 3050,
+			"url": "https://localhost:3050"
+		}
+	]
+}
