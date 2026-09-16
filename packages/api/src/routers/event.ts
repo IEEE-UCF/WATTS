@@ -98,8 +98,9 @@ const eventCreateSchema = z.object({
 	hidden: z.boolean().optional(),
 	timeZone: z.string().max(64).optional(),
 	allDay: z.boolean().optional(),
-	needsRoomReservation: z.boolean().optional(),
-	manuallyGivenRoom: z.boolean().optional(),
+	roomReservationStatus: z.enum(['none', 'unsubmitted', 'pending', 'confirmed', 'rejected']).optional(),
+	roomReservationRoom: z.string().max(255).optional(),
+	roomReservationNumber: z.string().max(64).optional(),
 	pingCreatorOnUpdate: z.boolean().optional(),
 });
 

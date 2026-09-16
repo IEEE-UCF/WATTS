@@ -21,22 +21,22 @@ export class ReadyEvent extends Event {
 			type: this.client.config.status.type,
 		});
 
-		// Startup ping in #general
-		const generalId: string = this.client.config.servers.main.channels.general;
-		if (generalId) {
+		// Startup/status ping in the default logging channel
+		const defaultLoggingId: string = this.client.config.servers.main.channels.defaultLogging;
+		if (defaultLoggingId) {
 			try {
-				const channel = await this.client.channels.fetch(generalId);
+				const channel = await this.client.channels.fetch(defaultLoggingId);
 				if (channel?.isTextBased() && 'send' in channel) {
 					await channel.send('bot alive');
-					this.client.logger?.success(`Posted startup message to #general (${generalId}).`);
+					this.client.logger?.success(`Posted startup message to #defaultLogging (${defaultLoggingId}).`);
 				} else {
-					this.client.logger?.warn(`CHANNEL_GENERAL_ID ${generalId} is not a sendable text channel.`);
+					this.client.logger?.warn(`CHANNEL_DEFAULT_LOGGING_ID ${defaultLoggingId} is not a sendable text channel.`);
 				}
 			} catch (err) {
-				this.client.logger?.warn(`Could not post startup message to #general: ${err}`);
+				this.client.logger?.warn(`Could not post startup message to #defaultLogging: ${err}`);
 			}
 		} else {
-			this.client.logger?.warn('CHANNEL_GENERAL_ID is unset — skipping the startup message.');
+			this.client.logger?.warn('CHANNEL_DEFAULT_LOGGING_ID is unset — skipping the startup message.');
 		}
 
 		await this.client.eventsAutomation.start();

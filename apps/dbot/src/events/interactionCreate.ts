@@ -93,7 +93,7 @@ export class InteractionCreateEvent extends Event {
 	private async sendErrorToLogs(interaction: ChatInputCommandInteraction, error: any): Promise<void> {
 		try {
 			// Check if we have a logs channel configured
-			const logsChannelId = this.client.config?.servers?.main?.channels?.logs;
+			const logsChannelId = this.client.config?.servers?.main?.channels?.defaultLogging;
 			if (!logsChannelId) return;
 
 			const logsChannel = this.client.channels.cache.get(logsChannelId);

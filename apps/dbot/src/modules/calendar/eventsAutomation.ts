@@ -210,6 +210,9 @@ export class eventsAutomation {
 			if (!channel?.isTextBased()) return;
 
 			const reminderHours = this.client.config.servers.main.eventReminders.reminderMinutes / 60;
+			// TODO(bug, deferred): `roleToPing` isn't a real Config field — the actual field is
+			// `reminderRole` (config.ts, backed by ROLE_REMINDER_ID). This always reads undefined,
+			// so the reminder role is never pinged below. Needs another look before relying on it.
 			const roleToPing = this.client.config.servers.main.roleToPing;
 
 			const embed = this.client.createEmbed()

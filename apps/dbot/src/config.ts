@@ -1,16 +1,17 @@
 import { GatewayIntentBits, Partials, ActivityType } from 'discord.js';
 import { loadRootEnv } from '@watts/config/load-env';
 
-// Env resolution: a bot-local `apps/dbot/.env` wins (bot token, test-guild id, and
-// optionally a DATABASE_URL override); the repo-root `./.env` fills in everything it
-// doesn't set (the shared SHARED section). Node's loader and dotenv both leave
-// already-set vars alone, so the local file must load first.
+// Env resolution: the repo-root `./.env` is authoritative. It loads first, so any key
+// it sets wins. A bot-local `apps/dbot/.env` only fills in keys the root file doesn't
+// set (e.g. a developer's own local-only override) — Node's loader and dotenv both
+// leave already-set vars alone, which is what makes that "fill gaps only" behavior work
+// as long as root loads first.
+loadRootEnv();
 try {
 	process.loadEnvFile?.(); // <cwd>/.env — apps/dbot/.env when run via `pnpm --filter @watts/bot dev`
 } catch {
 	/* no apps/dbot/.env — everything comes from the repo root */
 }
-loadRootEnv();
 
 interface Config {
 	token: string;
@@ -25,6 +26,10 @@ interface Config {
 				reminders: string;
 				assistance: string;
 				general: string;
+				/** Live room-reservation dashboard — split out from `calendar`, which now only holds the weekly events board. */
+				roomDashboard: string;
+				/** Default catch-all log channel: startup/status pings + room-reservation announcements. */
+				defaultLogging: string;
 			};
 			eventsAutomation: {
 				enabled: boolean;
@@ -86,6 +91,8 @@ const config: Config = {
 				reminders: process.env.CHANNEL_REMINDERS_ID ?? '',
 				assistance: process.env.CHANNEL_ASSISTANCE_ID ?? '',
 				general: process.env.CHANNEL_GENERAL_ID ?? '',
+				roomDashboard: process.env.CHANNEL_ROOM_DASHBOARD_ID ?? '',
+				defaultLogging: process.env.CHANNEL_DEFAULT_LOGGING_ID ?? '',
 			},
 			eventsAutomation: {
 				enabled: process.env.EVENTS_AUTOMATION_ENABLED === 'true',

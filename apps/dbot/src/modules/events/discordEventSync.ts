@@ -251,8 +251,8 @@ export class DiscordEventSync {
 	// NEW: Room Reservation Embed Showcase System
 	async reconcileReservations(guild: Guild, db: any) {
 		try {
-			// Get the target channel for reservation logs (fallback to general channel for testing)
-			const logChannelId = this.client.config.servers.main.channels.general;
+			// Room-reservation status-change announcements go to the default logging channel
+			const logChannelId = this.client.config.servers.main.channels.defaultLogging;
 			const channel = await guild.channels.fetch(logChannelId).catch(() => null);
 
 			if (!channel || !(channel instanceof TextChannel)) {
@@ -329,8 +329,8 @@ export class DiscordEventSync {
 	// NEW: Live Room Tracker Dashboard
 	async updateRoomDashboard(guild: Guild, db: any) {
 		try {
-			// Target the Calendar channel for the Dashboard
-			const dashboardChannelId = this.client.config.servers.main.channels.calendar;
+			// Target the dedicated room-reservation dashboard channel
+			const dashboardChannelId = this.client.config.servers.main.channels.roomDashboard;
 			const channel = await guild.channels.fetch(dashboardChannelId).catch(() => null);
 			if (!channel || !(channel instanceof TextChannel)) return;
 

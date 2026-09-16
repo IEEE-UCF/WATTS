@@ -34,6 +34,16 @@ const COMMON_TZ = [
 	'UTC',
 ];
 
+const ROOM_RESERVATION_STATUSES = ['none', 'unsubmitted', 'pending', 'confirmed', 'rejected'] as const;
+type RoomReservationStatus = (typeof ROOM_RESERVATION_STATUSES)[number];
+const ROOM_RESERVATION_LABELS: Record<RoomReservationStatus, string> = {
+	none: 'Not needed',
+	unsubmitted: 'Unsubmitted',
+	pending: 'Pending',
+	confirmed: 'Confirmed',
+	rejected: 'Rejected',
+};
+
 /** Postgres wire string → value for a <input type="datetime-local"> in the browser's local tz. */
 function toLocalInput(raw: string | null | undefined): string {
 	if (!raw) return '';
@@ -58,8 +68,9 @@ interface FormState {
 	requiresDues: boolean;
 	rsvpLink: string;
 	slug: string;
-	needsRoomReservation: boolean;
-	manuallyGivenRoom: boolean;
+	roomReservationStatus: RoomReservationStatus;
+	roomReservationRoom: string;
+	roomReservationNumber: string;
 	pingCreatorOnUpdate: boolean;
 }
 
@@ -78,8 +89,9 @@ function emptyForm(): FormState {
 		requiresDues: false,
 		rsvpLink: '',
 		slug: '',
-		needsRoomReservation: false,
-		manuallyGivenRoom: false,
+		roomReservationStatus: 'none',
+		roomReservationRoom: '',
+		roomReservationNumber: '',
 		pingCreatorOnUpdate: false,
 	};
 }
@@ -99,8 +111,9 @@ function fromEvent(ev: AdminEvent): FormState {
 		requiresDues: ev.requiresDues,
 		rsvpLink: ev.rsvpLink ?? '',
 		slug: ev.slug ?? '',
-		needsRoomReservation: ev.roomReservation !== null,
-		manuallyGivenRoom: ev.roomReservation?.isManualOverride ?? false,
+		roomReservationStatus: (ev.roomReservation?.status ?? 'none') as RoomReservationStatus,
+		roomReservationRoom: ev.roomReservation?.room ?? '',
+		roomReservationNumber: ev.roomReservation?.reservationNumber ?? '',
 		pingCreatorOnUpdate: ev.pingCreatorOnUpdate ?? false,
 	};
 }
@@ -151,8 +164,10 @@ function EventForm({
 			requiresDues: form.requiresDues,
 			rsvpLink: form.rsvpLink || undefined,
 			slug: form.slug || undefined,
-			needsRoomReservation: form.needsRoomReservation,
-			manuallyGivenRoom: form.manuallyGivenRoom,
+			roomReservationStatus: form.roomReservationStatus,
+			roomReservationRoom: form.roomReservationStatus === 'none' ? undefined : form.roomReservationRoom || undefined,
+			roomReservationNumber:
+				form.roomReservationStatus === 'none' ? undefined : form.roomReservationNumber || undefined,
 			pingCreatorOnUpdate: form.pingCreatorOnUpdate,
 		};
 		if (editing) await update.mutateAsync({ id: editing.id, data: payload });
@@ -330,24 +345,52 @@ function EventForm({
 					/>
 					Requires dues
 				</label>
-				<label className="flex items-center gap-2">
-					<input
-						id="needsRoomReservation"
-						type="checkbox"
-						checked={form.needsRoomReservation}
-						onChange={(e) => set('needsRoomReservation', e.target.checked)}
-					/>
-					Needs SU Room Reservation
+			</div>
+
+			<div className="grid gap-4 sm:grid-cols-3">
+				<label className="block">
+					<span className="mb-1 block text-xs text-muted-foreground">
+						SU Room Reservation
+					</span>
+					<select
+						id="roomReservationStatus"
+						value={form.roomReservationStatus}
+						onChange={(e) => set('roomReservationStatus', e.target.value as RoomReservationStatus)}
+						className={field}
+					>
+						{ROOM_RESERVATION_STATUSES.map((s) => (
+							<option key={s} value={s}>
+								{ROOM_RESERVATION_LABELS[s]}
+							</option>
+						))}
+					</select>
 				</label>
-				<label className="flex items-center gap-2 text-muted-foreground">
-					<input
-						id="manuallyGivenRoom"
-						type="checkbox"
-						checked={form.manuallyGivenRoom}
-						onChange={(e) => set('manuallyGivenRoom', e.target.checked)}
-					/>
-					Room is already confirmed (Skip Tracking)
-				</label>
+				{form.roomReservationStatus !== 'none' && (
+					<>
+						<label className="block">
+							<span className="mb-1 block text-xs text-muted-foreground">
+								Room (optional)
+							</span>
+							<input
+								id="roomReservationRoom"
+								value={form.roomReservationRoom}
+								onChange={(e) => set('roomReservationRoom', e.target.value)}
+								className={field}
+							/>
+						</label>
+						<label className="block">
+							<span className="mb-1 block text-xs text-muted-foreground">
+								Reservation # (optional)
+							</span>
+							<input
+								id="roomReservationNumber"
+								value={form.roomReservationNumber}
+								onChange={(e) => set('roomReservationNumber', e.target.value)}
+								className={field}
+							/>
+						</label>
+					</>
+				)}
 			</div>
 
 			{error && <p className="text-sm text-red-400">{error}</p>}

@@ -4,6 +4,16 @@ import { trpc } from '@/lib/trpc/client';
 
 type HostType = 'club' | 'committee' | 'project' | 'member' | '';
 
+const ROOM_RESERVATION_STATUSES = ['none', 'unsubmitted', 'pending', 'confirmed', 'rejected'] as const;
+type RoomReservationStatus = (typeof ROOM_RESERVATION_STATUSES)[number];
+const ROOM_RESERVATION_LABELS: Record<RoomReservationStatus, string> = {
+	none: 'Not needed',
+	unsubmitted: 'Unsubmitted',
+	pending: 'Pending',
+	confirmed: 'Confirmed',
+	rejected: 'Rejected',
+};
+
 interface EventFormData {
 	title: string;
 	location: string;
@@ -14,8 +24,9 @@ interface EventFormData {
 	description: string;
 	flyerUrl: string;
 	rsvpLink: string;
-	needsRoomReservation: boolean;
-	manuallyGivenRoom: boolean;
+	roomReservationStatus: RoomReservationStatus;
+	roomReservationRoom: string;
+	roomReservationNumber: string;
 	pingCreatorOnUpdate: boolean;
 }
 
@@ -40,8 +51,9 @@ export const FormPopup: React.FC = () => {
 		description: '',
 		flyerUrl: '',
 		rsvpLink: '',
-		needsRoomReservation: false,
-		manuallyGivenRoom: false,
+		roomReservationStatus: 'none',
+		roomReservationRoom: '',
+		roomReservationNumber: '',
 		pingCreatorOnUpdate: false,
 	});
 
@@ -61,8 +73,9 @@ export const FormPopup: React.FC = () => {
 				description: '',
 				flyerUrl: '',
 				rsvpLink: '',
-				needsRoomReservation: false,
-				manuallyGivenRoom: false,
+				roomReservationStatus: 'none',
+				roomReservationRoom: '',
+				roomReservationNumber: '',
 				pingCreatorOnUpdate: false,
 			});
 		},
@@ -86,8 +99,9 @@ export const FormPopup: React.FC = () => {
 			description: 'This is a test event created for database insertion testing.',
 			flyerUrl: '',
 			rsvpLink: '',
-			needsRoomReservation: false,
-			manuallyGivenRoom: false,
+			roomReservationStatus: 'none',
+			roomReservationRoom: '',
+			roomReservationNumber: '',
 			pingCreatorOnUpdate: false,
 		});
 	};
@@ -115,8 +129,11 @@ export const FormPopup: React.FC = () => {
 			flyerUrl: formData.flyerUrl || undefined,
 			rsvpLink: formData.rsvpLink || undefined,
 			requiresDues: formData.requiresDues,
-			needsRoomReservation: formData.needsRoomReservation,
-			manuallyGivenRoom: formData.manuallyGivenRoom,
+			roomReservationStatus: formData.roomReservationStatus,
+			roomReservationRoom:
+				formData.roomReservationStatus === 'none' ? undefined : formData.roomReservationRoom || undefined,
+			roomReservationNumber:
+				formData.roomReservationStatus === 'none' ? undefined : formData.roomReservationNumber || undefined,
 			pingCreatorOnUpdate: formData.pingCreatorOnUpdate,
 		});
 	};
@@ -273,38 +290,61 @@ export const FormPopup: React.FC = () => {
 									className="mt-1 block w-full rounded-md border border-input bg-card px-3 py-2 text-foreground shadow-sm sm:text-sm"
 								/>
 							</div>
-							<div className="mb-4 flex items-center">
-								<input
-									type="checkbox"
-									name="needsRoomReservation"
-									id="needsRoomReservation"
-									checked={formData.needsRoomReservation}
-									onChange={handleChange}
-									className="h-4 w-4 rounded border-input bg-card text-indigo-600"
-								/>
+							<div className="mb-4">
 								<label
-									htmlFor="needsRoomReservation"
-									className="ml-2 block text-sm text-foreground"
+									htmlFor="roomReservationStatus"
+									className="block text-sm font-medium text-muted-foreground"
 								>
-									Needs SU Room Reservation
+									SU Room Reservation
 								</label>
+								<select
+									name="roomReservationStatus"
+									id="roomReservationStatus"
+									value={formData.roomReservationStatus}
+									onChange={handleChange}
+									className="mt-1 block w-full rounded-md border border-input bg-card px-3 py-2 text-foreground shadow-sm sm:text-sm"
+								>
+									{ROOM_RESERVATION_STATUSES.map((s) => (
+										<option key={s} value={s}>
+											{ROOM_RESERVATION_LABELS[s]}
+										</option>
+									))}
+								</select>
 							</div>
-							{formData.needsRoomReservation && (
-								<div className="mb-4 ml-6 flex items-center">
-									<input
-										type="checkbox"
-										name="manuallyGivenRoom"
-										id="manuallyGivenRoom"
-										checked={formData.manuallyGivenRoom}
-										onChange={handleChange}
-										className="h-4 w-4 rounded border-input bg-card text-indigo-600"
-									/>
-									<label
-										htmlFor="manuallyGivenRoom"
-										className="ml-2 block text-sm text-foreground"
-									>
-										Room is already confirmed (Skip Tracking)
-									</label>
+							{formData.roomReservationStatus !== 'none' && (
+								<div className="mb-4 ml-6 grid grid-cols-2 gap-3">
+									<div>
+										<label
+											htmlFor="roomReservationRoom"
+											className="block text-sm font-medium text-muted-foreground"
+										>
+											Room (optional)
+										</label>
+										<input
+											type="text"
+											name="roomReservationRoom"
+											id="roomReservationRoom"
+											value={formData.roomReservationRoom}
+											onChange={handleChange}
+											className="mt-1 block w-full rounded-md border border-input bg-card px-3 py-2 text-foreground shadow-sm sm:text-sm"
+										/>
+									</div>
+									<div>
+										<label
+											htmlFor="roomReservationNumber"
+											className="block text-sm font-medium text-muted-foreground"
+										>
+											Reservation # (optional)
+										</label>
+										<input
+											type="text"
+											name="roomReservationNumber"
+											id="roomReservationNumber"
+											value={formData.roomReservationNumber}
+											onChange={handleChange}
+											className="mt-1 block w-full rounded-md border border-input bg-card px-3 py-2 text-foreground shadow-sm sm:text-sm"
+										/>
+									</div>
 								</div>
 							)}
 							<div className="mb-4 flex items-center">

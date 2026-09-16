@@ -24,9 +24,10 @@ export interface CreateEventInput {
 	/** IANA tz, e.g. "America/New_York". Defaults to Eastern. */
 	timeZone?: string;
 	allDay?: boolean;
-	needsRoomReservation?: boolean;
-	/** Skips tracking flow and locks room reservation as manually confirmed */
-	manuallyGivenRoom?: boolean;
+	/** 'none' (or omitted) means no reservation is tracked; any other value creates/keeps a RoomReservations row. */
+	roomReservationStatus?: 'none' | 'unsubmitted' | 'pending' | 'confirmed' | 'rejected';
+	roomReservationRoom?: string;
+	roomReservationNumber?: string;
 	/** Whether the creator wants to be pinged via Discord when this event updates */
 	pingCreatorOnUpdate?: boolean;
 }
@@ -51,7 +52,7 @@ export async function listActiveEvents(db: WattsDb) {
 
 /** Every event including inactive/soft-deleted — for the staff management grid.
  * Left-joined with its room reservation (if any) so the admin edit form can show
- * the real needsRoomReservation / manuallyGivenRoom state instead of guessing. */
+ * the real reservation status instead of guessing. */
 export async function listAllEvents(db: WattsDb) {
 	const rows = await db
 		.select({ event: Events, roomReservation: RoomReservations })
@@ -156,14 +157,17 @@ export async function createEvent(
 		})
 		.returning();
 
-	if (input.needsRoomReservation) {
-		const { RoomReservations } = await import('@watts/db/schema');
+	if (input.roomReservationStatus && input.roomReservationStatus !== 'none') {
 		await db.insert(RoomReservations).values({
 			eventId: event.id,
-			status: input.manuallyGivenRoom ? 'confirmed' : 'unsubmitted',
-			room: input.manuallyGivenRoom ? input.location : null,
-			isManualOverride: input.manuallyGivenRoom ? true : false,
-			lastAnnouncedStatus: input.manuallyGivenRoom ? 'confirmed' : 'unsubmitted',
+			status: input.roomReservationStatus,
+			room: input.roomReservationRoom ?? null,
+			reservationNumber: input.roomReservationNumber ?? null,
+			isManualOverride: true,
+			// Seeded null (not equal to `status`) so the bot's next reconcile poll sees a
+			// real diff and posts the initial "needs a room reservation" announcement.
+			lastAnnouncedStatus: null,
+			lastAnnouncedRoom: null,
 		});
 	}
 
@@ -193,27 +197,40 @@ export async function updateEvent(db: WattsDb, id: string, data: UpdateEventInpu
 	const [event] = await db.update(Events).set(patch).where(eq(Events.id, id)).returning();
 	if (!event) throw new DomainError('NOT_FOUND', 'Event not found');
 
-	if (data.needsRoomReservation || data.manuallyGivenRoom !== undefined) {
-		const { RoomReservations } = await import('@watts/db/schema');
-		const existing = await db.select().from(RoomReservations).where(eq(RoomReservations.eventId, id)).limit(1);
-		
-		if (existing.length > 0) {
-			const overrides: any = {};
-			if (data.manuallyGivenRoom !== undefined) {
-				overrides.status = data.manuallyGivenRoom ? 'confirmed' : existing[0].status;
-				overrides.isManualOverride = data.manuallyGivenRoom ? true : false;
-				overrides.room = data.manuallyGivenRoom ? (data.location ?? existing[0].room) : existing[0].room;
+	if (data.roomReservationStatus !== undefined) {
+		const existing = await db
+			.select()
+			.from(RoomReservations)
+			.where(eq(RoomReservations.eventId, id))
+			.limit(1);
+
+		if (data.roomReservationStatus === 'none') {
+			if (existing.length > 0) {
+				await db.delete(RoomReservations).where(eq(RoomReservations.eventId, id));
 			}
-			if (Object.keys(overrides).length > 0) {
-				await db.update(RoomReservations).set(overrides).where(eq(RoomReservations.eventId, id));
-			}
-		} else if (data.needsRoomReservation || data.manuallyGivenRoom) {
+		} else if (existing.length > 0) {
+			// Leave lastAnnouncedStatus/lastAnnouncedRoom untouched — only the bot writes
+			// those, after it announces. A real status/room change here still produces a
+			// diff for reconcileReservations() to pick up and announce.
+			await db
+				.update(RoomReservations)
+				.set({
+					status: data.roomReservationStatus,
+					room: data.roomReservationRoom ?? existing[0].room,
+					reservationNumber: data.roomReservationNumber ?? existing[0].reservationNumber,
+					isManualOverride: true,
+					updatedAt: new Date().toISOString(),
+				})
+				.where(eq(RoomReservations.eventId, id));
+		} else {
 			await db.insert(RoomReservations).values({
 				eventId: id,
-				status: data.manuallyGivenRoom ? 'confirmed' : 'unsubmitted',
-				room: data.manuallyGivenRoom ? (data.location ?? null) : null,
-				isManualOverride: data.manuallyGivenRoom ? true : false,
-				lastAnnouncedStatus: data.manuallyGivenRoom ? 'confirmed' : 'unsubmitted'
+				status: data.roomReservationStatus,
+				room: data.roomReservationRoom ?? null,
+				reservationNumber: data.roomReservationNumber ?? null,
+				isManualOverride: true,
+				lastAnnouncedStatus: null,
+				lastAnnouncedRoom: null,
 			});
 		}
 	}
