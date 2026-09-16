@@ -583,6 +583,7 @@ export function EventManager() {
 	const [showForm, setShowForm] = useState(false);
 	const [editing, setEditing] = useState<AdminEvent | null>(null);
 	const [showArchived, setShowArchived] = useState(false);
+	const [showPast, setShowPast] = useState(false);
 	const [flyerBusy, setFlyerBusy] = useState<string | null>(null);
 	const flyerRef = useRef<HTMLInputElement>(null);
 	const flyerTarget = useRef<string | null>(null);
@@ -681,7 +682,13 @@ export function EventManager() {
 		[events],
 	);
 	const archivedCount = useMemo(() => sorted.filter((e) => !e.active).length, [sorted]);
-	const visible = showArchived ? sorted : sorted.filter((e) => e.active);
+	const pastCount = useMemo(
+		() => sorted.filter((e) => new Date(e.endTimeRaw ?? e.startTimeRaw) < new Date()).length,
+		[sorted],
+	);
+	const visible = sorted
+		.filter((e) => showArchived || e.active)
+		.filter((e) => showPast || new Date(e.endTimeRaw ?? e.startTimeRaw) >= new Date());
 
 	function openCreate() {
 		setEditing(null);
@@ -757,16 +764,28 @@ export function EventManager() {
 				>
 					{importGoogle.isPending ? 'Working…' : 'Import from Google Calendar'}
 				</button>
-				{archivedCount > 0 && (
-					<label className="ml-auto flex items-center gap-2 text-xs text-muted-foreground">
-						<input
-							type="checkbox"
-							checked={showArchived}
-							onChange={(e) => setShowArchived(e.target.checked)}
-						/>
-						Show archived ({archivedCount})
-					</label>
-				)}
+				<div className="ml-auto flex items-center gap-4">
+					{pastCount > 0 && (
+						<label className="flex items-center gap-2 text-xs text-muted-foreground">
+							<input
+								type="checkbox"
+								checked={showPast}
+								onChange={(e) => setShowPast(e.target.checked)}
+							/>
+							Show past ({pastCount})
+						</label>
+					)}
+					{archivedCount > 0 && (
+						<label className="flex items-center gap-2 text-xs text-muted-foreground">
+							<input
+								type="checkbox"
+								checked={showArchived}
+								onChange={(e) => setShowArchived(e.target.checked)}
+							/>
+							Show archived ({archivedCount})
+						</label>
+					)}
+				</div>
 			</div>
 
 			{importPreview && (

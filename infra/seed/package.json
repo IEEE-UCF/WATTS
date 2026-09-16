@@ -6,10 +6,12 @@
   "type": "module",
   "scripts": {
     "seed": "tsx src/seed.ts",
+    "seed:event-labels": "tsx src/seed-event-labels.ts",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@watts/calendar": "workspace:*",
     "@watts/config": "workspace:*",
     "@watts/db": "workspace:*",
     "drizzle-orm": "0.45.2",
