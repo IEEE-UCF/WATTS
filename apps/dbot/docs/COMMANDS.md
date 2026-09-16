@@ -210,7 +210,6 @@ restart it. Cooldown 0.
 | Event | File | What |
 |---|---|---|
 | `guildMemberAdd` | `events/Greetings.ts` | welcome embed + `/help` button in `#general`, plus a welcome DM |
-| `messageCreate` | `events/guha.ts`, `events/suboh.ts` | keyword easter eggs ("guha", "suboh" → a gif) |
 | `messageCreate` | `events/messageCreate.ts` | currently a stub (ignores bots, does nothing) |
 | `interactionCreate` | `events/button.ts` | routes `cmd_<name>_…` buttons to the matching command |
 | `voiceStateUpdate` | `events/voiceStateUpdate.ts` | the voice idle timer |
