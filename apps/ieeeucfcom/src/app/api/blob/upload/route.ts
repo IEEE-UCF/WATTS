@@ -45,9 +45,21 @@ export async function POST(request: Request): Promise<Response> {
 	// ---- vercel provider: delegate to handleUpload ----
 	if (STORAGE_PROVIDER === 'vercel') {
 		const body = (await request.json()) as HandleUploadBody;
+
+		// event-flyer + project-photo are public-bucket kinds and must be signed with
+		// the public store's token, or Vercel 403s the client's direct PUT. Peek at the
+		// intent's kind before calling handleUpload, since it fixes the token up front.
+		let signingToken = vercelEnv().tokenPrivate;
+		if (body.type === 'blob.generate-client-token') {
+			const kind = JSON.parse(body.payload.clientPayload ?? '{}')?.kind;
+			if (kind === 'event-flyer' || kind === 'project-photo') {
+				signingToken = vercelEnv().tokenPublic;
+			}
+		}
+
 		try {
 			const json = await handleUpload({
-				token: vercelEnv().tokenPrivate,
+				token: signingToken,
 				body,
 				request,
 				onBeforeGenerateToken: async (pathname, clientPayload) => {
