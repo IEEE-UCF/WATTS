@@ -14,7 +14,7 @@
   },
   "dependencies": {
     "dotenv": "^17.2.4",
-    "zod": "^4.3.6"
+    "zod": "^4.6.4"
   },
   "devDependencies": {
     "@watts/eslint-config": "workspace:*",
