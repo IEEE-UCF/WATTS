@@ -4,6 +4,7 @@ import { trpc } from '@/lib/trpc/client';
 import { OnboardingChecklist } from '@/components/dashboard/onboarding-checklist';
 import { MembershipStatus } from '@/components/dashboard/membership-status';
 import { CommitteesProjects } from '@/components/dashboard/committees-projects';
+import { LeadRequestsPanel } from '@/components/dashboard/lead-requests-panel';
 import { AttendanceSummary } from '@/components/dashboard/attendance-summary';
 import { ResumeStatus } from '@/components/dashboard/resume-status';
 import { OfficerQuickTools } from '@/components/dashboard/officer-quick-tools';
@@ -54,6 +55,8 @@ export function DashboardWidgets() {
 				/>
 				<CommitteesProjects committees={committees} projects={projects} />
 			</div>
+
+			<LeadRequestsPanel />
 
 			{auth && <OfficerQuickTools isOfficer={auth.isOfficer} isAdmin={auth.isAdmin} />}
 		</div>

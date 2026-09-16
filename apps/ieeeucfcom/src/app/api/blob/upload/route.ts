@@ -25,11 +25,12 @@ import {
 export const runtime = 'nodejs';
 
 const intentSchema = z.object({
-	kind: z.enum(['resume', 'event-photo', 'event-flyer']),
+	kind: z.enum(['resume', 'event-photo', 'event-flyer', 'project-photo']),
 	contentType: z.string().min(1).max(100),
 	byteSize: z.number().int().positive(),
 	filename: z.string().max(255).nullish(),
 	eventId: z.string().uuid().optional(),
+	projectId: z.string().uuid().optional(),
 	photoId: z.string().uuid().optional(),
 	width: z.number().int().positive().nullish(),
 	height: z.number().int().positive().nullish(),

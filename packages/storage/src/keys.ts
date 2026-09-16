@@ -63,6 +63,11 @@ export function newPhotoKeys(eventId: string, photoId: string = randomUUID()): P
 	};
 }
 
+/** Many photos per project, PUBLIC bucket. Photo id (not the project id) makes the key unique. */
+export function projectPhotoKey(projectId: string, photoId: string = randomUUID()): string {
+	return `project-photos/${projectId}/${photoId}.jpg`;
+}
+
 /** Extract the photo id (filename stem) from any of its keys. */
 export function photoIdFromKey(key: string): string | null {
 	const base = key.split('/').pop() ?? '';
@@ -116,7 +121,7 @@ export function isImage(buf: Uint8Array): boolean {
 
 /** Does the object's leading bytes match what the declared kind requires? */
 export function magicBytesMatchKind(
-	kind: 'resume' | 'event-photo' | 'event-flyer',
+	kind: 'resume' | 'event-photo' | 'event-flyer' | 'project-photo',
 	buf: Uint8Array,
 ): boolean {
 	return kind === 'resume' ? isPdf(buf) : isImage(buf);

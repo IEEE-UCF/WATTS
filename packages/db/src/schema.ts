@@ -1,4 +1,4 @@
-import { pgTable, uuid, foreignKey, varchar, boolean, date, integer, text, timestamp, pgEnum, index, unique } from 'drizzle-orm/pg-core';
+import { pgTable, uuid, foreignKey, varchar, boolean, date, integer, text, timestamp, pgEnum, index, unique, uniqueIndex } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm/sql/sql';
 import { relations } from "drizzle-orm";
 
@@ -440,6 +440,22 @@ export const RoomReservations = pgTable('room_reservations', {
 	index('room_reservations_idx_event_id').on(table.eventId),
 ]);
 
+// ProjectCategories: the adjustable category set officers manage in /admin/projects.
+// Mirrors EventLabels — adding a category is a row insert, no migration, no deploy.
+export const ProjectCategories = pgTable('project_categories', {
+	id: uuid('id').defaultRandom().primaryKey().notNull(),
+	name: varchar('name', { length: 64 }).notNull(),
+	slug: varchar('slug', { length: 32 }).notNull(),
+	sortOrder: integer('sort_order').default(0).notNull(),
+	archived: boolean('archived').default(false).notNull(),
+	createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+	updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow().$onUpdate(() => sql`now()`),
+}, (table) => [
+	index('project_categories_idx_slug').on(table.slug),
+	index('project_categories_idx_sort_order').on(table.sortOrder),
+	unique('project_categories_slug_unique').on(table.slug),
+]);
+
 // Projects
 export const Projects = pgTable('projects', {
 	id: uuid('id').primaryKey().defaultRandom(),
@@ -450,8 +466,13 @@ export const Projects = pgTable('projects', {
 	hardwareInfo: text('hardware_info'),
 	softwareInfo: text('software_info'),
 	skills: text('skills'), // Comma-separated list of skills (e.g. "Python, C++, Machine Learning")
-	photoUrls: text('photo_urls').$type<string[]>(),
+	photoUrls: text('photo_urls').array(),
+	categoryId: uuid('category_id'),
+	// Discord role granted to any ProjectMembers row (member-tier access to the project's channel).
 	discordRoleId: varchar('discord_role_id', { length: 64 }),
+	// Discord role additionally granted when ProjectMembers.isLead = true.
+	discordLeadRoleId: varchar('discord_lead_role_id', { length: 64 }),
+	discordChannelId: varchar('discord_channel_id', { length: 64 }),
 	active: boolean('active').notNull().default(true),
 	createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 	updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow().$onUpdate(() => sql`now()`),
@@ -461,6 +482,12 @@ export const Projects = pgTable('projects', {
 	index('projects_idx_slug').on(table.slug),
 	index('projects_idx_created_at').on(table.createdAt),
 	index('projects_idx_updated_at').on(table.updatedAt),
+	index('projects_idx_category_id').on(table.categoryId),
+	foreignKey({
+		columns: [table.categoryId],
+		foreignColumns: [ProjectCategories.id],
+		name: 'projects_category_id_project_categories_id_fk',
+	}).onDelete('set null'),
 ]);
 // ProjectMembers: Join table for many-to-many relation between Projects and Members
 export const ProjectMembers = pgTable('project_members', {
@@ -474,6 +501,37 @@ export const ProjectMembers = pgTable('project_members', {
 	index('project_members_idx_member_id').on(table.memberId),
 	index('project_members_idx_is_lead').on(table.isLead),
 	unique('project_member_unique').on(table.projectId, table.memberId),
+]);
+
+export const projectMembershipRequestStatusEnum = pgEnum('project_membership_request_status_enum', [
+	'pending',
+	'approved',
+	'denied',
+]);
+
+// ProjectMembershipRequests: self-service "request to join" a project, reviewed by a
+// project lead or an officer/admin before a ProjectMembers row is created. Officers
+// and admins can still bypass this entirely via the existing instant addProjectMember
+// path — this table only models the reviewed path.
+export const ProjectMembershipRequests = pgTable('project_membership_requests', {
+	id: uuid('id').primaryKey().defaultRandom(),
+	projectId: uuid('project_id').notNull().references(() => Projects.id, { onDelete: 'cascade' }),
+	memberId: uuid('member_id').notNull().references(() => Members.id, { onDelete: 'cascade' }),
+	status: projectMembershipRequestStatusEnum('status').notNull().default('pending'),
+	message: text('message'),
+	requestedByMemberId: uuid('requested_by_member_id').notNull().references(() => Members.id),
+	reviewedByMemberId: uuid('reviewed_by_member_id').references(() => Members.id),
+	reviewNote: text('review_note'),
+	createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+	updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow().$onUpdate(() => sql`now()`),
+	reviewedAt: timestamp('reviewed_at', { withTimezone: true }),
+}, (table) => [
+	index('project_membership_requests_idx_project_id').on(table.projectId),
+	index('project_membership_requests_idx_member_id').on(table.memberId),
+	index('project_membership_requests_idx_status').on(table.status),
+	uniqueIndex('project_membership_requests_pending_unique')
+		.on(table.projectId, table.memberId)
+		.where(sql`${table.status} = 'pending'`),
 ]);
 
 // Sponsorships
@@ -685,6 +743,10 @@ export type Project = typeof Projects.$inferSelect;
 export type NewProject = typeof Projects.$inferInsert;
 export type ProjectMember = typeof ProjectMembers.$inferSelect;
 export type NewProjectMember = typeof ProjectMembers.$inferInsert;
+export type ProjectCategory = typeof ProjectCategories.$inferSelect;
+export type NewProjectCategory = typeof ProjectCategories.$inferInsert;
+export type ProjectMembershipRequest = typeof ProjectMembershipRequests.$inferSelect;
+export type NewProjectMembershipRequest = typeof ProjectMembershipRequests.$inferInsert;
 export type Committee = typeof Committees.$inferSelect;
 export type NewCommittee = typeof Committees.$inferInsert;
 export type CommitteeMember = typeof CommitteeMembers.$inferSelect;

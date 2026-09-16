@@ -16,6 +16,7 @@ export const CAPABILITIES = {
 	scan_attendance: { label: 'Scan event check-in', staff: true },
 	manage_events: { label: 'Create & edit events', staff: true },
 	manage_event_photos: { label: 'Upload & manage event photos', staff: true },
+	manage_projects: { label: 'Create & edit projects', staff: true },
 	review_resumes: { label: 'View résumés', staff: true },
 	// Résumé-upload rollout — Phase 2: grant to a pilot cohort while the env audience
 	// stays at "officers". Phase 3 = flip RESUME_UPLOAD_AUDIENCE to "members".
@@ -28,7 +29,8 @@ export const CAPABILITY_KEYS = Object.keys(CAPABILITIES) as Capability[];
 export const STAFF_CAPABILITY_KEYS = CAPABILITY_KEYS.filter((k) => CAPABILITIES[k].staff);
 
 // Capabilities an admin MAY choose to let officers grant to plain members.
-// (Role changes, manage_events, and review_resumes are never officer-delegable.)
+// (Role changes, manage_events, manage_projects, and review_resumes are never
+// officer-delegable — officers already have them via officerStatus above.)
 export const OFFICER_DELEGABLE_CAPABILITIES = [
 	'scan_attendance',
 	'manage_event_photos',

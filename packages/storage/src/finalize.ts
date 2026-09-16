@@ -11,7 +11,7 @@
 import { createHash } from 'crypto';
 import { and, eq, gte, sql } from 'drizzle-orm';
 import type { WattsDb } from '@watts/db';
-import { EventPhotos, Events, Members, UploadEvents } from '@watts/db/schema';
+import { EventPhotos, Events, Members, Projects, UploadEvents } from '@watts/db/schema';
 import { hasCapability } from '@watts/permissions';
 import { canUploadResumeSession, type SessionLike } from './audience';
 import {
@@ -27,6 +27,7 @@ import {
 	eventFlyerKey,
 	magicBytesMatchKind,
 	newPhotoKeys,
+	projectPhotoKey,
 	resumeKey,
 	sanitizeFilename,
 } from './keys';
@@ -91,6 +92,8 @@ export interface UploadIntent {
 	filename?: string | null;
 	// event-photo only
 	eventId?: string;
+	// project-photo only
+	projectId?: string;
 	/** Optional caller-provided id (vercel handleUpload flow needs the key up front). */
 	photoId?: string;
 	width?: number | null;
@@ -108,7 +111,7 @@ export interface AuthorizedUpload {
 	maxBytes: number;
 	/** Exact declared size — bound into the presigned upload so the body can't exceed it. */
 	contentLength: number;
-	/** event-photo: the row id / filename stem, decided here so keys and row stay in sync. */
+	/** event-photo / project-photo: the row id / filename stem, decided here so keys and row stay in sync. */
 	photoId?: string;
 	/** echoed back through the client token / confirm call */
 	tokenPayload: {
@@ -116,6 +119,7 @@ export interface AuthorizedUpload {
 		key: string;
 		userId: string;
 		eventId?: string;
+		projectId?: string;
 		photoId?: string;
 		filename?: string | null;
 		width?: number | null;
@@ -226,6 +230,53 @@ export async function authorizeUpload(
 		};
 	}
 
+	if (intent.kind === 'project-photo') {
+		if (!hasCapability(session.user, 'manage_projects')) {
+			throw new UploadError('FORBIDDEN', 'The manage_projects capability is required');
+		}
+		if (!intent.projectId) {
+			throw new UploadError('BAD_REQUEST', 'projectId is required');
+		}
+		if (!(PHOTO_CONTENT_TYPES as readonly string[]).includes(intent.contentType)) {
+			throw new UploadError('BAD_REQUEST', 'Photo must be a JPEG, PNG or WebP');
+		}
+		if (intent.byteSize > PHOTO_MAX_BYTES) {
+			throw new UploadError('BAD_REQUEST', 'Photo exceeds the 15 MB limit');
+		}
+
+		const [project] = await db
+			.select({ id: Projects.id })
+			.from(Projects)
+			.where(eq(Projects.id, intent.projectId))
+			.limit(1);
+		if (!project) {
+			throw new UploadError('NOT_FOUND', 'Project not found');
+		}
+
+		await assertCooldown(db, userId, 'project-photo');
+
+		const providedId = intent.photoId && UUID_RE.test(intent.photoId) ? intent.photoId : undefined;
+		const key = projectPhotoKey(intent.projectId, providedId);
+		const photoId = providedId ?? key.split('/').pop()!.replace(/\.jpg$/, '');
+		return {
+			kind: 'project-photo',
+			bucket: 'public',
+			key,
+			contentType: intent.contentType,
+			maxBytes: PHOTO_MAX_BYTES,
+			contentLength: intent.byteSize,
+			photoId,
+			tokenPayload: {
+				kind: 'project-photo',
+				key,
+				userId,
+				projectId: intent.projectId,
+				photoId,
+				filename: sanitizeFilename(intent.filename),
+			},
+		};
+	}
+
 	// event-photo
 	if (!hasCapability(session.user, 'manage_event_photos')) {
 		throw new UploadError('FORBIDDEN', 'The manage_event_photos capability is required');
@@ -286,6 +337,7 @@ export interface FinalizeResult {
 	resume?: { memberId: string; url: string };
 	photoId?: string;
 	flyerUrl?: string;
+	photoUrl?: string;
 }
 
 /**
@@ -295,8 +347,9 @@ export interface FinalizeResult {
 export async function finalizeUpload(db: WattsDb, payload: AuthorizedUpload['tokenPayload']): Promise<FinalizeResult> {
 	const storage = await getStorage();
 	// resume + event-photo live in the private bucket (photos surface to the public
-	// feed only via a per-row visibility flag). The event flyer is a public asset.
-	const bucket: StorageBucket = payload.kind === 'event-flyer' ? 'public' : 'private';
+	// feed only via a per-row visibility flag). The event flyer and project photos
+	// are public assets.
+	const bucket: StorageBucket = payload.kind === 'event-flyer' || payload.kind === 'project-photo' ? 'public' : 'private';
 
 	const head = await storage.head({ key: payload.key, bucket });
 	if (!head) {
@@ -360,6 +413,27 @@ export async function finalizeUpload(db: WattsDb, payload: AuthorizedUpload['tok
 		}
 		await db.insert(UploadEvents).values({ userId: payload.userId, kind: 'event-flyer' });
 		return { kind: 'event-flyer', flyerUrl };
+	}
+
+	if (payload.kind === 'project-photo') {
+		const photoUrl = storage.publicUrl(payload.key);
+		const [project] = await db
+			.select({ photoUrls: Projects.photoUrls })
+			.from(Projects)
+			.where(eq(Projects.id, payload.projectId!))
+			.limit(1);
+		if (!project) {
+			throw new UploadError('NOT_FOUND', 'Project not found');
+		}
+		const photoUrls = project.photoUrls ?? [];
+		if (!photoUrls.includes(photoUrl)) {
+			await db
+				.update(Projects)
+				.set({ photoUrls: [...photoUrls, photoUrl], updatedAt: new Date() })
+				.where(eq(Projects.id, payload.projectId!));
+		}
+		await db.insert(UploadEvents).values({ userId: payload.userId, kind: 'project-photo' });
+		return { kind: 'project-photo', photoUrl };
 	}
 
 	// event-photo
