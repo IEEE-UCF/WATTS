@@ -14,7 +14,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@trpc/server": "^11.9.0",
+    "@trpc/server": "^11.19.0",
     "@watts/calendar": "workspace:*",
     "@watts/core": "workspace:*",
     "@watts/db": "workspace:*",
@@ -23,12 +23,12 @@
     "drizzle-orm": "0.45.2",
     "luxon": "^3.7.2",
     "superjson": "^2.2.6",
-    "zod": "^4.3.6"
+    "zod": "^4.6.5"
   },
   "devDependencies": {
     "@types/luxon": "^3.7.1",
     "@watts/eslint-config": "workspace:*",
     "@watts/tsconfig": "workspace:*",
-    "eslint": "^10.10.0"
+    "eslint": "^10.11.0"
   }
 }
