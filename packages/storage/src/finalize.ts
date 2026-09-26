@@ -8,17 +8,21 @@
 //                        safe to call from both the client confirm mutation and (for
 //                        the vercel provider) the onUploadCompleted webhook.
 
-import { createHash } from 'crypto';
+import { createHash, randomUUID } from 'crypto';
 import { and, eq, gte, sql } from 'drizzle-orm';
 import type { WattsDb } from '@watts/db';
-import { EventPhotos, Events, Members, Projects, UploadEvents } from '@watts/db/schema';
+import { EventPhotos, Events, MediaAssets, Members, OfficerProfiles, Projects, UploadEvents } from '@watts/db/schema';
 import { hasCapability } from '@watts/permissions';
+import { canEditScope, type ContentScope } from '@watts/core/site-content';
 import { canUploadResumeSession, type SessionLike } from './audience';
 import {
 	PHOTO_CONTENT_TYPES,
 	PHOTO_MAX_BYTES,
 	RESUME_CONTENT_TYPES,
 	RESUME_MAX_BYTES,
+	SITE_MEDIA_DOCUMENT_TYPES,
+	SITE_MEDIA_IMAGE_TYPES,
+	SITE_MEDIA_MAX_BYTES,
 	UPLOAD_COOLDOWN_MAX,
 	UPLOAD_COOLDOWN_WINDOW_MS,
 } from './env';
@@ -30,6 +34,7 @@ import {
 	projectPhotoKey,
 	resumeKey,
 	sanitizeFilename,
+	siteMediaKey,
 } from './keys';
 import type { StorageBucket, UploadKind } from './types';
 
@@ -101,7 +106,17 @@ export interface UploadIntent {
 	takenAt?: string | null; // ISO, read from EXIF client-side before re-encode
 	caption?: string | null;
 	tags?: string[];
+	// site-media only
+	mediaKind?: 'image' | 'animated' | 'document';
+	scopeType?: 'global' | 'committee' | 'project';
+	scopeId?: string | null;
+	/** A linked officer uploading their own portrait (no manage_site_content needed). */
+	purpose?: 'officer-portrait';
+	officerProfileId?: string;
+	alt?: string | null;
 }
+
+export type SiteMediaKind = NonNullable<UploadIntent['mediaKind']>;
 
 export interface AuthorizedUpload {
 	kind: UploadKind;
@@ -127,6 +142,11 @@ export interface AuthorizedUpload {
 		takenAt?: string | null;
 		caption?: string | null;
 		tags?: string[];
+		mediaKind?: SiteMediaKind;
+		scopeType?: 'global' | 'committee' | 'project';
+		scopeId?: string | null;
+		contentType?: string;
+		alt?: string | null;
 	};
 }
 
@@ -277,6 +297,10 @@ export async function authorizeUpload(
 		};
 	}
 
+	if (intent.kind === 'site-media') {
+		return authorizeSiteMedia(db, session.user as SiteMediaUploader, intent);
+	}
+
 	// event-photo
 	if (!hasCapability(session.user, 'manage_event_photos')) {
 		throw new UploadError('FORBIDDEN', 'The manage_event_photos capability is required');
@@ -330,6 +354,89 @@ export async function authorizeUpload(
 	};
 }
 
+type SiteMediaUploader = {
+	id: string;
+	memberId?: string | null;
+	administrator?: boolean;
+	officerStatus?: boolean;
+	permissions?: string[] | null;
+};
+
+async function authorizeSiteMedia(
+	db: WattsDb,
+	user: SiteMediaUploader,
+	intent: UploadIntent,
+): Promise<AuthorizedUpload> {
+	const mediaKind = intent.mediaKind ?? 'image';
+	const allowedTypes: readonly string[] =
+		mediaKind === 'document' ? SITE_MEDIA_DOCUMENT_TYPES : SITE_MEDIA_IMAGE_TYPES;
+	if (!allowedTypes.includes(intent.contentType)) {
+		throw new UploadError(
+			'BAD_REQUEST',
+			mediaKind === 'document' ? 'Documents must be a PDF' : 'Images must be JPEG, PNG or WebP (convert GIFs to WebP)',
+		);
+	}
+	if (mediaKind === 'animated' && intent.contentType !== 'image/webp') {
+		throw new UploadError('BAD_REQUEST', 'Animated media must be an animated WebP');
+	}
+	const maxBytes = SITE_MEDIA_MAX_BYTES[mediaKind];
+	if (intent.byteSize > maxBytes) {
+		throw new UploadError('BAD_REQUEST', `File exceeds the ${Math.round(maxBytes / 1024 / 1024)} MB limit`);
+	}
+
+	let scope: ContentScope = { type: 'global' };
+	if (intent.scopeType === 'committee' || intent.scopeType === 'project') {
+		if (!intent.scopeId || !UUID_RE.test(intent.scopeId)) {
+			throw new UploadError('BAD_REQUEST', 'scopeId is required for page uploads');
+		}
+		scope = { type: intent.scopeType, id: intent.scopeId };
+	}
+
+	let allowed = await canEditScope(db, user, scope);
+	// A linked officer may upload a portrait for their own profile only.
+	if (!allowed && intent.purpose === 'officer-portrait' && intent.officerProfileId && user.memberId) {
+		if (mediaKind !== 'image') throw new UploadError('BAD_REQUEST', 'A portrait must be a still image');
+		const [profile] = await db
+			.select({ memberId: OfficerProfiles.memberId })
+			.from(OfficerProfiles)
+			.where(eq(OfficerProfiles.id, intent.officerProfileId))
+			.limit(1);
+		allowed = Boolean(profile && profile.memberId === user.memberId);
+	}
+	if (!allowed) {
+		throw new UploadError('FORBIDDEN', 'You cannot upload files for this page');
+	}
+
+	await assertCooldown(db, user.id, 'site-media');
+
+	const providedId = intent.photoId && UUID_RE.test(intent.photoId) ? intent.photoId : undefined;
+	const assetId = providedId ?? randomUUID();
+	const key = siteMediaKey(assetId, intent.contentType);
+	return {
+		kind: 'site-media',
+		bucket: 'public',
+		key,
+		contentType: intent.contentType,
+		maxBytes,
+		contentLength: intent.byteSize,
+		photoId: assetId,
+		tokenPayload: {
+			kind: 'site-media',
+			key,
+			userId: user.id,
+			photoId: assetId,
+			filename: sanitizeFilename(intent.filename),
+			width: intent.width ?? null,
+			height: intent.height ?? null,
+			mediaKind,
+			scopeType: scope.type,
+			scopeId: scope.type === 'global' ? null : scope.id,
+			contentType: intent.contentType,
+			alt: intent.alt?.slice(0, 500) ?? null,
+		},
+	};
+}
+
 const MAGIC_SNIFF_BYTES = 16;
 
 export interface FinalizeResult {
@@ -338,6 +445,8 @@ export interface FinalizeResult {
 	photoId?: string;
 	flyerUrl?: string;
 	photoUrl?: string;
+	/** site-media: the new media_assets row. */
+	asset?: { id: string; url: string };
 }
 
 /**
@@ -349,20 +458,28 @@ export async function finalizeUpload(db: WattsDb, payload: AuthorizedUpload['tok
 	// resume + event-photo live in the private bucket (photos surface to the public
 	// feed only via a per-row visibility flag). The event flyer and project photos
 	// are public assets.
-	const bucket: StorageBucket = payload.kind === 'event-flyer' || payload.kind === 'project-photo' ? 'public' : 'private';
+	const bucket: StorageBucket =
+		payload.kind === 'event-flyer' || payload.kind === 'project-photo' || payload.kind === 'site-media'
+			? 'public'
+			: 'private';
 
 	const head = await storage.head({ key: payload.key, bucket });
 	if (!head) {
 		throw new UploadError('NOT_FOUND', 'Uploaded object not found');
 	}
-	const maxBytes = payload.kind === 'resume' ? RESUME_MAX_BYTES : PHOTO_MAX_BYTES;
+	const maxBytes =
+		payload.kind === 'resume'
+			? RESUME_MAX_BYTES
+			: payload.kind === 'site-media'
+				? SITE_MEDIA_MAX_BYTES[payload.mediaKind ?? 'image']
+				: PHOTO_MAX_BYTES;
 	if (head.size > maxBytes) {
 		await storage.delete({ key: payload.key, bucket });
 		throw new UploadError('BAD_REQUEST', 'Uploaded file exceeds the size limit');
 	}
 
 	const sniff = await storage.getBytes({ key: payload.key, bucket, rangeEnd: MAGIC_SNIFF_BYTES });
-	if (!magicBytesMatchKind(payload.kind, sniff)) {
+	if (!magicBytesMatchKind(payload.kind, sniff, payload.contentType)) {
 		await storage.delete({ key: payload.key, bucket });
 		throw new UploadError('BAD_REQUEST', 'File content does not match its declared type');
 	}
@@ -415,6 +532,35 @@ export async function finalizeUpload(db: WattsDb, payload: AuthorizedUpload['tok
 		}
 		await db.insert(UploadEvents).values({ userId: payload.userId, kind: 'event-flyer' });
 		return { kind: 'event-flyer', flyerUrl };
+	}
+
+	if (payload.kind === 'site-media') {
+		const assetId = payload.photoId!;
+		const url = head.url ?? storage.publicUrl(payload.key);
+		const [existing] = await db
+			.select({ id: MediaAssets.id, url: MediaAssets.url })
+			.from(MediaAssets)
+			.where(eq(MediaAssets.id, assetId))
+			.limit(1);
+		if (existing) return { kind: 'site-media', asset: existing };
+		await db.insert(MediaAssets).values({
+			id: assetId,
+			kind: payload.mediaKind ?? 'image',
+			storageKey: payload.key,
+			url,
+			contentType: head.contentType ?? payload.contentType ?? 'application/octet-stream',
+			sizeBytes: head.size,
+			width: payload.width ?? null,
+			height: payload.height ?? null,
+			checksumSha256: checksum,
+			alt: payload.alt ?? null,
+			sourceFilename: payload.filename ?? null,
+			uploadedByUserId: payload.userId,
+			scopeType: payload.scopeType ?? 'global',
+			scopeId: payload.scopeId ?? null,
+		});
+		await db.insert(UploadEvents).values({ userId: payload.userId, kind: 'site-media' });
+		return { kind: 'site-media', asset: { id: assetId, url } };
 	}
 
 	if (payload.kind === 'project-photo') {

@@ -17,6 +17,10 @@ export const CAPABILITIES = {
 	manage_events: { label: 'Create & edit events', staff: true },
 	manage_event_photos: { label: 'Upload & manage event photos', staff: true },
 	manage_projects: { label: 'Create & edit projects', staff: true },
+	// Site-content CMS: page media, officer roster, sponsors, documents, review queue,
+	// and assigning per-page editors. Chairs/leads/assigned editors edit their own
+	// committee/project page without it (their edits go to review).
+	manage_site_content: { label: 'Edit website content', staff: true },
 	review_resumes: { label: 'View résumés', staff: true },
 	// Résumé-upload rollout — Phase 2: grant to a pilot cohort while the env audience
 	// stays at "officers". Phase 3 = flip RESUME_UPLOAD_AUDIENCE to "members".

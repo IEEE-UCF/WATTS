@@ -15,7 +15,9 @@
     "./officers": "./src/officers.ts",
     "./project-categories": "./src/project-categories.ts",
     "./projects": "./src/projects.ts",
-    "./settings": "./src/settings.ts"
+    "./settings": "./src/settings.ts",
+    "./site-content": "./src/site-content.ts",
+    "./site-media-slots": "./src/site-media-slots.ts"
   },
   "dependencies": {
     "@watts/calendar": "workspace:*",

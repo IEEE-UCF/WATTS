@@ -22,6 +22,16 @@ export const PHOTO_MAX_BYTES = 15 * 1024 * 1024; // 15 MB
 export const RESUME_CONTENT_TYPES = ['application/pdf'] as const;
 export const PHOTO_CONTENT_TYPES = ['image/jpeg', 'image/png', 'image/webp'] as const;
 
+// CMS media library (site-media). GIF is deliberately not accepted: animated media is
+// uploaded as animated WebP (scripts/ieeeucfcom/gif-to-webp.mjs converts).
+export const SITE_MEDIA_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'] as const;
+export const SITE_MEDIA_DOCUMENT_TYPES = ['application/pdf'] as const;
+export const SITE_MEDIA_MAX_BYTES = {
+	image: 15 * 1024 * 1024, // before client-side compression; compressed uploads are ~≤2 MB
+	animated: 8 * 1024 * 1024, // served unoptimized, so keep page weight sane
+	document: 25 * 1024 * 1024,
+} as const;
+
 // Per-user cooldown: max uploads of one kind within the window.
 export const UPLOAD_COOLDOWN_WINDOW_MS = 10 * 60 * 1000; // 10 minutes
 export const UPLOAD_COOLDOWN_MAX = 30;

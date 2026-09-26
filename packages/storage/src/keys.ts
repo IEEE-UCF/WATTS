@@ -68,6 +68,19 @@ export function projectPhotoKey(projectId: string, photoId: string = randomUUID(
 	return `project-photos/${projectId}/${photoId}.jpg`;
 }
 
+/** CMS media library: one immutable key per asset, PUBLIC bucket. */
+export function siteMediaKey(assetId: string, contentType: string): string {
+	const ext =
+		contentType === 'application/pdf'
+			? 'pdf'
+			: contentType === 'image/png'
+				? 'png'
+				: contentType === 'image/webp'
+					? 'webp'
+					: 'jpg';
+	return `site-media/${assetId}.${ext}`;
+}
+
 /** Extract the photo id (filename stem) from any of its keys. */
 export function photoIdFromKey(key: string): string | null {
 	const base = key.split('/').pop() ?? '';
@@ -121,8 +134,11 @@ export function isImage(buf: Uint8Array): boolean {
 
 /** Does the object's leading bytes match what the declared kind requires? */
 export function magicBytesMatchKind(
-	kind: 'resume' | 'event-photo' | 'event-flyer' | 'project-photo',
+	kind: 'resume' | 'event-photo' | 'event-flyer' | 'project-photo' | 'site-media',
 	buf: Uint8Array,
+	contentType?: string,
 ): boolean {
-	return kind === 'resume' ? isPdf(buf) : isImage(buf);
+	if (kind === 'resume') return isPdf(buf);
+	if (kind === 'site-media' && contentType === 'application/pdf') return isPdf(buf);
+	return isImage(buf);
 }
