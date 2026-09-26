@@ -2,7 +2,8 @@
 
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@watts/ui/accordion';
 
-import Image from 'next/image';
+import type { PublicAsset } from '@watts/core/site-content';
+import { SlotImage } from '@/components/slot-image';
 
 // NOTE: Awards are not yet in the PostgreSQL schema. Once an `awards` table and
 // tRPC router are added, replace the static list below with:
@@ -22,7 +23,7 @@ const awards: { category: string; event: string; place?: string }[] = [
 	},
 ];
 
-export default function AboutIEEE() {
+export default function AboutIEEE({ slots = {} }: { slots?: Record<string, PublicAsset> }) {
 	return (
 		<div className="">
 			<Accordion type="single" collapsible>
@@ -83,17 +84,19 @@ export default function AboutIEEE() {
 							resumes.
 						</div>
 						<div className="flex flex-row">
-							<Image
+							<SlotImage
 								className="h-120 object-cover p-3 transition-transform hover:scale-102 md:w-1/2"
-								src="/committees/workshop1.png"
+								slot="about.workshops.1"
+								media={slots['about.workshops.1']}
 								alt="Workshop Photo"
 								width={2000}
 								height={2000}
 								sizes="50vw"
 							/>
-							<Image
+							<SlotImage
 								className="h-120 object-cover p-3 transition-transform hover:scale-102 md:w-1/2"
-								src="/committees/workshop2.png"
+								slot="about.workshops.2"
+								media={slots['about.workshops.2']}
 								alt="Workshop Photo"
 								width={2000}
 								height={2000}
@@ -122,17 +125,19 @@ export default function AboutIEEE() {
 							Networking Competition, and more.
 						</div>
 						<div className="flex flex-row">
-							<Image
+							<SlotImage
 								className="h-120 object-cover p-3 transition-transform hover:scale-102 md:w-1/2"
-								src="/southeastcon/secawards.png"
+								slot="about.southeastcon.1"
+								media={slots['about.southeastcon.1']}
 								alt="SEC Photo"
 								width={2000}
 								height={2000}
 								sizes="50vw"
 							/>
-							<Image
+							<SlotImage
 								className="h-120 object-cover p-3 transition-transform hover:scale-102 md:w-1/2"
-								src="/projects/sechardware1.png"
+								slot="about.southeastcon.2"
+								media={slots['about.southeastcon.2']}
 								alt="SEC Photo"
 								width={2000}
 								height={2000}
@@ -169,17 +174,19 @@ export default function AboutIEEE() {
 							food pantries, through donations and volunteer work.
 						</div>
 						<div className="flex flex-row">
-							<Image
+							<SlotImage
 								className="h-120 object-cover p-3 transition-transform hover:scale-102 md:w-1/2"
-								src="/committees/service1.png"
+								slot="about.service.1"
+								media={slots['about.service.1']}
 								alt="Service Photo"
 								width={2000}
 								height={2000}
 								sizes="50vw"
 							/>
-							<Image
+							<SlotImage
 								className="h-120 object-cover p-3 transition-transform hover:scale-102 md:w-1/2"
-								src="/committees/service2.png"
+								slot="about.service.2"
+								media={slots['about.service.2']}
 								alt="Service Photo"
 								width={2000}
 								height={2000}
@@ -206,17 +213,19 @@ export default function AboutIEEE() {
 							relationships through IEEE @ UCF.
 						</div>
 						<div className="flex flex-row">
-							<Image
+							<SlotImage
 								className="h-120 object-cover p-3 transition-transform hover:scale-102 md:w-1/2"
-								src="/committees/social1.png"
+								slot="about.social.1"
+								media={slots['about.social.1']}
 								alt="Social Photo"
 								width={2000}
 								height={2000}
 								sizes="50vw"
 							/>
-							<Image
+							<SlotImage
 								className="h-120 object-cover p-3 transition-transform hover:scale-102 md:w-1/2"
-								src="/committees/social2.png"
+								slot="about.social.2"
+								media={slots['about.social.2']}
 								alt="Social Photo"
 								width={2000}
 								height={2000}
@@ -244,17 +253,19 @@ export default function AboutIEEE() {
 							with potential employers.
 						</div>
 						<div className="flex flex-row">
-							<Image
+							<SlotImage
 								className="h-120 object-cover p-3 transition-transform hover:scale-102 md:w-1/2"
-								src="/committees/prodev2.jpg"
+								slot="about.prodev.1"
+								media={slots['about.prodev.1']}
 								alt="Pro Dev Photo"
 								width={2000}
 								height={2000}
 								sizes="50vw"
 							/>
-							<Image
+							<SlotImage
 								className="h-120 object-cover p-3 transition-transform hover:scale-102 md:w-1/2"
-								src="/committees/prodev1.jpg"
+								slot="about.prodev.2"
+								media={slots['about.prodev.2']}
 								alt="Pro Dev Photo"
 								width={2000}
 								height={2000}
@@ -273,9 +284,10 @@ export default function AboutIEEE() {
 							notable companies.
 						</div>
 						<div className="flex flex-row">
-							<Image
+							<SlotImage
 								className="h-auto w-full object-cover p-3 transition-transform hover:scale-102"
-								src="/sponsors/network.png"
+								slot="about.network"
+								media={slots['about.network']}
 								alt="About Us Photo"
 								width={2000}
 								height={2000}
