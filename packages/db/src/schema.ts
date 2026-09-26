@@ -1,4 +1,4 @@
-import { pgTable, uuid, foreignKey, varchar, boolean, date, integer, text, timestamp, pgEnum, index, unique, uniqueIndex } from 'drizzle-orm/pg-core';
+import { pgTable, uuid, foreignKey, varchar, boolean, date, integer, text, timestamp, pgEnum, index, unique, uniqueIndex, jsonb } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm/sql/sql';
 import { relations } from "drizzle-orm";
 
@@ -201,6 +201,17 @@ export const photoVisibilityEnum = pgEnum('photo_visibility_enum', [
 	'private',
 ]);
 
+// Site-content CMS (see apps/ieeeucfcom/docs/site-content/ARCHITECTURE.md)
+export const mediaAssetKindEnum = pgEnum('media_asset_kind_enum', ['image', 'animated', 'document']);
+export const contentScopeTypeEnum = pgEnum('content_scope_type_enum', ['global', 'committee', 'project']);
+export const officerGroupEnum = pgEnum('officer_group_enum', ['executive', 'chair']);
+export const contentRevisionStatusEnum = pgEnum('content_revision_status_enum', [
+	'pending',
+	'published',
+	'rejected',
+	'superseded',
+]);
+
 // ==== Schemas ====
 
 // basically we need this for authentication with nextauth and drizzle, and we need to link it in members
@@ -295,6 +306,12 @@ export const Committees = pgTable('committees', {
 	about: text('about').notNull(),
 	chairId: uuid('chair_id').notNull().references(() => Members.id, { onDelete: 'cascade' }),
 	discordRoleId: varchar('discord_role_id', { length: 64 }),
+	// Public page (/committees/[slug]) — edited through content_revisions.
+	tagline: varchar('tagline', { length: 255 }),
+	applyUrl: varchar('apply_url', { length: 500 }),
+	heroAssetId: uuid('hero_asset_id'),
+	galleryAssetIds: uuid('gallery_asset_ids').array().notNull().default(sql`'{}'::uuid[]`),
+	published: boolean('published').notNull().default(false),
 	active: boolean('active').notNull().default(true),
 	createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 	updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow().$onUpdate(() => sql`now()`),
@@ -473,6 +490,11 @@ export const Projects = pgTable('projects', {
 	// Discord role additionally granted when ProjectMembers.isLead = true.
 	discordLeadRoleId: varchar('discord_lead_role_id', { length: 64 }),
 	discordChannelId: varchar('discord_channel_id', { length: 64 }),
+	// Public page (/projects/[slug]) — edited through content_revisions.
+	tagline: varchar('tagline', { length: 255 }),
+	heroAssetId: uuid('hero_asset_id'),
+	galleryAssetIds: uuid('gallery_asset_ids').array().notNull().default(sql`'{}'::uuid[]`),
+	published: boolean('published').notNull().default(false),
 	active: boolean('active').notNull().default(true),
 	createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 	updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow().$onUpdate(() => sql`now()`),
@@ -538,12 +560,14 @@ export const ProjectMembershipRequests = pgTable('project_membership_requests', 
 export const Sponsorships = pgTable('sponsorships', {
 	id: uuid('id').primaryKey().defaultRandom(),
 	companyName: varchar('company_name', { length: 255 }).notNull(),
-	moneyDonated: integer('money_donated').notNull(),
+	moneyDonated: integer('money_donated'),
 	description: text('description'),
 	tier: sponsorshipTierEnum('tier').notNull(),
 	companyLogoUrl: varchar('company_logo_url', { length: 500 }),
+	logoAssetId: uuid('logo_asset_id'),
+	sortOrder: integer('sort_order').notNull().default(0),
 	websiteUrl: varchar('website_url', { length: 500 }),
-	contactEmail: varchar('contact_email', { length: 255 }).notNull(),
+	contactEmail: varchar('contact_email', { length: 255 }),
 	active: boolean('active').notNull().default(true),
 	createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 	updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow().$onUpdate(() => sql`now()`),
@@ -767,3 +791,95 @@ export type UploadEvent = typeof UploadEvents.$inferSelect;
 export type NewUploadEvent = typeof UploadEvents.$inferInsert;
 export type RoomReservation = typeof RoomReservations.$inferSelect;
 export type NewRoomReservation = typeof RoomReservations.$inferInsert;
+// ==== Site-content CMS ====
+// See apps/ieeeucfcom/docs/site-content/ARCHITECTURE.md.
+
+// MediaAssets: one row per uploaded site file. Immutable — a replacement is a new
+// asset, so its URL can be cached forever and old revisions stay renderable.
+export const MediaAssets = pgTable('media_assets', {
+	id: uuid('id').primaryKey().defaultRandom(),
+	kind: mediaAssetKindEnum('kind').notNull(),
+	storageKey: varchar('storage_key', { length: 512 }).notNull(),
+	url: text('url').notNull(),
+	contentType: varchar('content_type', { length: 100 }).notNull(),
+	sizeBytes: integer('size_bytes').notNull(),
+	width: integer('width'),
+	height: integer('height'),
+	checksumSha256: varchar('checksum_sha256', { length: 64 }),
+	alt: text('alt'),
+	sourceFilename: varchar('source_filename', { length: 255 }),
+	uploadedByUserId: uuid('uploaded_by_user_id').references(() => Users.id, { onDelete: 'set null' }),
+	scopeType: contentScopeTypeEnum('scope_type').notNull().default('global'),
+	scopeId: uuid('scope_id'),
+	createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+}, (table) => [
+	index('media_assets_idx_scope').on(table.scopeType, table.scopeId),
+	index('media_assets_idx_created_at').on(table.createdAt),
+]);
+
+// SiteMediaSlots: which asset fills a named spot on a page. Slot definitions (label,
+// kind, sizes, code default) live in @watts/core/site-media-slots; no row = default.
+export const SiteMediaSlots = pgTable('site_media_slots', {
+	slotKey: varchar('slot_key', { length: 96 }).primaryKey(),
+	assetId: uuid('asset_id').references(() => MediaAssets.id, { onDelete: 'set null' }),
+	updatedByUserId: uuid('updated_by_user_id').references(() => Users.id, { onDelete: 'set null' }),
+	updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow().$onUpdate(() => sql`now()`),
+});
+
+// OfficerProfiles: the public officer roster (/about). Separate from Members so the
+// website roster can differ from officer flags; a profile may be linked to a member,
+// who can then submit edits to their own profile (reviewed).
+export const OfficerProfiles = pgTable('officer_profiles', {
+	id: uuid('id').primaryKey().defaultRandom(),
+	memberId: uuid('member_id').references(() => Members.id, { onDelete: 'set null' }).unique(),
+	displayName: varchar('display_name', { length: 255 }).notNull(),
+	roleTitle: varchar('role_title', { length: 255 }).notNull(),
+	group: officerGroupEnum('group').notNull().default('chair'),
+	major: varchar('major', { length: 255 }),
+	yearLabel: varchar('year_label', { length: 64 }),
+	bio: text('bio'),
+	linkedinUrl: varchar('linkedin_url', { length: 500 }),
+	portraitAssetId: uuid('portrait_asset_id').references(() => MediaAssets.id, { onDelete: 'set null' }),
+	sortOrder: integer('sort_order').notNull().default(0),
+	active: boolean('active').notNull().default(true),
+	createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+	updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow().$onUpdate(() => sql`now()`),
+}, (table) => [
+	index('officer_profiles_idx_active_sort').on(table.active, table.group, table.sortOrder),
+]);
+
+// PageEditors: explicit per-page edit assignments (on top of chairs/leads, who can
+// edit their own page implicitly). Deliberately NOT member_permissions — see ARCHITECTURE.md.
+export const PageEditors = pgTable('page_editors', {
+	id: uuid('id').primaryKey().defaultRandom(),
+	scopeType: contentScopeTypeEnum('scope_type').notNull(),
+	scopeId: uuid('scope_id').notNull(),
+	memberId: uuid('member_id').notNull().references(() => Members.id, { onDelete: 'cascade' }),
+	grantedByMemberId: uuid('granted_by_member_id').references(() => Members.id, { onDelete: 'set null' }),
+	expiresAt: timestamp('expires_at', { withTimezone: true }),
+	createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+}, (table) => [
+	unique('page_editors_scope_member_unique').on(table.scopeType, table.scopeId, table.memberId),
+	index('page_editors_idx_member').on(table.memberId),
+]);
+
+// ContentRevisions: append-only history + review queue for every CMS edit. The live
+// tables hold only the published state; a revision snapshot is the full editable
+// payload for its entity. Restore = publish an old snapshot again as a new revision.
+export const ContentRevisions = pgTable('content_revisions', {
+	id: uuid('id').primaryKey().defaultRandom(),
+	// officer_profile | sponsor | slot | committee_page | project_page
+	entityType: varchar('entity_type', { length: 32 }).notNull(),
+	// the row's uuid, or the slot key for slots
+	entityId: varchar('entity_id', { length: 96 }).notNull(),
+	snapshot: jsonb('snapshot').notNull(),
+	status: contentRevisionStatusEnum('status').notNull(),
+	authorMemberId: uuid('author_member_id').references(() => Members.id, { onDelete: 'set null' }),
+	reviewerMemberId: uuid('reviewer_member_id').references(() => Members.id, { onDelete: 'set null' }),
+	reviewNote: text('review_note'),
+	createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+	reviewedAt: timestamp('reviewed_at', { withTimezone: true }),
+}, (table) => [
+	index('content_revisions_idx_entity').on(table.entityType, table.entityId, table.createdAt),
+	index('content_revisions_idx_status').on(table.status),
+]);
