@@ -50,6 +50,18 @@ const nextConfig: NextConfig = {
 		return [{ source: '/:path*', headers: securityHeaders }];
 	},
 	images: {
+		// Vercel bills image cache reads/writes in 8 KB units, so cost tracks (variants x bytes).
+		// Static images rarely change, so cache them for 31 days: stops STALE re-transforms
+		// (billed as writes) and lets browsers reuse them (Cache-Control max-age). Safe for
+		// replaced images: local files are keyed by content hash and flyer URLs carry `?v=`
+		// (finalize.ts), so a new upload is a new cache key. Don't add `search: ''` to the
+		// remote patterns below or flyers stop matching.
+		minimumCacheTTL: 2678400,
+		// Default list minus 3840: with no `sizes`, `width={2000}` asks for 2048w and 3840w, and
+		// for sources <= 2000px both return the same bytes under two cache keys.
+		deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048],
+		// Only quality 75 is ever used; refusing other `?q=` values stops extra cache entries.
+		qualities: [75],
 		remotePatterns: [
 			{
 				protocol: 'https',
