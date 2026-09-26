@@ -36,9 +36,17 @@ export function ContentPageView({ page }: { page: PublicContentPage }) {
 					<Navbar />
 				</div>
 				<div className="relative z-10 mx-auto flex max-w-4xl flex-col gap-3 px-6 py-16 md:py-24">
-					<p className="font-heading text-sm tracking-widest text-ieee-bright-yellow uppercase">{kind}</p>
-					<h1 className="font-heading text-4xl text-ieee-bright-yellow md:text-6xl">{page.title}</h1>
-					{page.tagline && <p className="font-subheading text-xl text-white md:text-2xl">{page.tagline}</p>}
+					<p className="font-heading text-sm tracking-widest text-ieee-bright-yellow uppercase">
+						{kind}
+					</p>
+					<h1 className="font-heading text-4xl text-ieee-bright-yellow md:text-6xl">
+						{page.title}
+					</h1>
+					{page.tagline && (
+						<p className="font-subheading text-xl text-white md:text-2xl">
+							{page.tagline}
+						</p>
+					)}
 					{page.leadNames.length > 0 && (
 						<p className="font-body text-muted-foreground">
 							{page.type === 'committee' ? 'Led by ' : 'Project lead: '}
@@ -69,7 +77,11 @@ export function ContentPageView({ page }: { page: PublicContentPage }) {
 
 				<section className="flex flex-col gap-4">
 					<h2 className="font-heading text-2xl text-ieee-bright-yellow">PHOTOS</h2>
-					<ContentGallery title={page.title} assets={page.gallery} legacyUrls={page.legacyPhotoUrls} />
+					<ContentGallery
+						title={page.title}
+						assets={page.gallery}
+						legacyUrls={page.legacyPhotoUrls}
+					/>
 				</section>
 			</main>
 

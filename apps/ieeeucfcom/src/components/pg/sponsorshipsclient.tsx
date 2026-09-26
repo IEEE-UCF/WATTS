@@ -11,7 +11,11 @@ import type { PublicSponsor } from '@watts/core/site-content';
 // Pre-CMS sponsor list. Shown only until sponsors exist in the database (the one-off
 // import copies exactly this list in); edit sponsors at /admin/site-content.
 // ---------------------------------------------------------------------------
-type SponsorCard = { name: string; logo: string; tier: string };
+interface SponsorCard {
+	name: string;
+	logo: string;
+	tier: string;
+}
 
 const SPONSORS: SponsorCard[] = [
 	{ name: 'Rex McCrary Foundation', logo: '/sponsors/rex.jpeg', tier: 'Gold' },

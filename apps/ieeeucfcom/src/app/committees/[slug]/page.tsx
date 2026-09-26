@@ -11,7 +11,9 @@ export async function generateStaticParams() {
 	return committees.map((slug) => ({ slug }));
 }
 
-type Props = { params: Promise<{ slug: string }> };
+interface Props {
+	params: Promise<{ slug: string }>;
+}
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
 	const { slug } = await params;
@@ -22,7 +24,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 	return {
 		title,
 		description,
-		openGraph: { title, description, url: `https://www.ieeeucf.com/committees/${slug}`, type: 'website' },
+		openGraph: {
+			title,
+			description,
+			url: `https://www.ieeeucf.com/committees/${slug}`,
+			type: 'website',
+		},
 	};
 }
 

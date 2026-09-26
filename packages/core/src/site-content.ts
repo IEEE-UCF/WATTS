@@ -573,14 +573,16 @@ const revisionColumns = {
 	authorLastName: Members.lastName,
 };
 
-export function listRevisionHistory(db: WattsDb, entityType: ContentEntityType, entityId: string) {
-	return db
+export async function listRevisionHistory(db: WattsDb, entityType: ContentEntityType, entityId: string) {
+	const items = await db
 		.select(revisionColumns)
 		.from(ContentRevisions)
 		.leftJoin(Members, eq(Members.id, ContentRevisions.authorMemberId))
 		.where(and(eq(ContentRevisions.entityType, entityType), eq(ContentRevisions.entityId, entityId)))
 		.orderBy(desc(ContentRevisions.createdAt))
 		.limit(50);
+	const assets = await getAssetsByIds(db, items.flatMap((i) => referencedAssetIds(i.snapshot)));
+	return { items, assets: Object.fromEntries(assets) };
 }
 
 /** The review queue, each item paired with what's live now so the UI can diff. */
@@ -591,13 +593,30 @@ export async function listPendingRevisions(db: WattsDb) {
 		.leftJoin(Members, eq(Members.id, ContentRevisions.authorMemberId))
 		.where(eq(ContentRevisions.status, 'pending'))
 		.orderBy(asc(ContentRevisions.createdAt));
-	return Promise.all(
+	const items = await Promise.all(
 		rows.map(async (r) => ({
 			...r,
 			current: await readCurrent(db, r.entityType as ContentEntityType, r.entityId).catch(() => null),
 			label: await entityLabel(db, r.entityType as ContentEntityType, r.entityId),
 		})),
 	);
+	// Files referenced by either side, so reviewers see the actual images.
+	const assets = await getAssetsByIds(
+		db,
+		items.flatMap((i) => [...referencedAssetIds(i.snapshot), ...referencedAssetIds(i.current)]),
+	);
+	return { items, assets: Object.fromEntries(assets) };
+}
+
+/** Asset ids in a snapshot (any `…AssetId` / `…AssetIds` field). */
+export function referencedAssetIds(snapshot: unknown): string[] {
+	if (!snapshot || typeof snapshot !== 'object') return [];
+	const out: string[] = [];
+	for (const [k, v] of Object.entries(snapshot)) {
+		if (k.endsWith('AssetId') && typeof v === 'string') out.push(v);
+		if (k.endsWith('AssetIds') && Array.isArray(v)) out.push(...v.filter((x): x is string => typeof x === 'string'));
+	}
+	return out;
 }
 
 /** An author's own submissions that are still pending or were recently reviewed. */

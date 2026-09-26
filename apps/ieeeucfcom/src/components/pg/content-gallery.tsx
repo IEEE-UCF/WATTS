@@ -2,10 +2,21 @@
 
 import Image from 'next/image';
 import Autoplay from 'embla-carousel-autoplay';
-import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@watts/ui/carousel';
+import {
+	Carousel,
+	CarouselContent,
+	CarouselItem,
+	CarouselNext,
+	CarouselPrevious,
+} from '@watts/ui/carousel';
 import type { PublicAsset } from '@watts/core/site-content';
 
-type GalleryItem = { key: string; url: string; alt: string; animated: boolean };
+interface GalleryItem {
+	key: string;
+	url: string;
+	alt: string;
+	animated: boolean;
+}
 
 /**
  * Photo carousel for committee/project pages. Deliberately simple; styling pass later.
@@ -23,7 +34,12 @@ export function ContentGallery({
 }) {
 	const items: GalleryItem[] =
 		assets.length > 0
-			? assets.map((a) => ({ key: a.id, url: a.url, alt: a.alt ?? title, animated: a.kind === 'animated' }))
+			? assets.map((a) => ({
+					key: a.id,
+					url: a.url,
+					alt: a.alt ?? title,
+					animated: a.kind === 'animated',
+				}))
 			: legacyUrls.map((url) => ({ key: url, url, alt: title, animated: false }));
 
 	if (items.length === 0) {

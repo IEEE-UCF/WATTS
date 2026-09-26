@@ -44,5 +44,7 @@ export function SlotImage({ slot, media, alt, width, height, fill, ...rest }: Sl
 			/>
 		);
 	}
-	return <Image {...rest} src={def.defaultSrc} alt={alt} fill={fill} width={width} height={height} />;
+	return (
+		<Image {...rest} src={def.defaultSrc} alt={alt} fill={fill} width={width} height={height} />
+	);
 }

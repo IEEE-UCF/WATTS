@@ -381,6 +381,23 @@ export const entriesMeta: EntryMeta[] = [
 		notes: 'Needs manage_events + real event data. Table structure now shared via @watts/ui/table (dashboard consolidation pass).',
 	},
 	{
+		slug: 'admin/site-content-manager',
+		name: 'SiteContentManager',
+		group: 'admin',
+		status: 'legacy',
+		source: '@/components/admin/site-content/site-content-manager',
+		notes: 'The /admin/site-content CMS (review queue, page media, officers, sponsors, documents, page editors). Needs a manage_site_content session + DB; empty/erroring without one.',
+	},
+	{
+		slug: 'admin/content-page-view',
+		name: 'ContentPageView',
+		group: 'admin',
+		status: 'ok',
+		source: '@/components/pg/content-page',
+		surface: 'marketing',
+		notes: 'Public committee/project page layout with sample data (no DB). Intentionally plain; styling pass later.',
+	},
+	{
 		slug: 'admin/members-manager',
 		name: 'MembersManager',
 		group: 'admin',

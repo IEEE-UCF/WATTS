@@ -9,6 +9,7 @@ import { signOut, useSession } from 'next-auth/react';
 import { useState } from 'react';
 import { trpc } from '@/lib/trpc/client';
 import { ResumeUpload } from '@/components/settings/ResumeUpload';
+import { MyOfficerProfileCard } from '@/components/admin/site-content/my-officer-profile';
 import { DashboardShell } from '@/components/shell/dashboard-shell';
 
 // Middleware at /settings guarantees a valid session — no useEffect redirect needed.
@@ -409,6 +410,9 @@ export default function SettingsPage() {
 						</FieldSet>
 					</FieldGroup>
 				</form>
+				<div className="mt-8">
+					<MyOfficerProfileCard />
+				</div>
 			</div>
 		</DashboardShell>
 	);
