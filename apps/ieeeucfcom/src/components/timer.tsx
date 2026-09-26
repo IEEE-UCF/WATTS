@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { AnimatedMedia } from '@/components/animated-media';
 import { Calendar } from '@/components/calendar';
 import { trpc } from '@/lib/trpc/client';
 
@@ -91,15 +90,6 @@ const Timer: React.FC = () => {
 
 	return (
 		<div className="relative mx-auto h-fit w-full content-center overflow-hidden rounded-sm bg-transparent p-4 drop-shadow-none sm:p-10 lg:p-20">
-			<AnimatedMedia
-				name="/gbms/gbmgif"
-				alt="Photo"
-				fill
-				sizes="100vw"
-				className="-z-10 rounded-sm object-cover object-center opacity-50"
-				priority
-			/>
-
 			<div className="flex flex-col flex-wrap items-center justify-between gap-8 lg:flex-row">
 				{/* ── Left: countdown ── */}
 				<div className="flex w-full flex-col items-center justify-center py-4 text-center lg:w-1/2">
