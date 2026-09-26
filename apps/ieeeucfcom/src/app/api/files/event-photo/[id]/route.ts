@@ -54,6 +54,13 @@ export async function GET(
 	};
 	if (isPublic) {
 		headers['Cache-Control'] = 'public, max-age=86400, immutable';
+		// `max-age` only caches in the browser; Vercel's CDN caches function responses only
+		// with `s-maxage` (or a CDN-specific header). This one is CDN-only (not sent to
+		// browsers), so public photos stop invoking this function + a private Blob read on
+		// every view. Trade-off: an un-approved / un-published photo can keep being served
+		// from the CDN for up to a week, so shorten this (or purge by tag) if public posting
+		// of people's photos goes live.
+		headers['Vercel-CDN-Cache-Control'] = 'public, s-maxage=604800';
 	} else {
 		headers['Cache-Control'] = 'private, no-store, max-age=0';
 		headers['X-Robots-Tag'] = 'noindex, nofollow';
