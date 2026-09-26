@@ -11,7 +11,7 @@
 // partial failure leaves the live row and the history consistent enough to retry
 // (apply live first, then record the revision).
 
-import { and, asc, desc, eq, gt, inArray, isNull, or } from 'drizzle-orm';
+import { and, asc, desc, eq, gt, inArray, isNotNull, isNull, or } from 'drizzle-orm';
 import type { WattsDb } from '@watts/db';
 import {
 	Committees,
@@ -948,6 +948,7 @@ export interface PublicSiteContent {
 	slots: Record<string, PublicAsset>;
 	/** Empty ⇒ the page keeps its code roster (nothing imported yet). */
 	officers: PublicOfficer[];
+	/** Active sponsors that have a CMS logo. Empty ⇒ the page keeps its code list. */
 	sponsors: PublicSponsor[];
 }
 
@@ -959,10 +960,12 @@ export async function getPublicSiteContent(db: WattsDb): Promise<PublicSiteConte
 			.from(OfficerProfiles)
 			.where(eq(OfficerProfiles.active, true))
 			.orderBy(asc(OfficerProfiles.group), asc(OfficerProfiles.sortOrder)),
+		// Only sponsors with a CMS logo: the pre-existing `sponsorships` table may hold
+		// old rows that were never shown on the site, and must not appear by surprise.
 		db
 			.select()
 			.from(Sponsorships)
-			.where(eq(Sponsorships.active, true))
+			.where(and(eq(Sponsorships.active, true), isNotNull(Sponsorships.logoAssetId)))
 			.orderBy(asc(Sponsorships.sortOrder), asc(Sponsorships.companyName)),
 	]);
 	const assets = await getAssetsByIds(db, [

@@ -8,12 +8,15 @@
     "seed": "tsx src/seed.ts",
     "seed:event-labels": "tsx src/seed-event-labels.ts",
     "lint": "eslint .",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "import:site-content": "tsx src/import-site-content.ts"
   },
   "dependencies": {
     "@watts/calendar": "workspace:*",
     "@watts/config": "workspace:*",
+    "@watts/core": "workspace:*",
     "@watts/db": "workspace:*",
+    "@watts/storage": "workspace:*",
     "drizzle-orm": "0.45.2",
     "postgres": "3.4.8"
   },

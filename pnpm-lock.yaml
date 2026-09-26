@@ -381,9 +381,15 @@ importers:
       '@watts/config':
         specifier: workspace:*
         version: link:../../packages/config
+      '@watts/core':
+        specifier: workspace:*
+        version: link:../../packages/core
       '@watts/db':
         specifier: workspace:*
         version: link:../../packages/db
+      '@watts/storage':
+        specifier: workspace:*
+        version: link:../../packages/storage
       drizzle-orm:
         specifier: 0.45.2
         version: 0.45.2(@neondatabase/serverless@1.0.2)(@types/pg@8.23.1)(pg@8.16.3)(postgres@3.4.8)

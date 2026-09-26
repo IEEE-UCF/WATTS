@@ -10,6 +10,7 @@ const routes = [
 	{ path: '/admin/dashboard', name: 'admin-dashboard' },
 	{ path: '/admin/photos', name: 'admin-photos' },
 	{ path: '/admin/resumes', name: 'admin-resumes' },
+	{ path: '/admin/site-content', name: 'admin-site-content' },
 	{ path: '/staff', name: 'staff' },
 ];
 

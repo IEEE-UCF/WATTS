@@ -33,16 +33,26 @@ export function SiteContentManager() {
 	const [tab, setTab] = useState<Tab>('review');
 	const pending = trpc.siteContent.listPending.useQuery();
 	const pendingCount = pending.data?.items.length ?? 0;
+	const refresh = trpc.siteContent.refreshCache.useMutation();
 
 	return (
 		<div className="text-foreground">
-			<div className="mb-6 flex flex-wrap gap-2">
+			<div className="mb-6 flex flex-wrap items-center gap-2">
 				{TABS.map((t) => (
 					<TogglePill key={t.id} selected={tab === t.id} onClick={() => setTab(t.id)}>
 						{t.label}
 						{t.id === 'review' && pendingCount > 0 ? ` (${pendingCount})` : ''}
 					</TogglePill>
 				))}
+				<button
+					type="button"
+					className={`${buttonClass} ml-auto`}
+					disabled={refresh.isPending}
+					onClick={() => refresh.mutate()}
+					title="Public pages refresh automatically when you save. Use this after a bulk import."
+				>
+					{refresh.isSuccess ? 'Public pages refreshed' : 'Refresh public pages'}
+				</button>
 			</div>
 			{tab === 'review' && <ReviewQueue />}
 			{tab === 'media' && <PageMedia kind="media" />}

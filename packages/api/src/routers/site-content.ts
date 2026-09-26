@@ -179,6 +179,12 @@ export const siteContentRouter = createTRPCRouter({
 			}
 		}),
 
+	/** Re-render the public pages now — e.g. after the one-off import, which writes directly. */
+	refreshCache: manageSite.mutation(({ ctx }) => {
+		changed(ctx);
+		return { success: true };
+	}),
+
 	// ---- staff: page media ----
 
 	listSlots: manageSite.query(({ ctx }) => listSlotsForAdmin(ctx.db)),
