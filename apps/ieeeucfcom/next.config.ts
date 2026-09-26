@@ -51,9 +51,11 @@ const nextConfig: NextConfig = {
 	},
 	images: {
 		// Vercel bills image cache reads/writes in 8 KB units, so cost tracks (variants x bytes).
-		// Static images rarely change, so cache them for 31 days: stops STALE re-transforms
-		// (billed as writes) and lets browsers reuse them (Cache-Control max-age). Safe for
-		// replaced images: local files are keyed by content hash and flyer URLs carry `?v=`
+		// Static images rarely change, so keep them in Vercel's CDN cache for 31 days: stops
+		// STALE re-transforms (billed as writes). This is CDN-side only: measured on production,
+		// /_next/image still sends browsers `max-age=0, must-revalidate` (only `next start`
+		// sends the long max-age), so it does not stop repeat visitors from revalidating. Safe
+		// for replaced images: local files are keyed by content hash and flyer URLs carry `?v=`
 		// (finalize.ts), so a new upload is a new cache key. Don't add `search: ''` to the
 		// remote patterns below or flyers stop matching.
 		minimumCacheTTL: 2678400,
