@@ -416,6 +416,34 @@ export const entriesMeta: EntryMeta[] = [
 		],
 	},
 
+	{
+		slug: 'marketing/animated-media',
+		name: 'AnimatedMedia (GIF format comparison)',
+		group: 'marketing',
+		status: 'ok',
+		source: '@/components/animated-media',
+		surface: 'marketing',
+		notes: 'Every delivery format for one animated asset side by side, with real byte sizes (HEAD request). Site-wide default comes from NEXT_PUBLIC_ANIMATED_MEDIA (gif | webp | static | video, default webp). Video files are not generated yet, so that column shows its poster.',
+		controls: [
+			{
+				name: 'name',
+				type: 'select',
+				options: [
+					'/gbms/gbmgif',
+					'/committees/workshopgif',
+					'/committees/socialgif1',
+					'/committees/socialgif2',
+					'/committees/servicegif',
+					'/committees/prodevgif',
+					'/projects/sechardwaregif1',
+					'/projects/sechardwaregif2',
+				],
+				default: '/committees/workshopgif',
+			},
+			{ name: 'height', type: 'number', default: 360, min: 120, max: 720, step: 40 },
+		],
+	},
+
 	// ---- previously only on /component-showcase, not registered here ---------
 	{
 		slug: 'marketing/glow-button',

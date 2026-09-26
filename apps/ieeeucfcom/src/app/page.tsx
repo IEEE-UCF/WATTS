@@ -3,6 +3,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect, useRef } from 'react';
 
+import { AnimatedMedia } from '@/components/animated-media';
 import { Navbar } from '@/components/navbar';
 import { Footer } from '@/components/footer';
 import { Timer } from '@/components/timer';
@@ -19,11 +20,11 @@ if (typeof window !== 'undefined') {
 }
 
 const carouselList = [
-	{ feature: 'TECHNICAL WORKSHOPS', photo: '/committees/workshopgif.gif' },
-	{ feature: 'EMBEDDED PROJECTS', photo: '/projects/sechardwaregif1.gif' },
-	{ feature: 'SOCIAL EVENTS', photo: '/committees/socialgif1.gif' },
-	{ feature: 'CAREER DEVELOPMENT', photo: '/committees/prodevgif.gif' },
-	{ feature: 'COMMUNITY SERVICE', photo: '/committees/servicegif.gif' },
+	{ feature: 'TECHNICAL WORKSHOPS', photo: '/committees/workshopgif' },
+	{ feature: 'EMBEDDED PROJECTS', photo: '/projects/sechardwaregif1' },
+	{ feature: 'SOCIAL EVENTS', photo: '/committees/socialgif1' },
+	{ feature: 'CAREER DEVELOPMENT', photo: '/committees/prodevgif' },
+	{ feature: 'COMMUNITY SERVICE', photo: '/committees/servicegif' },
 ];
 
 export default function Home() {
@@ -105,8 +106,9 @@ export default function Home() {
 										className="mt-10 h-60 w-auto place-self-center object-contain lg:h-110 lg:w-9/12"
 										src="/iconography/ieeeucfsymbol.png"
 										alt="IEEE UCF Logo"
-										width={3000}
-										height={3000}
+										width={2000}
+										height={2000}
+										sizes="(min-width: 1024px) 440px, 240px"
 									/>
 								</div>
 							</div>
@@ -175,12 +177,14 @@ export default function Home() {
 												<Card className="group relative z-10 h-90 w-65 overflow-hidden rounded-sm border-none p-0 shadow-md transition sm:h-70 sm:w-70 md:h-85 md:w-85 xl:h-90 xl:w-90">
 													<CardContent className="flex h-full w-full flex-col justify-end p-0">
 														<div className="relative h-full w-full">
-															<Image
-																src={item.photo}
+															<AnimatedMedia
+																name={item.photo}
 																alt="Photo"
 																fill
+																sizes="360px"
 																className="rounded-none object-cover object-bottom"
-																priority
+																priority={index === 0}
+																loading="eager"
 															/>
 															<div className="pointer-events-none absolute inset-0 bg-black/40 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
 															<span className="absolute bottom-0 left-1/2 h-fit w-full -translate-x-1/2 bg-black/60 p-2 font-body text-lg text-white">

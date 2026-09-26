@@ -71,10 +71,11 @@ export default function AboutHeader() {
 			<div className="h-full w-full bg-black">
 				<Image
 					className="absolute z-0 h-full w-full object-cover object-center opacity-100"
-					src="/southeastcon/secgroup.png"
+					src="/southeastcon/secgroup.jpg"
 					alt="About Us Photo"
 					width={2000}
 					height={2000}
+					sizes="100vw"
 				/>
 			</div>
 		</div>

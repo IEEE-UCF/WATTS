@@ -162,6 +162,7 @@ const OfficerImage = ({ src, alt }: { src: string; alt: string }) => {
 			fill
 			className="object-cover"
 			onError={() => setImgSrc('/iconography/ieeeucfsymbol.png')}
+			sizes="280px"
 		/>
 	);
 };

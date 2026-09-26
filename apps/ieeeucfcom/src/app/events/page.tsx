@@ -1,4 +1,4 @@
-import Image from 'next/image';
+import { AnimatedMedia } from '@/components/animated-media';
 import { Navbar } from '@/components/navbar';
 import { Footer } from '@/components/footer';
 
@@ -44,9 +44,10 @@ export default function EventsPage() {
 				</div>
 
 				<div className="h-full w-full bg-black">
-					<Image
+					<AnimatedMedia
 						className="absolute z-0 h-full w-full object-cover opacity-70"
-						src="/gbms/gbmgif.gif"
+						name="/gbms/gbmgif"
+						sizes="100vw"
 						alt="Events Photo"
 						width={2000}
 						height={2000}

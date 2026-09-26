@@ -45,8 +45,8 @@ const AvatarMenu: React.FC<AvatarMenuProps> = ({ image, name, email, role, navAu
 							className="h-12 w-12 cursor-pointer rounded-full border border-white object-cover transition-all hover:scale-107"
 							src={image}
 							alt="Profile"
-							width={2000}
-							height={2000}
+							width={48}
+							height={48}
 						/>
 					</NavigationMenuTrigger>
 

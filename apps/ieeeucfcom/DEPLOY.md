@@ -49,6 +49,13 @@ want preview deploys to be functional):
 Optional S3 vars (`S3_*`) are only for `STORAGE_PROVIDER=local` / self-hosted MinIO —
 leave unset on Vercel.
 
+`NEXT_PUBLIC_ANIMATED_MEDIA` — optional. Picks the format for the animated hero /
+carousel media site-wide: `webp` (default), `gif` (original GIFs), `static` (first
+frame only), or `video` (needs `.webm`/`.mp4` files, not generated yet). It is inlined
+at **build time**, so after changing it in Vercel you must **redeploy** (a plain
+Redeploy is enough; no code change). Declared in `turbo.json` (`build.env`). See
+`src/components/animated-media.tsx`.
+
 `NEXT_PUBLIC_ENABLE_DEV_GALLERY` — leave **unset** in production. The `/dev`
 component gallery 404s on any `NODE_ENV=production` build unless this is `1`. Set it
 to `1` only on a throwaway preview deploy if you need to look at the gallery outside

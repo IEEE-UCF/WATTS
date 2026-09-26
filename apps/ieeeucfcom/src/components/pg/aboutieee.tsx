@@ -89,6 +89,7 @@ export default function AboutIEEE() {
 								alt="Workshop Photo"
 								width={2000}
 								height={2000}
+								sizes="50vw"
 							/>
 							<Image
 								className="h-120 object-cover p-3 transition-transform hover:scale-102 md:w-1/2"
@@ -96,6 +97,7 @@ export default function AboutIEEE() {
 								alt="Workshop Photo"
 								width={2000}
 								height={2000}
+								sizes="50vw"
 							/>
 						</div>
 					</AccordionContent>
@@ -126,6 +128,7 @@ export default function AboutIEEE() {
 								alt="SEC Photo"
 								width={2000}
 								height={2000}
+								sizes="50vw"
 							/>
 							<Image
 								className="h-120 object-cover p-3 transition-transform hover:scale-102 md:w-1/2"
@@ -133,6 +136,7 @@ export default function AboutIEEE() {
 								alt="SEC Photo"
 								width={2000}
 								height={2000}
+								sizes="50vw"
 							/>
 						</div>
 						<div className="py-2 font-body text-lg text-white">
@@ -171,6 +175,7 @@ export default function AboutIEEE() {
 								alt="Service Photo"
 								width={2000}
 								height={2000}
+								sizes="50vw"
 							/>
 							<Image
 								className="h-120 object-cover p-3 transition-transform hover:scale-102 md:w-1/2"
@@ -178,6 +183,7 @@ export default function AboutIEEE() {
 								alt="Service Photo"
 								width={2000}
 								height={2000}
+								sizes="50vw"
 							/>
 						</div>
 					</AccordionContent>
@@ -206,6 +212,7 @@ export default function AboutIEEE() {
 								alt="Social Photo"
 								width={2000}
 								height={2000}
+								sizes="50vw"
 							/>
 							<Image
 								className="h-120 object-cover p-3 transition-transform hover:scale-102 md:w-1/2"
@@ -213,6 +220,7 @@ export default function AboutIEEE() {
 								alt="Social Photo"
 								width={2000}
 								height={2000}
+								sizes="50vw"
 							/>
 						</div>
 					</AccordionContent>
@@ -238,17 +246,19 @@ export default function AboutIEEE() {
 						<div className="flex flex-row">
 							<Image
 								className="h-120 object-cover p-3 transition-transform hover:scale-102 md:w-1/2"
-								src="/committees/prodev2.png"
+								src="/committees/prodev2.jpg"
 								alt="Pro Dev Photo"
 								width={2000}
 								height={2000}
+								sizes="50vw"
 							/>
 							<Image
 								className="h-120 object-cover p-3 transition-transform hover:scale-102 md:w-1/2"
-								src="/committees/prodev1.png"
+								src="/committees/prodev1.jpg"
 								alt="Pro Dev Photo"
 								width={2000}
 								height={2000}
+								sizes="50vw"
 							/>
 						</div>
 					</AccordionContent>
@@ -269,6 +279,7 @@ export default function AboutIEEE() {
 								alt="About Us Photo"
 								width={2000}
 								height={2000}
+								sizes="100vw"
 							/>
 						</div>
 					</AccordionContent>

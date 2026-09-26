@@ -27,8 +27,8 @@ const Footer: React.FC = () => {
 						className="h-24 w-24 object-cover md:h-40 md:w-40"
 						src="/iconography/ieeeucflogo.png"
 						alt="Events Photo"
-						width={2000}
-						height={2000}
+						width={160}
+						height={160}
 					/>
 				</div>
 				<div className="flex w-full flex-col items-center gap-y-1 md:w-auto md:items-start md:justify-center">
