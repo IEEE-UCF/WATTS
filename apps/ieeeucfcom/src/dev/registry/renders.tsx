@@ -73,6 +73,7 @@ import { GlowButton } from '@/components/ui/glow-button';
 import { QREventScanner } from '@/components/admin/qr_event_scanner';
 import { FormPopup } from '@/components/dashboard/newEventForm';
 import { ThemePlayground } from '@/components/theme-playground';
+import { AnimatedMediaCompare } from '@/dev/components/animated-media-compare';
 
 type Render = ComponentType<Record<string, unknown>>;
 
@@ -279,6 +280,12 @@ export const renders: Record<string, Render> = {
 	),
 	'marketing/signin-block': () => <Signinblock />,
 	'marketing/timer': () => <Timer />,
+	'marketing/animated-media': (p) => (
+		<AnimatedMediaCompare
+			name={(p.name as string) || '/committees/workshopgif'}
+			height={(p.height as number) || 360}
+		/>
+	),
 	'marketing/calendar': (p) => <Calendar className={(p.className as string) || 'h-96 w-full'} />,
 	'marketing/about-ieee': () => <AboutIEEE />,
 	'marketing/about-header': () => <AboutHeader />,

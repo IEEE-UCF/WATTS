@@ -116,6 +116,7 @@ export default function EventSidebar() {
 											alt="Event Flyer"
 											width={2000}
 											height={2000}
+											sizes="(min-width: 640px) 50vh, 40vh"
 										/>
 										<div className="m-5 flex flex-col gap-y-3">
 											<div className="text-3xl font-bold text-white">
@@ -164,6 +165,7 @@ export default function EventSidebar() {
 											alt="Event Flyer"
 											width={2000}
 											height={2000}
+											sizes="(min-width: 1024px) 50vh, 100vw"
 										/>
 										<div className="flex flex-col gap-y-3">
 											<div className="text-2xl font-bold text-white lg:text-3xl">

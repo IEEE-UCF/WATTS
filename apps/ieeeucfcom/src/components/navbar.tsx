@@ -214,8 +214,8 @@ const MobileMenu: React.FC<{ toggleMenu: () => void }> = ({ toggleMenu }) => {
 								className="h-7 w-7 object-cover"
 								src="/iconography/navbarhome.png"
 								alt="Profile"
-								width={2000}
-								height={2000}
+								width={28}
+								height={28}
 							/>
 							Home
 						</Link>
@@ -233,8 +233,8 @@ const MobileMenu: React.FC<{ toggleMenu: () => void }> = ({ toggleMenu }) => {
 									className="h-7 w-7 object-cover"
 									src={route.image}
 									alt="Profile"
-									width={2000}
-									height={2000}
+									width={28}
+									height={28}
 								/>
 
 								{route.title}
@@ -255,8 +255,8 @@ const MobileMenu: React.FC<{ toggleMenu: () => void }> = ({ toggleMenu }) => {
 								className="h-7 w-7 object-cover"
 								src="/iconography/navbardashboard.png"
 								alt=""
-								width={2000}
-								height={2000}
+								width={28}
+								height={28}
 							/>
 							Staff Tools
 						</Link>
@@ -279,8 +279,8 @@ const MobileMenu: React.FC<{ toggleMenu: () => void }> = ({ toggleMenu }) => {
 									className="h-7 w-7 object-cover"
 									src={route.image}
 									alt="Profile"
-									width={2000}
-									height={2000}
+									width={28}
+									height={28}
 								/>
 
 								{route.title}
@@ -306,8 +306,8 @@ const MobileMenu: React.FC<{ toggleMenu: () => void }> = ({ toggleMenu }) => {
 									className="h-7 w-7 object-cover"
 									src={route.image}
 									alt="Profile"
-									width={2000}
-									height={2000}
+									width={28}
+									height={28}
 								/>
 
 								{route.title}

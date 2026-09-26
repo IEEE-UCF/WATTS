@@ -56,6 +56,7 @@ export const SponsorsCarousel: React.FC = () => (
 									alt={sponsor.name}
 									fill
 									className="object-contain"
+									sizes="224px"
 								/>
 							</div>
 							<span className="text-center font-body text-base text-muted-foreground transition-colors group-hover:text-ieee-bright-yellow">

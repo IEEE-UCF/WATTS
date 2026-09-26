@@ -47,6 +47,7 @@ export default function ConnectPage() {
 						alt="About Us Photo"
 						width={2000}
 						height={2000}
+						sizes="100vw"
 					/>
 				</div>
 			</div>
@@ -189,6 +190,7 @@ export default function ConnectPage() {
 						alt="About Us Photo"
 						width={2000}
 						height={2000}
+						sizes="(min-width: 1024px) 600px, 100vw"
 					/>
 				</div>
 
@@ -242,6 +244,7 @@ export default function ConnectPage() {
 									alt="IEEE Logo"
 									width={2000}
 									height={2000}
+									sizes="(min-width: 1024px) 25vw, 100vw"
 								/>
 							</CardContent>
 						</Card>
@@ -262,6 +265,7 @@ export default function ConnectPage() {
 									alt="IEEE Logo"
 									width={2000}
 									height={2000}
+									sizes="(min-width: 1024px) 25vw, 100vw"
 								/>
 							</CardContent>
 						</Card>
@@ -281,6 +285,7 @@ export default function ConnectPage() {
 									alt="IEEE Logo"
 									width={2000}
 									height={2000}
+									sizes="(min-width: 1024px) 25vw, 100vw"
 								/>
 							</CardContent>
 						</Card>
@@ -298,6 +303,7 @@ export default function ConnectPage() {
 									alt="IEEE Logo"
 									width={2000}
 									height={2000}
+									sizes="(min-width: 1024px) 25vw, 100vw"
 								/>
 							</CardContent>
 						</Card>

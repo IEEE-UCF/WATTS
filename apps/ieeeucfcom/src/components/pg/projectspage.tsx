@@ -1,6 +1,7 @@
 'use client';
 
 import Image from 'next/image';
+import { AnimatedMedia } from '@/components/animated-media';
 import Link from 'next/link';
 import { Navbar } from '@/components/navbar';
 import { SidebarProvider } from '@watts/ui/sidebar';
@@ -173,12 +174,13 @@ export default function ProjectsPage() {
 						</div>
 					</div>
 					<div className="relative h-full w-full bg-black">
-						<Image
+						<AnimatedMedia
 							className="absolute z-0 h-full w-full object-cover object-center opacity-100"
-							src="/projects/sechardwaregif2.gif"
+							name="/projects/sechardwaregif2"
 							alt="Projects Photo"
 							width={2000}
 							height={2000}
+							sizes="100vw"
 						/>
 					</div>
 				</div>
@@ -249,6 +251,7 @@ export default function ProjectsPage() {
 												alt={project.title}
 												width={2000}
 												height={2000}
+												sizes="(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw"
 											/>
 											<div className="mb-2 text-xl font-bold text-white">
 												{project.title}
