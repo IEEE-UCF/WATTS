@@ -99,6 +99,15 @@ function ReviewQueue() {
 					<div className="text-xs">
 						<SnapshotView snapshot={r.snapshot} compareTo={r.current} assets={assets} />
 					</div>
+					{r.previewPath && (
+						<Link
+							href={r.previewPath}
+							target="_blank"
+							className="mt-2 inline-block text-xs text-ieee-bright-yellow underline"
+						>
+							Preview as page ↗
+						</Link>
+					)}
 					<div className="mt-3 flex flex-wrap items-center gap-2">
 						<input
 							placeholder="Note to the author (optional)"

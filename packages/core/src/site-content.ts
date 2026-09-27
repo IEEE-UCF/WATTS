@@ -52,6 +52,20 @@ export interface ContentActor extends CapabilitySubject {
 	memberId: string | null;
 }
 
+/** Build the actor from an auth user id and their resolved roles (null = no member profile). */
+export function contentActor(
+	userId: string,
+	roles: (CapabilitySubject & { memberId?: string | null }) | null,
+): ContentActor {
+	return {
+		userId,
+		memberId: roles?.memberId ?? null,
+		administrator: roles?.administrator ?? false,
+		officerStatus: roles?.officerStatus ?? false,
+		permissions: roles?.permissions ?? [],
+	};
+}
+
 export type OfficerGroup = 'executive' | 'chair';
 export type SponsorTier = 'Bronze' | 'Silver' | 'Gold';
 
@@ -292,9 +306,7 @@ async function readSlot(db: WattsDb, key: string): Promise<SlotSnapshot> {
 	return { assetId: r?.assetId ?? null };
 }
 
-async function readCommitteePage(db: WattsDb, id: string): Promise<CommitteePageSnapshot> {
-	const [r] = await db.select().from(Committees).where(eq(Committees.id, id)).limit(1);
-	if (!r) throw new DomainError('NOT_FOUND', 'Committee not found');
+function committeeSnapshotOf(r: typeof Committees.$inferSelect): CommitteePageSnapshot {
 	return {
 		tagline: r.tagline,
 		about: r.about,
@@ -305,9 +317,7 @@ async function readCommitteePage(db: WattsDb, id: string): Promise<CommitteePage
 	};
 }
 
-async function readProjectPage(db: WattsDb, id: string): Promise<ProjectPageSnapshot> {
-	const [r] = await db.select().from(Projects).where(eq(Projects.id, id)).limit(1);
-	if (!r) throw new DomainError('NOT_FOUND', 'Project not found');
+function projectSnapshotOf(r: typeof Projects.$inferSelect): ProjectPageSnapshot {
 	return {
 		tagline: r.tagline,
 		overview: r.overview,
@@ -315,6 +325,18 @@ async function readProjectPage(db: WattsDb, id: string): Promise<ProjectPageSnap
 		galleryAssetIds: r.galleryAssetIds ?? [],
 		published: r.published,
 	};
+}
+
+async function readCommitteePage(db: WattsDb, id: string): Promise<CommitteePageSnapshot> {
+	const [r] = await db.select().from(Committees).where(eq(Committees.id, id)).limit(1);
+	if (!r) throw new DomainError('NOT_FOUND', 'Committee not found');
+	return committeeSnapshotOf(r);
+}
+
+async function readProjectPage(db: WattsDb, id: string): Promise<ProjectPageSnapshot> {
+	const [r] = await db.select().from(Projects).where(eq(Projects.id, id)).limit(1);
+	if (!r) throw new DomainError('NOT_FOUND', 'Project not found');
+	return projectSnapshotOf(r);
 }
 
 export function readCurrent(db: WattsDb, type: ContentEntityType, id: string): Promise<ContentSnapshot> {
@@ -598,6 +620,7 @@ export async function listPendingRevisions(db: WattsDb) {
 			...r,
 			current: await readCurrent(db, r.entityType as ContentEntityType, r.entityId).catch(() => null),
 			label: await entityLabel(db, r.entityType as ContentEntityType, r.entityId),
+			previewPath: await pagePreviewPath(db, r.entityType as ContentEntityType, r.entityId, r.id),
 		})),
 	);
 	// Files referenced by either side, so reviewers see the actual images.
@@ -1016,29 +1039,69 @@ export interface PublicContentPage {
 	legacyPhotoUrls: string[];
 }
 
-export async function getPublishedCommitteePage(db: WattsDb, slug: string): Promise<PublicContentPage | null> {
-	const [c] = await db
-		.select({ committee: Committees, chairFirst: Members.firstName, chairLast: Members.lastName })
-		.from(Committees)
-		.leftJoin(Members, eq(Members.id, Committees.chairId))
-		.where(and(eq(Committees.slug, slug), eq(Committees.published, true), eq(Committees.active, true)))
-		.limit(1);
-	if (!c) return null;
-	const k = c.committee;
-	const assets = await getAssetsByIds(db, [k.heroAssetId ?? '', ...(k.galleryAssetIds ?? [])]);
+/** Render model for a committee page from `snap` (live fields or a revision snapshot). */
+async function buildCommitteePage(
+	db: WattsDb,
+	k: typeof Committees.$inferSelect,
+	snap: CommitteePageSnapshot,
+): Promise<PublicContentPage> {
+	const [chair] = k.chairId
+		? await db
+			.select({ first: Members.firstName, last: Members.lastName })
+			.from(Members)
+			.where(eq(Members.id, k.chairId))
+			.limit(1)
+		: [];
+	const assets = await getAssetsByIds(db, [snap.heroAssetId ?? '', ...snap.galleryAssetIds]);
 	return {
 		type: 'committee',
 		id: k.id,
-		slug,
+		slug: k.slug ?? '',
 		title: k.title,
-		tagline: k.tagline,
-		body: k.about,
-		leadNames: c.chairFirst ? [`${c.chairFirst} ${c.chairLast}`] : [],
-		applyUrl: k.applyUrl,
-		hero: k.heroAssetId ? (assets.get(k.heroAssetId) ?? null) : null,
-		gallery: (k.galleryAssetIds ?? []).map((id) => assets.get(id)).filter((a): a is PublicAsset => Boolean(a)),
+		tagline: snap.tagline,
+		body: snap.about,
+		leadNames: chair ? [`${chair.first} ${chair.last}`] : [],
+		applyUrl: snap.applyUrl,
+		hero: snap.heroAssetId ? (assets.get(snap.heroAssetId) ?? null) : null,
+		gallery: snap.galleryAssetIds.map((id) => assets.get(id)).filter((a): a is PublicAsset => Boolean(a)),
 		legacyPhotoUrls: [],
 	};
+}
+
+/** Render model for a project page from `snap` (live fields or a revision snapshot). */
+async function buildProjectPage(
+	db: WattsDb,
+	p: typeof Projects.$inferSelect,
+	snap: ProjectPageSnapshot,
+): Promise<PublicContentPage> {
+	const leads = await db
+		.select({ first: Members.firstName, last: Members.lastName })
+		.from(ProjectMembers)
+		.innerJoin(Members, eq(Members.id, ProjectMembers.memberId))
+		.where(and(eq(ProjectMembers.projectId, p.id), eq(ProjectMembers.isLead, true)));
+	const assets = await getAssetsByIds(db, [snap.heroAssetId ?? '', ...snap.galleryAssetIds]);
+	return {
+		type: 'project',
+		id: p.id,
+		slug: p.slug ?? '',
+		title: p.title,
+		tagline: snap.tagline,
+		body: snap.overview,
+		leadNames: leads.length ? leads.map((l) => `${l.first} ${l.last}`) : p.projectLead ? [p.projectLead] : [],
+		applyUrl: null,
+		hero: snap.heroAssetId ? (assets.get(snap.heroAssetId) ?? null) : null,
+		gallery: snap.galleryAssetIds.map((id) => assets.get(id)).filter((a): a is PublicAsset => Boolean(a)),
+		legacyPhotoUrls: p.photoUrls ?? [],
+	};
+}
+
+export async function getPublishedCommitteePage(db: WattsDb, slug: string): Promise<PublicContentPage | null> {
+	const [k] = await db
+		.select()
+		.from(Committees)
+		.where(and(eq(Committees.slug, slug), eq(Committees.published, true), eq(Committees.active, true)))
+		.limit(1);
+	return k ? buildCommitteePage(db, k, committeeSnapshotOf(k)) : null;
 }
 
 export async function getPublishedProjectPage(db: WattsDb, slug: string): Promise<PublicContentPage | null> {
@@ -1047,26 +1110,91 @@ export async function getPublishedProjectPage(db: WattsDb, slug: string): Promis
 		.from(Projects)
 		.where(and(eq(Projects.slug, slug), eq(Projects.published, true), eq(Projects.active, true)))
 		.limit(1);
-	if (!p) return null;
-	const leads = await db
-		.select({ first: Members.firstName, last: Members.lastName })
-		.from(ProjectMembers)
-		.innerJoin(Members, eq(Members.id, ProjectMembers.memberId))
-		.where(and(eq(ProjectMembers.projectId, p.id), eq(ProjectMembers.isLead, true)));
-	const assets = await getAssetsByIds(db, [p.heroAssetId ?? '', ...(p.galleryAssetIds ?? [])]);
-	return {
-		type: 'project',
-		id: p.id,
-		slug,
-		title: p.title,
-		tagline: p.tagline,
-		body: p.overview,
-		leadNames: leads.length ? leads.map((l) => `${l.first} ${l.last}`) : p.projectLead ? [p.projectLead] : [],
-		applyUrl: null,
-		hero: p.heroAssetId ? (assets.get(p.heroAssetId) ?? null) : null,
-		gallery: (p.galleryAssetIds ?? []).map((id) => assets.get(id)).filter((a): a is PublicAsset => Boolean(a)),
-		legacyPhotoUrls: p.photoUrls ?? [],
-	};
+	return p ? buildProjectPage(db, p, projectSnapshotOf(p)) : null;
+}
+
+export interface PagePreview {
+	page: PublicContentPage;
+	/** Whether the page is currently live at its public URL. */
+	livePublished: boolean;
+	/** Whether the previewed content would be published (the snapshot's own flag). */
+	published: boolean;
+	/** Set when previewing a revision rather than the saved page. */
+	revision: {
+		id: string;
+		status: 'pending' | 'published' | 'rejected' | 'superseded';
+		createdAt: Date;
+		authorName: string | null;
+	} | null;
+}
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * Preview of a committee/project page for someone who may edit it: the saved page
+ * (published or not), or — with `revisionId` — a submitted revision rendered as if it
+ * were approved. Only staff and the revision's author may preview a revision.
+ * Returns null for anything the actor may not see, so callers can 404 without
+ * revealing whether the page exists.
+ */
+export async function getPagePreview(
+	db: WattsDb,
+	actor: ContentActor,
+	type: 'committee' | 'project',
+	slug: string,
+	revisionId?: string | null,
+): Promise<PagePreview | null> {
+	const row =
+		type === 'committee'
+			? (await db.select().from(Committees).where(eq(Committees.slug, slug)).limit(1))[0]
+			: (await db.select().from(Projects).where(eq(Projects.slug, slug)).limit(1))[0];
+	if (!row) return null;
+	if (!(await canEditScope(db, actor, { type, id: row.id }))) return null;
+
+	const live = type === 'committee'
+		? committeeSnapshotOf(row as typeof Committees.$inferSelect)
+		: projectSnapshotOf(row as typeof Projects.$inferSelect);
+	let snap: CommitteePageSnapshot | ProjectPageSnapshot = live;
+	let revision: PagePreview['revision'] = null;
+
+	if (revisionId) {
+		if (!UUID_RE.test(revisionId)) return null;
+		const [rev] = await db
+			.select(revisionColumns)
+			.from(ContentRevisions)
+			.leftJoin(Members, eq(Members.id, ContentRevisions.authorMemberId))
+			.where(eq(ContentRevisions.id, revisionId))
+			.limit(1);
+		const entityType: ContentEntityType = type === 'committee' ? 'committee_page' : 'project_page';
+		if (!rev || rev.entityType !== entityType || rev.entityId !== row.id) return null;
+		if (!publishesDirectly(actor) && rev.authorMemberId !== actor.memberId) return null;
+		snap = rev.snapshot as CommitteePageSnapshot | ProjectPageSnapshot;
+		revision = {
+			id: rev.id,
+			status: rev.status,
+			createdAt: rev.createdAt,
+			authorName: rev.authorFirstName ? `${rev.authorFirstName} ${rev.authorLastName}` : null,
+		};
+	}
+
+	const page =
+		type === 'committee'
+			? await buildCommitteePage(db, row as typeof Committees.$inferSelect, snap as CommitteePageSnapshot)
+			: await buildProjectPage(db, row as typeof Projects.$inferSelect, snap as ProjectPageSnapshot);
+	return { page, livePublished: live.published && row.active, published: snap.published, revision };
+}
+
+/** Editor/preview path for a revision of a committee/project page; null for other entities. */
+async function pagePreviewPath(db: WattsDb, type: ContentEntityType, id: string, revisionId: string) {
+	if (type === 'committee_page') {
+		const [c] = await db.select({ slug: Committees.slug }).from(Committees).where(eq(Committees.id, id)).limit(1);
+		return c?.slug ? `/pages/committee/${c.slug}/preview?revision=${revisionId}` : null;
+	}
+	if (type === 'project_page') {
+		const [p] = await db.select({ slug: Projects.slug }).from(Projects).where(eq(Projects.id, id)).limit(1);
+		return p?.slug ? `/pages/project/${p.slug}/preview?revision=${revisionId}` : null;
+	}
+	return null;
 }
 
 export async function listPublishedPageSlugs(db: WattsDb) {

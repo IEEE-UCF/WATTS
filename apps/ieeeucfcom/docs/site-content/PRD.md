@@ -62,6 +62,8 @@ Officer profiles are separate from member accounts: the roster can include peopl
 - Staff also control whether the page is published.
 - Non-staff see "submitted for review", their latest submission's status, and any reviewer note.
 - `/dashboard` lists the pages the member can edit.
+- **Preview** (`/pages/<type>/<slug>/preview`): anyone who can edit the page sees the saved version, even while unpublished, under a "Preview" bar. `?revision=<id>` shows a submitted change as it would look if approved; only its author and staff can open it. Everyone else gets a 404. The editor links to both, and the review queue has "Preview as page".
+- **Save as draft** (staff): sends a staff edit to the review queue instead of publishing, so it can be previewed and then approved.
 
 ### Linked officers (/settings)
 
@@ -70,7 +72,7 @@ Officer profiles are separate from member accounts: the roster can include peopl
 ### Public site
 
 - Existing pages look exactly as before until content is imported, because every image spot falls back to its current file.
-- `/committees/<slug>` and `/projects/<slug>` exist once published (otherwise 404) and are listed in the sitemap.
+- `/committees/<slug>` and `/projects/<slug>` exist once published (otherwise the site's 404 page) and are listed in the sitemap.
 - Sample: `/committees/software`, "run by Dawn Balaschak", with an Apply link and a photo carousel.
 
 ## Success metrics

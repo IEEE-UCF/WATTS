@@ -16,6 +16,7 @@ import {
 	assignPageEditor,
 	buildOfficerSelfSnapshot,
 	canEditScope,
+	contentActor,
 	createOfficerProfile,
 	createSponsor,
 	deleteOfficerProfile,
@@ -39,7 +40,6 @@ import {
 	revokePageEditor,
 	submitChange,
 	type CommitteePageSnapshot,
-	type ContentActor,
 	type ProjectPageSnapshot,
 } from '@watts/core/site-content';
 import { isSlotKey } from '@watts/core/site-media-slots';
@@ -126,18 +126,8 @@ const projectPageSnapshot = z.object({
 
 const entityType = z.enum(['officer_profile', 'sponsor', 'slot', 'committee_page', 'project_page']);
 
-function toActor(userId: string, roles: MemberRoles | null): ContentActor {
-	return {
-		userId,
-		memberId: roles?.memberId ?? null,
-		administrator: roles?.administrator ?? false,
-		officerStatus: roles?.officerStatus ?? false,
-		permissions: roles?.permissions ?? [],
-	};
-}
-
 async function actorOf(ctx: { session: { user: { id: string } }; getRoles: () => Promise<MemberRoles | null> }) {
-	return toActor(ctx.session.user.id, await ctx.getRoles());
+	return contentActor(ctx.session.user.id, await ctx.getRoles());
 }
 
 function changed(ctx: { onContentChanged?: (tag: string) => void }) {
@@ -440,16 +430,18 @@ export const siteContentRouter = createTRPCRouter({
 		}),
 
 	submitCommitteePage: protectedProcedure
-		.input(z.object({ id: uuid, snapshot: committeePageSnapshot }))
+		// draft: staff save to the review queue instead of publishing, so they can preview first.
+		.input(z.object({ id: uuid, snapshot: committeePageSnapshot, draft: z.boolean().optional() }))
 		.mutation(async ({ ctx, input }) => {
 			const actor = await actorOf(ctx);
 			if (!(await canEditScope(ctx.db, actor, { type: 'committee', id: input.id }))) {
 				throw new TRPCError({ code: 'FORBIDDEN', message: 'You cannot edit this page' });
 			}
 			try {
-				const direct = publishesDirectly(actor);
+				const staff = publishesDirectly(actor);
+				const direct = staff && !input.draft;
 				const snapshot: CommitteePageSnapshot = { ...input.snapshot };
-				if (!direct) {
+				if (!staff) {
 					// Only staff decide whether a page is live.
 					const current = (await readCurrent(ctx.db, 'committee_page', input.id)) as CommitteePageSnapshot;
 					snapshot.published = current.published;
@@ -469,16 +461,18 @@ export const siteContentRouter = createTRPCRouter({
 		}),
 
 	submitProjectPage: protectedProcedure
-		.input(z.object({ id: uuid, snapshot: projectPageSnapshot }))
+		// draft: staff save to the review queue instead of publishing, so they can preview first.
+		.input(z.object({ id: uuid, snapshot: projectPageSnapshot, draft: z.boolean().optional() }))
 		.mutation(async ({ ctx, input }) => {
 			const actor = await actorOf(ctx);
 			if (!(await canEditScope(ctx.db, actor, { type: 'project', id: input.id }))) {
 				throw new TRPCError({ code: 'FORBIDDEN', message: 'You cannot edit this page' });
 			}
 			try {
-				const direct = publishesDirectly(actor);
+				const staff = publishesDirectly(actor);
+				const direct = staff && !input.draft;
 				const snapshot: ProjectPageSnapshot = { ...input.snapshot };
-				if (!direct) {
+				if (!staff) {
 					const current = (await readCurrent(ctx.db, 'project_page', input.id)) as ProjectPageSnapshot;
 					snapshot.published = current.published;
 				}

@@ -75,8 +75,9 @@ export function PageEditor({ type, slug }: { type: 'committee' | 'project'; slug
 		});
 	}
 
-	async function save(e: React.FormEvent) {
-		e.preventDefault();
+	// draft: staff only — save to the review queue instead of publishing, to preview first.
+	async function save(e: React.FormEvent | null, draft = false) {
+		e?.preventDefault();
 		if (!form) return;
 		try {
 			const res =
@@ -91,6 +92,7 @@ export function PageEditor({ type, slug }: { type: 'committee' | 'project'; slug
 								galleryAssetIds: form.galleryAssetIds,
 								published: form.published,
 							},
+							draft,
 						})
 					: await submitProject.mutateAsync({
 							id: data.id,
@@ -101,13 +103,16 @@ export function PageEditor({ type, slug }: { type: 'committee' | 'project'; slug
 								galleryAssetIds: form.galleryAssetIds,
 								published: form.published,
 							},
+							draft,
 						});
 			setBanner({
 				kind: 'ok',
 				text:
 					res?.status === 'published'
 						? 'Saved and published.'
-						: 'Submitted for review — it will go live once a website editor approves it.',
+						: draft
+							? 'Saved as a draft. Preview it below, then approve it in the Review queue to publish.'
+							: 'Submitted for review — it will go live once a website editor approves it.',
 			});
 		} catch (err) {
 			setBanner({ kind: 'err', text: err instanceof Error ? err.message : 'Save failed' });
@@ -115,6 +120,7 @@ export function PageEditor({ type, slug }: { type: 'committee' | 'project'; slug
 	}
 
 	const publicPath = `/${type === 'committee' ? 'committees' : 'projects'}/${slug}`;
+	const previewPath = `/pages/${type}/${slug}/preview`;
 	const pending = submitCommittee.isPending || submitProject.isPending;
 
 	return (
@@ -130,6 +136,14 @@ export function PageEditor({ type, slug }: { type: 'committee' | 'project'; slug
 				) : (
 					<span className="text-muted-foreground">not published yet</span>
 				)}
+				<Link
+					href={previewPath}
+					target="_blank"
+					className="text-ieee-bright-yellow underline"
+					title="Opens the last saved version. Unsaved edits aren't included."
+				>
+					Preview saved page ↗
+				</Link>
 			</div>
 
 			{data.myLatest && data.myLatest.status !== 'published' && (
@@ -137,7 +151,14 @@ export function PageEditor({ type, slug }: { type: 'committee' | 'project'; slug
 					Your last submission: <StatusTag status={data.myLatest.status} />{' '}
 					<span className="text-muted-foreground">
 						({new Date(data.myLatest.createdAt).toLocaleString()})
-					</span>
+					</span>{' '}
+					<Link
+						href={`${previewPath}?revision=${data.myLatest.id}`}
+						target="_blank"
+						className="text-ieee-bright-yellow underline"
+					>
+						Preview it ↗
+					</Link>
 					{data.myLatest.reviewNote && (
 						<p className="mt-1 text-muted-foreground">
 							Reviewer note: {data.myLatest.reviewNote}
@@ -295,6 +316,16 @@ export function PageEditor({ type, slug }: { type: 'committee' | 'project'; slug
 					<button type="submit" className={primaryButtonClass} disabled={pending}>
 						{data.canPublish ? 'Save & publish' : 'Submit for review'}
 					</button>
+					{data.canPublish && (
+						<button
+							type="button"
+							className={buttonClass}
+							disabled={pending}
+							onClick={() => void save(null, true)}
+						>
+							Save as draft
+						</button>
+					)}
 					{data.canPublish && (
 						<button
 							type="button"

@@ -29,6 +29,7 @@ What it is for: [PRD.md](PRD.md). This document covers how the pieces fit togeth
 | API | `packages/api/src/routers/site-content.ts` → `siteContent` | Thin tRPC layer (zod shapes + who-may-do-what) |
 | Cache | `apps/ieeeucfcom/src/lib/site-content.ts` | `unstable_cache` reads with a DB-failure fallback |
 | Rendering | `components/slot-image.tsx`, `components/pg/content-page.tsx`, `content-gallery.tsx` | Slot → image; committee/project page layout |
+| Preview | `app/pages/[type]/[slug]/preview/page.tsx` | Editor-only preview of saved pages and pending revisions |
 | Admin | `components/admin/site-content/*` | `/admin/site-content`, page editor, officer card |
 | Import | `infra/seed/src/import-site-content.ts` | One-off move of today's content into the CMS |
 
@@ -76,6 +77,12 @@ After that:
 Snapshots are full, not diffs. Approving an old pending change therefore overwrites anything staff published in the meantime; the review queue shows the diff against *what is live now*, so the reviewer sees exactly what would change.
 
 Non-staff can never change `published` on a committee/project page. The router copies the live value into their snapshot.
+
+**Drafts and preview.** Staff can pass `draft: true` to `submitCommitteePage` / `submitProjectPage`. Their change then goes to the queue as `pending` instead of publishing, and they (or another staff member) approve it after previewing. `/pages/<type>/<slug>/preview` renders the same `ContentPageView` as the public page from `getPagePreview()`:
+- By default it shows the live row, published or not.
+- With `?revision=<id>` it shows that revision's snapshot.
+
+`getPagePreview` returns null, and the route returns a 404, unless `canEditScope` passes. For a revision, the viewer must also be staff or the revision's author. The route is `force-dynamic` and `noindex`, and it never touches the `site-content` cache, so previews can't leak into the static public pages.
 
 **No transactions:** the website's Neon HTTP driver has none. Writes are ordered (apply live row → insert revision → supersede old) so a failure midway leaves a state a retry fixes.
 
