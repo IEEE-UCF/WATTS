@@ -48,10 +48,12 @@ export function MembershipStatus({
 			</div>
 			{!duesPaid && (
 				<a
-					href="/settings"
+					href="https://www.ieee.org/membership/join/index.html"
+					target="_blank"
+					rel="noopener noreferrer"
 					className="mt-1 inline-flex w-fit items-center rounded-md bg-ieee-dark-yellow px-3 py-1.5 text-xs font-semibold text-black"
 				>
-					Pay dues
+					Pay dues on IEEE.org ↗
 				</a>
 			)}
 		</Card>
