@@ -76,3 +76,45 @@ Everything else is a faithful copy, **including members' personal data and résu
 3. It copies files into local MinIO, and rewrites production Blob URLs to local MinIO URLs.
 
 Sessions aren't copied, so sign in again with Discord. Your Discord account maps to your production user.
+
+## Handing off to the next site admin
+
+Production access belongs to whoever runs the website this year. When that changes, work through this list with the outgoing and incoming admin **together**. Never send tokens or connection strings over Discord, email or chat. The new admin copies them straight from the dashboards below once they have access.
+
+### 1. Give the new admin access
+
+| System | What to grant | What it's for |
+| --- | --- | --- |
+| **Vercel** (website project) | Team member with access to the project | Deploys, env vars, Blob stores. The Neon `DATABASE_URL_UNPOOLED` and both Blob tokens are read from here. |
+| **Neon** (through the Vercel integration) | Access to the project/branch | Point-in-time restore, and resetting the database password |
+| **GitHub** (`IEEE-UCF/WATTS`) | Repo admin, **and** a Required reviewer on the `production` environment | Merging, and approving the gated `migrate` job ([DEPLOY.md §5](../../apps/ieeeucfcom/DEPLOY.md)) |
+| **Discord developer portal** | Team member on the *website's* OAuth app (and the bot's app, if they run the bot) | Sign-in redirect URIs and client secret |
+| **Google Cloud** (only if calendar sync is on) | Access to the service account's project | `GOOGLE_SERVICE_ACCOUNT_JSON` |
+| **The website itself** | `administrator` in `/admin/members` | Every admin page, including `/admin/site-content` |
+
+### 2. The new admin sets up backups
+
+1. Create `~/.watts/production.env` (see [One-time setup](#one-time-setup)), copying values from Vercel → Settings → Environment Variables (Production):
+   - `DATABASE_URL` = `DATABASE_URL_UNPOOLED` (the host has no `-pooler`)
+   - `BLOB_READ_WRITE_TOKEN` = the **private** store's token
+   - `BLOB_RW_TOKEN_PUBLIC` (or `PUBLIC_READ_WRITE_TOKEN`) = the **public** store's token
+   - `STORAGE_PROVIDER=vercel`
+2. Run `pnpm prod:backup`, check that `REPORT.md` looks sane, then run `pnpm mirror:restore` and `pnpm mirror:use`.
+3. Keep backing up weekly, and before any risky migration or import.
+
+### 3. The outgoing admin hands back
+
+1. Delete the local backup folder (`~/Desktop/WATTS production backup`) and `~/.watts/production.env`. The backup contains members' personal data and résumés.
+2. Revoke their access in each system from the table above. Remove their `administrator` flag if they are no longer an officer.
+3. Rotate the secrets they held. Update each new value everywhere it's used, then redeploy.
+   - **Neon database password:** update Vercel's `DATABASE_URL*` variables, and the GitHub `production` environment secret `PROD_DATABASE_URL_UNPOOLED`.
+   - **Both Blob tokens,** where Vercel allows it: update the Vercel env vars.
+   - **`NEXTAUTH_SECRET`:** this signs everyone out.
+   - **The Discord client secret.**
+
+### Things worth knowing (as of 2026-09)
+
+- **Blob stores:** production has two. One is **private** (event photos, résumés); the other is **public** (event flyers, website images). Vercel names the public token `PUBLIC_READ_WRITE_TOKEN`, but the site reads `BLOB_RW_TOKEN_PUBLIC`, so keep both set to the same value.
+- **Legacy table:** production has an extra `resumes` table from before this repo. It is kept on purpose; don't drop it.
+- **Duplicate accounts:** some people have several accounts with the same name (test accounts). When linking officer profiles, pick the account that is actually used.
+- **Migrations before merging:** when a PR adds columns to a table the site already reads, run the migration **before** merging. Vercel deploys immediately, while the `migrate` job waits for approval.
