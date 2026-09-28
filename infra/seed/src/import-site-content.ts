@@ -168,12 +168,18 @@ async function main() {
 	} else {
 		const officers = await readLegacyOfficers();
 		const members = await db.select({ id: Members.id, first: Members.firstName, last: Members.lastName }).from(Members);
-		const byName = new Map(members.map((m) => [`${m.first} ${m.last}`.toLowerCase().trim(), m.id]));
+		const byName = new Map<string, string[]>();
+		for (const m of members) {
+			const k = `${m.first} ${m.last}`.toLowerCase().trim();
+			byName.set(k, [...(byName.get(k) ?? []), m.id]);
+		}
 		const unmatched: string[] = [];
 		for (const o of officers) {
-			const memberId = byName.get(o.name.toLowerCase()) ?? null;
-			if (!memberId) unmatched.push(o.name);
-			log(`  ${o.name} — ${o.role}${memberId ? ' (linked to member)' : ''}`);
+			// Only link an unambiguous name: several accounts can share one (test accounts, re-registrations).
+			const ids = byName.get(o.name.toLowerCase()) ?? [];
+			const memberId = ids.length === 1 ? ids[0] : null;
+			if (!memberId) unmatched.push(ids.length > 1 ? `${o.name} (${ids.length} members share this name)` : o.name);
+			log(`  ${o.name} — ${o.role}${memberId ? ' (linked to member)' : ids.length > 1 ? ` (not linked: ${ids.length} members share this name)` : ''}`);
 			const portraitAssetId = await uploadPublicFile(o.photo, 'image', user.id, o.name);
 			if (APPLY) {
 				await core.createOfficerProfile(
@@ -253,14 +259,20 @@ async function main() {
 	// 4. sample Software committee page ----------------------------------------
 	console.log('\n• sample committee page: /committees/software');
 	let [committee] = await db.select().from(Committees).where(eq(Committees.slug, 'software')).limit(1);
+	const preexisting = Boolean(committee);
 	if (!committee) {
-		const [dawn] = await db
+		const dawns = await db
 			.select({ id: Members.id })
 			.from(Members)
-			.where(and(ilike(Members.firstName, 'Dawn'), ilike(Members.lastName, 'Balaschak')))
-			.limit(1);
+			.where(and(ilike(Members.firstName, 'Dawn'), ilike(Members.lastName, 'Balaschak')));
+		// Several accounts can share the name: prefer the --as account when it is one of them.
+		const dawn = dawns.length === 1 ? dawns[0] : dawns.find((d) => d.id === me?.id);
 		if (!dawn) {
-			console.log('  ! no "software" committee and no member "Dawn Balaschak" — skipped');
+			console.log(
+				dawns.length > 1
+					? `  ! ${dawns.length} members are named "Dawn Balaschak" and --as isn't one of them — skipped (run with --as=<Dawn's login email>)`
+					: '  ! no "software" committee and no member "Dawn Balaschak" — skipped',
+			);
 		} else if (APPLY) {
 			const { createCommittee } = await import('@watts/core/committees');
 			({ committee } = await createCommittee(db, {
@@ -274,7 +286,7 @@ async function main() {
 			log('  would create the Software committee (chair: Dawn Balaschak)');
 		}
 	}
-	if (committee && !committee.published) {
+	if (preexisting && committee && !committee.published) {
 		const [chair] = await db
 			.select({ first: Members.firstName, last: Members.lastName })
 			.from(Members)

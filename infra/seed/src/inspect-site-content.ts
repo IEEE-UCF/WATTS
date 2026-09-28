@@ -94,13 +94,15 @@ async function main() {
 					: `→ import will publish the sample page on the EXISTING software committee (chair shown: ${software.first_name ? `${software.first_name} ${software.last_name}` : 'none'}); its "about" is replaced, and the original is kept in History`,
 			);
 		} else {
-			const [dawn] = await tx`
-				select 1 as ok from members
-				where lower(first_name) = 'dawn' and lower(last_name) = 'balaschak' limit 1`;
+			const [{ n }] = await tx`
+				select count(*)::int as n from members
+				where lower(first_name) = 'dawn' and lower(last_name) = 'balaschak'`;
 			say(
-				dawn
+				n === 1
 					? '→ no "software" committee: the import creates it with Dawn Balaschak as chair'
-					: '! no "software" committee and no member "Dawn Balaschak": the sample page will be skipped',
+					: n > 1
+						? `→ no "software" committee: ${n} members are named Dawn Balaschak — the import uses the --as account as chair if it's one of them, otherwise skips the sample page`
+						: '! no "software" committee and no member "Dawn Balaschak": the sample page will be skipped',
 			);
 		}
 
@@ -133,7 +135,11 @@ async function main() {
 			if (n > 0) say(`! ${n} officer profiles already exist — the import will skip the roster entirely`);
 		}
 		const members = await tx`select first_name, last_name from members`;
-		const full = new Set(members.map((m) => `${m.first_name} ${m.last_name}`.toLowerCase().trim()));
+		const full = new Map<string, number>();
+		for (const m of members) {
+			const k = `${m.first_name} ${m.last_name}`.toLowerCase().trim();
+			full.set(k, (full.get(k) ?? 0) + 1);
+		}
 		const lastNames = new Map<string, string[]>();
 		for (const m of members) {
 			const k = String(m.last_name).toLowerCase().trim();
@@ -141,9 +147,12 @@ async function main() {
 		}
 		let linked = 0;
 		for (const o of officers) {
-			if (full.has(o.name.toLowerCase())) {
+			const n = full.get(o.name.toLowerCase()) ?? 0;
+			if (n === 1) {
 				linked++;
 				say(`✓ ${o.name} — will be linked to their member account`);
+			} else if (n > 1) {
+				say(`! ${o.name} — ${n} members share this name: not linked automatically, pick the right account in /admin/site-content → Officers`);
 			} else {
 				const near = lastNames.get(o.name.split(' ').pop()!.toLowerCase()) ?? [];
 				say(`· ${o.name} — no exact member match${near.length ? ` (same last name: ${near.join(', ')} — link by hand after import)` : ''}`);
