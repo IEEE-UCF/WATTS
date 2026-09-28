@@ -4,9 +4,12 @@ import { getServerSession } from 'next-auth';
 import { appRouter, createTRPCContext } from '@watts/api';
 import { authOptions } from '@/lib/auth';
 import { db } from '@/lib/database/client';
+import { requestBotSync } from '@/lib/bot-sync';
 
 const handler = async (req: Request) => {
 	const session = await getServerSession(authOptions);
+	// One bot nudge per request, however many event mutations it batched.
+	let botSyncRequested = false;
 
 	return fetchRequestHandler({
 		endpoint: '/api/trpc',
@@ -19,6 +22,12 @@ const handler = async (req: Request) => {
 				headers: req.headers,
 				// Published CMS changes refresh the statically rendered public pages.
 				onContentChanged: (tag) => revalidateTag(tag),
+				// Event changes the Discord bot mirrors → ask it to sync now (see bot-sync.ts).
+				onEventsChanged: () => {
+					if (botSyncRequested) return;
+					botSyncRequested = true;
+					requestBotSync();
+				},
 			}),
 		onError:
 			process.env.NODE_ENV === 'development'

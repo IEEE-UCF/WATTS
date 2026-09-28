@@ -40,6 +40,8 @@ interface Config {
 				enabled: boolean;
 				intervalMinutes: number;
 				pingEventCreators: boolean;
+				/** Id of the Discord webhook the website posts to after an event change ('' = off). */
+				webhookId: string;
 			};
 			eventReminders: {
 				enabled: boolean;
@@ -100,8 +102,13 @@ const config: Config = {
 			},
 			discordEventSync: {
 				enabled: process.env.DISCORD_EVENT_SYNC_ENABLED === 'true',
-				intervalMinutes: Number(process.env.DISCORD_EVENT_SYNC_INTERVAL_MINS) || 15,
+				// Fallback poll only — website changes arrive via the webhook below. Each poll
+				// wakes Neon (~5 min billed), so keep this long.
+				intervalMinutes: Number(process.env.DISCORD_EVENT_SYNC_INTERVAL_MINS) || 180,
 				pingEventCreators: process.env.PING_EVENT_CREATORS === 'true',
+				// Same webhook URL the website posts to; only its id is needed here.
+				webhookId:
+					process.env.DISCORD_BOT_SYNC_WEBHOOK_URL?.match(/\/webhooks\/(\d+)\//)?.[1] ?? '',
 			},
 			eventReminders: {
 				enabled: process.env.EVENT_REMINDERS_ENABLED !== 'false',
