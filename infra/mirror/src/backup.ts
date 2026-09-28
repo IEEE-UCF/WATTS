@@ -57,6 +57,8 @@ const STORAGE_KEYS = [
 
 async function main() {
 	const env = readEnvFile(sourceEnvPath);
+	// Vercel's own name for a second store's token (what the store's "Connect" step creates).
+	if (!env.BLOB_RW_TOKEN_PUBLIC && env.PUBLIC_READ_WRITE_TOKEN) env.BLOB_RW_TOKEN_PUBLIC = env.PUBLIC_READ_WRITE_TOKEN;
 	if (!env.DATABASE_URL) throw new Error(`DATABASE_URL missing in ${sourceEnvPath}`);
 	const dbUrl = new URL(env.DATABASE_URL);
 	if (dbUrl.hostname.includes('-pooler.')) {

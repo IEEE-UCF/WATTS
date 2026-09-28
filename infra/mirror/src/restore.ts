@@ -66,12 +66,18 @@ async function main() {
 	try {
 		const migrationsFolder = join(ROOT, 'packages', 'db', 'drizzle');
 		await migrate(drizzle(sql), { migrationsFolder });
-		const local_ = (await sql`select hash from drizzle.__drizzle_migrations`).map((r) => String(r.hash));
-		const prodOnly = m.migrations.filter((x) => !local_.includes(x.hash)).length;
-		const branchOnly = local_.filter((h) => !m.migrations.some((x) => x.hash === h)).length;
-		console.log(`• schema: ${local_.length} migrations from this branch`);
+		// Drizzle tracks applied migrations by timestamp (created_at = the journal's "when"),
+		// not by file hash — a file saved with different line endings still counts as applied.
+		const applied = (await sql`select created_at from drizzle.__drizzle_migrations`).map((r) => String(r.created_at));
+		const prodOnly = m.migrations.filter((x) => !applied.includes(x.createdAt)).length;
+		const branchOnly = applied.filter((c) => !m.migrations.some((x) => x.createdAt === c)).length;
+		const olderUnknown = m.migrations.filter((x) => !applied.includes(x.createdAt) && Number(x.createdAt) < Math.min(...applied.map(Number))).length;
+		console.log(`• schema: ${applied.length} migrations from this branch`);
 		if (branchOnly) console.log(`  this branch adds ${branchOnly} migration(s) production doesn't have yet (normal on a feature branch)`);
-		if (prodOnly) console.log(`  ! production has ${prodOnly} migration(s) this branch doesn't — switch to an up-to-date branch for a faithful mirror`);
+		if (olderUnknown) console.log(`  production also has ${olderUnknown} older migration(s) from before this repo's history — ignored`);
+		if (prodOnly - olderUnknown > 0) {
+			console.log(`  ! production has ${prodOnly - olderUnknown} newer migration(s) this branch doesn't — switch to an up-to-date branch for a faithful mirror`);
+		}
 
 		// 2. rows ------------------------------------------------------------------------
 		console.log('\n• data');
