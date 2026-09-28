@@ -1,10 +1,10 @@
 'use client';
 
-import { Fragment, useMemo, useRef, useState } from 'react';
+import { Fragment, useMemo, useState } from 'react';
 import { trpc } from '@/lib/trpc/client';
 import type { RouterOutputs } from '@watts/api';
-import { uploadProjectPhoto } from '@watts/storage/client';
 import { TagInput } from '@/components/tag-input';
+import { ProjectPhotos } from './project-photos';
 import {
 	Table,
 	TableHeader,
@@ -526,17 +526,18 @@ export function ProjectManager() {
 
 	const [showForm, setShowForm] = useState(false);
 	const [editing, setEditing] = useState<AdminProject | null>(null);
-	const [expandedId, setExpandedId] = useState<string | null>(null);
-	const [photoBusy, setPhotoBusy] = useState<string | null>(null);
-	const photoRef = useRef<HTMLInputElement>(null);
-	const photoTarget = useRef<string | null>(null);
-	const [banner, setBanner] = useState<{ kind: 'ok' | 'err'; text: string } | null>(null);
+	// One open detail panel per table: a project's photos or its members.
+	const [expanded, setExpanded] = useState<{ id: string; panel: 'photos' | 'members' } | null>(
+		null,
+	);
 
 	const invalidate = () => void utils.project.getAll.invalidate();
 
 	const del = trpc.project.delete.useMutation({ onSuccess: invalidate });
-	const confirmPhoto = trpc.project.confirmPhoto.useMutation();
-	const removePhoto = trpc.project.removePhoto.useMutation({ onSuccess: invalidate });
+
+	function toggle(id: string, panel: 'photos' | 'members') {
+		setExpanded((cur) => (cur?.id === id && cur.panel === panel ? null : { id, panel }));
+	}
 
 	function openCreate() {
 		setEditing(null);
@@ -547,54 +548,9 @@ export function ProjectManager() {
 		setShowForm(true);
 	}
 
-	function pickPhoto(projectId: string) {
-		photoTarget.current = projectId;
-		photoRef.current?.click();
-	}
-
-	async function onPhotoFile(e: React.ChangeEvent<HTMLInputElement>) {
-		const file = e.target.files?.[0];
-		e.target.value = '';
-		const projectId = photoTarget.current;
-		if (!file || !projectId) return;
-		setPhotoBusy(projectId);
-		try {
-			const { photoId } = await uploadProjectPhoto(projectId, file);
-			await confirmPhoto.mutateAsync({ projectId, photoId, filename: file.name });
-			invalidate();
-			setBanner({ kind: 'ok', text: 'Photo uploaded.' });
-		} catch (err) {
-			setBanner({
-				kind: 'err',
-				text: err instanceof Error ? err.message : 'Photo upload failed',
-			});
-		} finally {
-			setPhotoBusy(null);
-		}
-	}
-
 	return (
 		<div className="text-foreground">
 			<CategoryBar categories={categories ?? []} />
-
-			{banner && (
-				<div
-					className={`mb-4 flex items-start justify-between gap-3 rounded-md border px-3 py-2 text-sm ${
-						banner.kind === 'ok'
-							? 'border-green-800 bg-green-900/30 text-green-200'
-							: 'border-red-800 bg-red-900/30 text-red-200'
-					}`}
-				>
-					<span>{banner.text}</span>
-					<button
-						type="button"
-						onClick={() => setBanner(null)}
-						className="text-xs opacity-70 hover:opacity-100"
-					>
-						dismiss
-					</button>
-				</div>
-			)}
 
 			<div className="mb-4">
 				<button
@@ -614,14 +570,6 @@ export function ProjectManager() {
 					onDone={() => setShowForm(false)}
 				/>
 			)}
-
-			<input
-				ref={photoRef}
-				type="file"
-				accept="image/jpeg,image/png,image/webp"
-				className="hidden"
-				onChange={onPhotoFile}
-			/>
 
 			{isLoading ? (
 				<p className="text-sm text-muted-foreground">Loading…</p>
@@ -649,17 +597,28 @@ export function ProjectManager() {
 										{p.lead ?? '—'}
 									</TableCell>
 									<TableCell>
-										<div className="flex gap-1">
-											{(p.photoUrls ?? []).slice(0, 3).map((url) => (
+										<button
+											type="button"
+											onClick={() => toggle(p.id, 'photos')}
+											className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground"
+											title="Manage photos"
+										>
+											{p.photoUrls?.[0] ? (
 												// eslint-disable-next-line @next/next/no-img-element
 												<img
-													key={url}
-													src={url}
-													alt=""
-													className="h-8 w-8 rounded object-cover"
+													src={p.photoUrls[0]}
+													alt="Main photo"
+													className="h-10 w-10 rounded border border-ieee-dark-yellow object-cover"
 												/>
-											))}
-										</div>
+											) : (
+												<span className="flex h-10 w-10 items-center justify-center rounded border border-dashed border-input">
+													—
+												</span>
+											)}
+											{(p.photoUrls ?? []).length === 0
+												? 'no photos'
+												: `${p.photoUrls!.length} photo${p.photoUrls!.length === 1 ? '' : 's'}`}
+										</button>
 									</TableCell>
 									<TableCell>
 										<div className="flex justify-end gap-3 text-xs">
@@ -672,20 +631,23 @@ export function ProjectManager() {
 											</button>
 											<button
 												type="button"
-												disabled={photoBusy === p.id}
-												onClick={() => pickPhoto(p.id)}
-												className="text-blue-400 hover:underline disabled:opacity-50"
+												onClick={() => toggle(p.id, 'photos')}
+												className="text-blue-400 hover:underline"
 											>
-												{photoBusy === p.id ? 'uploading…' : '+ photo'}
+												{expanded?.id === p.id &&
+												expanded.panel === 'photos'
+													? 'hide photos'
+													: 'photos'}
 											</button>
 											<button
 												type="button"
-												onClick={() =>
-													setExpandedId(expandedId === p.id ? null : p.id)
-												}
+												onClick={() => toggle(p.id, 'members')}
 												className="text-blue-400 hover:underline"
 											>
-												{expandedId === p.id ? 'hide members' : 'members'}
+												{expanded?.id === p.id &&
+												expanded.panel === 'members'
+													? 'hide members'
+													: 'members'}
 											</button>
 											<button
 												type="button"
@@ -697,36 +659,18 @@ export function ProjectManager() {
 										</div>
 									</TableCell>
 								</TableRow>
-								{expandedId === p.id && (
+								{expanded?.id === p.id && (
 									<TableRow>
 										<TableCell colSpan={4}>
 											<div className="rounded-md border border-input p-3">
-												<MembershipPanel projectId={p.id} />
-												{(p.photoUrls ?? []).length > 0 && (
-													<div className="mt-3 flex flex-wrap gap-2 border-t border-input pt-3">
-														{(p.photoUrls ?? []).map((url) => (
-															<div key={url} className="relative">
-																{/* eslint-disable-next-line @next/next/no-img-element */}
-																<img
-																	src={url}
-																	alt=""
-																	className="h-16 w-16 rounded object-cover"
-																/>
-																<button
-																	type="button"
-																	onClick={() =>
-																		removePhoto.mutate({
-																			projectId: p.id,
-																			photoUrl: url,
-																		})
-																	}
-																	className="absolute -top-1 -right-1 rounded-full bg-red-600 px-1 text-[10px] text-white"
-																>
-																	×
-																</button>
-															</div>
-														))}
-													</div>
+												{expanded.panel === 'photos' ? (
+													<ProjectPhotos
+														projectId={p.id}
+														photoUrls={p.photoUrls ?? []}
+														onChanged={invalidate}
+													/>
+												) : (
+													<MembershipPanel projectId={p.id} />
 												)}
 											</div>
 										</TableCell>

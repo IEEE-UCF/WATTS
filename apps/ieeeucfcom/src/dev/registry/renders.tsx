@@ -73,6 +73,7 @@ import { AdminOverview } from '@/components/admin/overview';
 import { CommitteesProjectsPanel } from '@/components/staff/committees-projects-panel';
 import { GlowButton } from '@/components/ui/glow-button';
 import { QREventScanner } from '@/components/admin/qr_event_scanner';
+import { ProjectPhotos } from '@/components/admin/project-photos';
 import { FormPopup } from '@/components/dashboard/newEventForm';
 import { ThemePlayground } from '@/components/theme-playground';
 import { AnimatedMediaCompare } from '@/dev/components/animated-media-compare';
@@ -304,6 +305,17 @@ export const renders: Record<string, Render> = {
 		</div>
 	),
 	'admin/event-manager': () => <EventManager />,
+	'admin/project-photos': () => (
+		<ProjectPhotos
+			projectId="00000000-0000-0000-0000-000000000000"
+			photoUrls={[
+				'/projects/micromouse.png',
+				'/projects/gnor.png',
+				'/projects/pegasuscpu.png',
+			]}
+			onChanged={() => undefined}
+		/>
+	),
 	'admin/site-content-manager': () => <SiteContentManager />,
 	'admin/content-page-view': () => (
 		<ContentPageView
