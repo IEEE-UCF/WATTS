@@ -10,6 +10,7 @@ import {
 	createProject,
 	updateProject,
 	deleteProject,
+	reorderProjects,
 	listProjectMembers,
 	addProjectMember,
 	removeProjectMember,
@@ -48,6 +49,8 @@ const projectCreateSchema = z.object({
 	discordRoleId: z.string().max(64).nullish(),
 	discordLeadRoleId: z.string().max(64).nullish(),
 	discordChannelId: z.string().max(64).nullish(),
+	// Current vs Past on the public /projects page.
+	status: z.enum(['current', 'past']).optional(),
 });
 
 const projectUpdateSchema = projectCreateSchema.partial();
@@ -187,6 +190,19 @@ export const projectRouter = createTRPCRouter({
 				});
 			} catch (err) {
 				mapUploadError(err);
+			}
+		}),
+
+	// Set the public order of one group (Current or Past): first id is shown first, so
+	// the top of Current is the featured project.
+	reorder: manageProjects
+		.input(z.object({ ids: z.array(z.string().uuid()).min(1).max(500) }))
+		.mutation(async ({ ctx, input }) => {
+			try {
+				await reorderProjects(ctx.db, input.ids);
+				return { success: true };
+			} catch (error) {
+				mapDomainError(error);
 			}
 		}),
 

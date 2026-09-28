@@ -184,6 +184,12 @@ export const graduationTermEnum = pgEnum('graduation_term_enum', [
 	'spring', 'summer', 'fall',
 ]);
 
+// Where a project sits on the public /projects page. Declaration order is sort order:
+// current projects are listed before past ones.
+export const projectStatusEnum = pgEnum('project_status_enum', [
+	'current', 'past',
+]);
+
 // Sponsorship Tiers: Bronze, Silver, Gold
 export const sponsorshipTierEnum = pgEnum('sponsorship_tier_enum', [
 	'Bronze',
@@ -504,6 +510,10 @@ export const Projects = pgTable('projects', {
 	heroAssetId: uuid('hero_asset_id'),
 	galleryAssetIds: uuid('gallery_asset_ids').array().notNull().default(sql`'{}'::uuid[]`),
 	published: boolean('published').notNull().default(false),
+	// Public /projects grouping + order. Lowest sort_order within "current" is shown first,
+	// so the top of the list is the featured project. `active` stays "not deleted".
+	status: projectStatusEnum('status').notNull().default('current'),
+	sortOrder: integer('sort_order').notNull().default(0),
 	active: boolean('active').notNull().default(true),
 	createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 	updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow().$onUpdate(() => sql`now()`),

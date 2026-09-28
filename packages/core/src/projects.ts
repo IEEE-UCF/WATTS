@@ -1,4 +1,4 @@
-import { and, eq } from 'drizzle-orm';
+import { and, asc, eq, inArray, sql } from 'drizzle-orm';
 import type { WattsDb } from '@watts/db';
 import { Projects, ProjectMembers, ProjectMembershipRequests, Members } from '@watts/db/schema';
 import { DomainError } from './errors';
@@ -16,7 +16,10 @@ export interface CreateProjectInput {
 	discordRoleId?: string | null;
 	discordLeadRoleId?: string | null;
 	discordChannelId?: string | null;
+	status?: ProjectStatus;
 }
+
+export type ProjectStatus = 'current' | 'past';
 
 export type UpdateProjectInput = Partial<CreateProjectInput>;
 
@@ -54,8 +57,13 @@ async function leadNameForProject(db: WattsDb, projectId: string): Promise<strin
 	return row ? `${row.firstName} ${row.lastName}` : null;
 }
 
+/** Public /projects order: current before past, then by sort_order (lowest = featured). */
 export async function listActiveProjects(db: WattsDb) {
-	const projects = await db.select().from(Projects).where(eq(Projects.active, true));
+	const projects = await db
+		.select()
+		.from(Projects)
+		.where(eq(Projects.active, true))
+		.orderBy(asc(Projects.status), asc(Projects.sortOrder), asc(Projects.createdAt));
 	const leadMap = await fetchLeadNames(db, projects.map((p) => p.id));
 	return projects.map((project) => ({
 		...project,
@@ -76,7 +84,17 @@ export async function getProjectBySlug(db: WattsDb, slug: string) {
 	return { ...project, lead: project.projectLead ?? (await leadNameForProject(db, project.id)) };
 }
 
+/** Next sort_order at the end of a status group, so new/moved projects land last. */
+async function nextSortOrder(db: WattsDb, status: ProjectStatus): Promise<number> {
+	const [row] = await db
+		.select({ max: sql<number | null>`max(${Projects.sortOrder})` })
+		.from(Projects)
+		.where(eq(Projects.status, status));
+	return (row?.max ?? -1) + 1;
+}
+
 export async function createProject(db: WattsDb, input: CreateProjectInput) {
+	const status = input.status ?? 'current';
 	const [project] = await db
 		.insert(Projects)
 		.values({
@@ -92,19 +110,55 @@ export async function createProject(db: WattsDb, input: CreateProjectInput) {
 			discordRoleId: input.discordRoleId ?? null,
 			discordLeadRoleId: input.discordLeadRoleId ?? null,
 			discordChannelId: input.discordChannelId ?? null,
+			status,
+			sortOrder: await nextSortOrder(db, status),
 		})
 		.returning();
 	return { project };
 }
 
 export async function updateProject(db: WattsDb, id: string, data: UpdateProjectInput) {
+	const patch: Partial<typeof Projects.$inferInsert> = { ...data, updatedAt: new Date() };
+	if (data.status) {
+		const [current] = await db
+			.select({ status: Projects.status })
+			.from(Projects)
+			.where(eq(Projects.id, id))
+			.limit(1);
+		// Moving between Current and Past puts the project at the end of its new group.
+		if (current && current.status !== data.status) {
+			patch.sortOrder = await nextSortOrder(db, data.status);
+		}
+	}
 	const [project] = await db
 		.update(Projects)
-		.set({ ...data, updatedAt: new Date() })
+		.set(patch)
 		.where(eq(Projects.id, id))
 		.returning();
 	if (!project) throw new DomainError('NOT_FOUND', 'Project not found');
 	return { project };
+}
+
+/**
+ * Set the order of one status group from an ordered list of project ids (first = shown
+ * first). Every id must exist and share one status.
+ */
+export async function reorderProjects(db: WattsDb, ids: string[]) {
+	if (ids.length === 0) return;
+	if (new Set(ids).size !== ids.length) {
+		throw new DomainError('BAD_REQUEST', 'Duplicate project in the order');
+	}
+	const rows = await db
+		.select({ id: Projects.id, status: Projects.status })
+		.from(Projects)
+		.where(inArray(Projects.id, ids));
+	if (rows.length !== ids.length) throw new DomainError('NOT_FOUND', 'Project not found');
+	if (new Set(rows.map((r) => r.status)).size > 1) {
+		throw new DomainError('BAD_REQUEST', 'Reorder one group (Current or Past) at a time');
+	}
+	for (const [i, id] of ids.entries()) {
+		await db.update(Projects).set({ sortOrder: i }).where(eq(Projects.id, id));
+	}
 }
 
 export async function deleteProject(db: WattsDb, id: string) {

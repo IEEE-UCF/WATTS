@@ -214,84 +214,114 @@ export default function ProjectsPage({ heroMedia }: { heroMedia?: PublicAsset | 
 					</svg>
 				</div>
 
-				<div className="flex -translate-y-20 flex-row flex-wrap justify-start bg-black px-3 py-20">
-					{projectData.map((project, index) => {
-						const hwSkills = parseSkills(project.hardwareInfo).map((s) => ({
-							label: s,
-							type: 'hw',
-						}));
-						const swSkills = parseSkills(project.softwareInfo).map((s) => ({
-							label: s,
-							type: 'sw',
-						}));
-						const allSkills = [...hwSkills, ...swSkills];
-						const maxVisible = 6;
-						const visibleSkills = allSkills.slice(0, maxVisible - 1);
-						const remaining =
-							allSkills.length > maxVisible
-								? allSkills.length - visibleSkills.length
-								: 0;
-						const photoUrl = Array.isArray(project.photoUrls)
-							? (project.photoUrls[0] ?? null)
-							: (project.photoUrls ?? null);
-
+				<div className="-translate-y-20 bg-black px-3 py-20">
+					{/* getAll returns current projects first (top = featured), then past ones.
+					    Section headings only appear once there is a past project. */}
+					{(['current', 'past'] as const).map((status) => {
+						const items = projectData.filter((p) => p.status === status);
+						if (items.length === 0) return null;
+						const showHeading = projectData.some((p) => p.status === 'past');
 						return (
-							<div
-								key={project.id}
-								ref={(el) => {
-									if (el) cardsRef.current[index] = el;
-								}}
-								className="flex h-fit w-full flex-col p-3 opacity-0 transition hover:scale-102 md:basis-1/2 lg:basis-1/3"
-							>
-								<div className="group relative cursor-pointer transition-transform hover:scale-102">
-									<div className="absolute -inset-0.5 rounded-sm bg-gradient-to-r from-ieee-bright-yellow to-ieee-bright-yellow opacity-25 blur transition duration-300 group-hover:opacity-100 group-hover:duration-200"></div>
-									<Card className="relative h-fit border-0 bg-black">
-										<CardContent>
-											<Image
-												className="mb-4 h-80 w-full rounded-sm border-white object-cover object-center"
-												src={photoUrl ?? '/larry.png'}
-												alt={project.title}
-												width={2000}
-												height={2000}
-												sizes="(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw"
-											/>
-											<div className="mb-2 text-xl font-bold text-white">
-												{project.title}
-											</div>
-											{project.lead && (
-												<div className="mb-2 text-muted-foreground">
-													Project Lead: {project.lead}
-												</div>
-											)}
-											<div className="mb-4 text-muted-foreground">
-												{project.overview?.slice(0, 120)}...
-											</div>
-											<div className="mb-4 flex flex-wrap gap-2">
-												{visibleSkills.map((skill, idx) => (
-													<div
-														key={idx}
-														className={`w-fit rounded-sm px-3 py-1 text-sm text-white ${skill.type === 'hw' ? 'bg-ieee-light-grey' : 'bg-ieee-grey'}`}
-													>
-														{skill.label}
-													</div>
-												))}
-												{remaining > 0 && (
-													<div className="w-fit rounded-sm bg-ieee-dark-grey px-3 py-1 font-subheading text-sm text-white">
-														+{remaining} more
-													</div>
-												)}
-											</div>
+							<section key={status} className="mb-10">
+								{showHeading && (
+									<h2 className="px-3 pb-2 font-heading text-3xl text-ieee-bright-yellow">
+										{status === 'current'
+											? 'CURRENT PROJECTS'
+											: 'PAST PROJECTS'}
+									</h2>
+								)}
+								<div className="flex flex-row flex-wrap justify-start">
+									{items.map((project) => {
+										const index = projectData.indexOf(project);
+										const hwSkills = parseSkills(project.hardwareInfo).map(
+											(s) => ({
+												label: s,
+												type: 'hw',
+											}),
+										);
+										const swSkills = parseSkills(project.softwareInfo).map(
+											(s) => ({
+												label: s,
+												type: 'sw',
+											}),
+										);
+										const allSkills = [...hwSkills, ...swSkills];
+										const maxVisible = 6;
+										const visibleSkills = allSkills.slice(0, maxVisible - 1);
+										const remaining =
+											allSkills.length > maxVisible
+												? allSkills.length - visibleSkills.length
+												: 0;
+										const photoUrl = Array.isArray(project.photoUrls)
+											? (project.photoUrls[0] ?? null)
+											: (project.photoUrls ?? null);
+
+										return (
 											<div
-												className="relative flex w-full cursor-pointer flex-row justify-between text-white transition hover:scale-103 hover:text-amber-300"
-												onClick={() => viewSidebar(project)}
+												key={project.id}
+												ref={(el) => {
+													if (el) cardsRef.current[index] = el;
+												}}
+												className="flex h-fit w-full flex-col p-3 opacity-0 transition hover:scale-102 md:basis-1/2 lg:basis-1/3"
 											>
-												LEARN MORE
-												<ChevronRight />
+												<div className="group relative cursor-pointer transition-transform hover:scale-102">
+													<div className="absolute -inset-0.5 rounded-sm bg-gradient-to-r from-ieee-bright-yellow to-ieee-bright-yellow opacity-25 blur transition duration-300 group-hover:opacity-100 group-hover:duration-200"></div>
+													<Card className="relative h-fit border-0 bg-black">
+														<CardContent>
+															<Image
+																className="mb-4 h-80 w-full rounded-sm border-white object-cover object-center"
+																src={photoUrl ?? '/larry.png'}
+																alt={project.title}
+																width={2000}
+																height={2000}
+																sizes="(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw"
+															/>
+															<div className="mb-2 flex flex-wrap items-center gap-2 text-xl font-bold text-white">
+																{project.title}
+																{project.status === 'past' && (
+																	<span className="rounded-sm bg-ieee-dark-grey px-2 py-0.5 font-subheading text-xs font-normal text-muted-foreground uppercase">
+																		Past project
+																	</span>
+																)}
+															</div>
+															{project.lead && (
+																<div className="mb-2 text-muted-foreground">
+																	Project Lead: {project.lead}
+																</div>
+															)}
+															<div className="mb-4 text-muted-foreground">
+																{project.overview?.slice(0, 120)}...
+															</div>
+															<div className="mb-4 flex flex-wrap gap-2">
+																{visibleSkills.map((skill, idx) => (
+																	<div
+																		key={idx}
+																		className={`w-fit rounded-sm px-3 py-1 text-sm text-white ${skill.type === 'hw' ? 'bg-ieee-light-grey' : 'bg-ieee-grey'}`}
+																	>
+																		{skill.label}
+																	</div>
+																))}
+																{remaining > 0 && (
+																	<div className="w-fit rounded-sm bg-ieee-dark-grey px-3 py-1 font-subheading text-sm text-white">
+																		+{remaining} more
+																	</div>
+																)}
+															</div>
+															<div
+																className="relative flex w-full cursor-pointer flex-row justify-between text-white transition hover:scale-103 hover:text-amber-300"
+																onClick={() => viewSidebar(project)}
+															>
+																LEARN MORE
+																<ChevronRight />
+															</div>
+														</CardContent>
+													</Card>
+												</div>
 											</div>
-										</CardContent>
-									</Card>
+										);
+									})}
 								</div>
-							</div>
+							</section>
 						);
 					})}
 				</div>
@@ -325,7 +355,13 @@ export default function ProjectsPage({ heroMedia }: { heroMedia?: PublicAsset | 
 							/>
 						</div>
 						<div className="mb-4 flex flex-row flex-wrap items-center gap-3">
-							<RequestInfoDropdown projectId={selectedProject.id} />
+							{selectedProject.status === 'past' ? (
+								<span className="rounded-sm bg-ieee-dark-grey px-3 py-1.5 text-sm text-muted-foreground">
+									Past project
+								</span>
+							) : (
+								<RequestInfoDropdown projectId={selectedProject.id} />
+							)}
 							{selectedProject.published && selectedProject.slug && (
 								<Link
 									href={`/projects/${selectedProject.slug}`}
