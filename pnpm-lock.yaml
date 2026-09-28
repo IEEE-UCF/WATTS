@@ -373,6 +373,37 @@ importers:
         specifier: ^1.17.1
         version: 1.17.1
 
+  infra/mirror:
+    dependencies:
+      '@watts/config':
+        specifier: workspace:*
+        version: link:../../packages/config
+      '@watts/storage':
+        specifier: workspace:*
+        version: link:../../packages/storage
+      dotenv:
+        specifier: ^17.2.4
+        version: 17.4.2
+      drizzle-orm:
+        specifier: 0.45.2
+        version: 0.45.2(@neondatabase/serverless@1.0.2)(@types/pg@8.23.1)(pg@8.16.3)(postgres@3.4.8)
+      postgres:
+        specifier: 3.4.8
+        version: 3.4.8
+    devDependencies:
+      '@watts/eslint-config':
+        specifier: workspace:*
+        version: link:../../packages/eslint-config
+      '@watts/tsconfig':
+        specifier: workspace:*
+        version: link:../../packages/tsconfig
+      eslint:
+        specifier: ^10.10.0
+        version: 10.10.0(jiti@2.7.0)
+      tsx:
+        specifier: ^4.19.2
+        version: 4.23.13
+
   infra/seed:
     dependencies:
       '@watts/calendar':

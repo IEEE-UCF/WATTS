@@ -47,6 +47,8 @@ export interface ListedObject {
 	key: string;
 	size: number;
 	uploadedAt: Date;
+	/** Vercel Blob only: the object's URL. Its host says whether it is public or private. */
+	url?: string;
 }
 
 export interface StreamResult {

@@ -1,0 +1,28 @@
+{
+  "name": "@watts/mirror",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Production backup (read-only) and a local mirror built from it.",
+  "type": "module",
+  "scripts": {
+    "backup": "tsx src/backup.ts",
+    "report": "tsx src/report.ts",
+    "restore": "tsx src/restore.ts",
+    "use": "tsx src/use.ts",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@watts/config": "workspace:*",
+    "@watts/storage": "workspace:*",
+    "dotenv": "^17.2.4",
+    "drizzle-orm": "0.45.2",
+    "postgres": "3.4.8"
+  },
+  "devDependencies": {
+    "@watts/eslint-config": "workspace:*",
+    "@watts/tsconfig": "workspace:*",
+    "eslint": "^10.10.0",
+    "tsx": "^4.19.2"
+  }
+}

@@ -110,6 +110,7 @@ export const vercelAdapter: StorageAdapter = {
 				key: b.pathname,
 				size: b.size,
 				uploadedAt: b.uploadedAt,
+				url: b.url,
 			})),
 			nextCursor: res.cursor,
 		};
