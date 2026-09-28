@@ -190,8 +190,9 @@ export const projectRouter = createTRPCRouter({
 			}
 		}),
 
+	// Not .url(): older projects store site-relative paths like "/projects/gnor.png".
 	removePhoto: manageProjects
-		.input(z.object({ projectId: z.string().uuid(), photoUrl: z.string().url() }))
+		.input(z.object({ projectId: z.string().uuid(), photoUrl: z.string().min(1).max(2048) }))
 		.mutation(async ({ ctx, input }) => {
 			const [project] = await ctx.db
 				.select({ photoUrls: Projects.photoUrls })
@@ -201,6 +202,40 @@ export const projectRouter = createTRPCRouter({
 			if (!project) throw new TRPCError({ code: 'NOT_FOUND', message: 'Project not found' });
 			const photoUrls = (project?.photoUrls ?? []).filter((url) => url !== input.photoUrl);
 			await ctx.db.update(Projects).set({ photoUrls, updatedAt: new Date() }).where(eq(Projects.id, input.projectId));
+			return { success: true };
+		}),
+
+	// Reorder a project's photos. The first one is the main photo: the /projects card and
+	// its "Learn more" panel show photoUrls[0]. Must be the same set of photos, reordered.
+	reorderPhotos: manageProjects
+		.input(
+			z.object({
+				projectId: z.string().uuid(),
+				photoUrls: z.array(z.string().min(1).max(2048)).max(50),
+			}),
+		)
+		.mutation(async ({ ctx, input }) => {
+			const [project] = await ctx.db
+				.select({ photoUrls: Projects.photoUrls })
+				.from(Projects)
+				.where(eq(Projects.id, input.projectId))
+				.limit(1);
+			if (!project) throw new TRPCError({ code: 'NOT_FOUND', message: 'Project not found' });
+			const current = project.photoUrls ?? [];
+			const sameSet =
+				input.photoUrls.length === current.length &&
+				new Set(input.photoUrls).size === current.length &&
+				input.photoUrls.every((url) => current.includes(url));
+			if (!sameSet) {
+				throw new TRPCError({
+					code: 'CONFLICT',
+					message: 'The photos changed since this page loaded. Refresh and try again.',
+				});
+			}
+			await ctx.db
+				.update(Projects)
+				.set({ photoUrls: input.photoUrls, updatedAt: new Date() })
+				.where(eq(Projects.id, input.projectId));
 			return { success: true };
 		}),
 

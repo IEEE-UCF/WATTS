@@ -381,6 +381,14 @@ export const entriesMeta: EntryMeta[] = [
 		notes: 'Needs manage_events + real event data. Table structure now shared via @watts/ui/table (dashboard consolidation pass).',
 	},
 	{
+		slug: 'admin/project-photos',
+		name: 'ProjectPhotos',
+		group: 'admin',
+		status: 'ok',
+		source: '@/components/admin/project-photos',
+		notes: 'Per-project photo manager on /admin/projects (the "photos" panel): the first photo is the main one shown on the public /projects card and its "Learn more" panel. Make main, reorder, remove (in-page confirm) and add. Preview uses repo images; the buttons need a manage_projects session + DB to save.',
+	},
+	{
 		slug: 'admin/site-content-manager',
 		name: 'SiteContentManager',
 		group: 'admin',
