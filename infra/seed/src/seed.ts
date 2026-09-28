@@ -123,8 +123,10 @@ async function seedAdmin() {
 			personalEmail: DEV_ADMIN_EMAIL,
 			ucfEmail: 'dev.admin@ucf.edu',
 			major: 'Computer Science (BS)',
+			additionalMajors: ['Computer Engineering (BSCpE)'],
 			gender: 'PNTS',
 			graduationYear: 2027,
+			graduationTerm: 'spring',
 		});
 		console.log('• created member profile (administrator + officer)');
 	} else if (!member.administrator || !member.officerStatus || member.discordId !== DEV_ADMIN_DISCORD_ID) {

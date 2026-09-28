@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { majorEnums, officerRoleEnum } from "@watts/db/schema";
+import { graduationTermEnum, majorEnums, officerRoleEnum } from "@watts/db/schema";
 import {
 	protectedProcedure,
 	adminProcedure,
@@ -35,7 +35,9 @@ const memberRegistrationSchema = z.object({
 	phoneNumber: z.string().max(20).optional(),
 	gender: z.enum(["M", "F", "NB", "O", "PNTS"]),
 	graduationYear: z.number().int().min(2020).max(2035),
+	graduationTerm: z.enum(graduationTermEnum.enumValues).optional(),
 	major: z.enum(majorEnums.enumValues),
+	additionalMajors: z.array(z.enum(majorEnums.enumValues)).max(3).optional(),
 });
 
 const memberUpdateSchema = z.object({
@@ -45,7 +47,9 @@ const memberUpdateSchema = z.object({
 	biography: z.string().optional(),
 	phoneNumber: z.string().max(20).optional(),
 	major: z.enum(majorEnums.enumValues),
+	additionalMajors: z.array(z.enum(majorEnums.enumValues)).max(3).optional(),
 	graduationYear: z.number().int().min(2020).max(2035).optional(),
+	graduationTerm: z.enum(graduationTermEnum.enumValues).nullable().optional(),
 	gender: z.enum(["M", "F", "NB", "O", "PNTS"]).optional(),
 	linkedinURL: z.string().url().optional(),
 	githubURL: z.string().url().optional(),

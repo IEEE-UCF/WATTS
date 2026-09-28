@@ -9,6 +9,12 @@ import { signOut, useSession } from 'next-auth/react';
 import { useState } from 'react';
 import { trpc } from '@/lib/trpc/client';
 import { ResumeUpload } from '@/components/settings/ResumeUpload';
+import {
+	AdditionalMajorsPicker,
+	GraduationTermSelect,
+	type GraduationTerm,
+	type Major,
+} from '@/components/settings/member-fields';
 import { MyOfficerProfileCard } from '@/components/admin/site-content/my-officer-profile';
 import { DashboardShell } from '@/components/shell/dashboard-shell';
 
@@ -23,6 +29,8 @@ export default function SettingsPage() {
 	// formKey forces a full re-mount of the form on cancel, resetting all inputs
 	// (including uncontrolled Select components which don't respond to imperative resets)
 	const [formKey, setFormKey] = useState(0);
+	// Tracked so the additional-majors list can hide whatever primary major is picked.
+	const [primaryMajor, setPrimaryMajor] = useState<string | null>(null);
 
 	const utils = trpc.useUtils();
 
@@ -51,6 +59,7 @@ export default function SettingsPage() {
 	const handleCancel = () => {
 		// Re-mount the form so every field resets to its defaultValue from memberProfile
 		setFormKey((k) => k + 1);
+		setPrimaryMajor(null);
 		setError(null);
 		setSuccess(null);
 	};
@@ -83,8 +92,10 @@ export default function SettingsPage() {
 				biography: (formData.get('biography') as string) || undefined,
 				phoneNumber: formData.get('phone_number') as string,
 				major: major as (typeof majorEnums)['enumValues'][number],
+				additionalMajors: formData.getAll('additional_majors') as Major[],
 				gender: formData.get('gender') as 'M' | 'F' | 'NB' | 'O' | 'PNTS',
 				graduationYear,
+				graduationTerm: (formData.get('graduation_term') as GraduationTerm) || undefined,
 				linkedinURL: (formData.get('linkedin_url') as string) || undefined,
 				githubURL: (formData.get('github_url') as string) || undefined,
 				websiteURL: (formData.get('website_url') as string) || undefined,
@@ -243,6 +254,7 @@ export default function SettingsPage() {
 										<Select
 											name="major"
 											defaultValue={memberProfile.major ?? undefined}
+											onValueChange={setPrimaryMajor}
 											required
 										>
 											<SelectTrigger id="major">
@@ -256,6 +268,22 @@ export default function SettingsPage() {
 												))}
 											</SelectContent>
 										</Select>
+									</Field>
+									<Field>
+										<FieldLabel>Additional majors</FieldLabel>
+										<AdditionalMajorsPicker
+											primary={primaryMajor ?? memberProfile.major}
+											defaultValue={memberProfile.additionalMajors}
+										/>
+									</Field>
+									<Field>
+										<FieldLabel htmlFor="graduation_term">
+											Graduation Semester
+										</FieldLabel>
+										<GraduationTermSelect
+											defaultValue={memberProfile.graduationTerm}
+											required={false}
+										/>
 									</Field>
 									<Field>
 										<FieldLabel htmlFor="graduation_year">

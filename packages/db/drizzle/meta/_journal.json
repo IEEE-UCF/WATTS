@@ -92,6 +92,13 @@
       "when": 1790437946248,
       "tag": "0012_site_content_cms",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1790581284952,
+      "tag": "0013_member_grad_term_majors",
+      "breakpoints": true
     }
   ]
 }

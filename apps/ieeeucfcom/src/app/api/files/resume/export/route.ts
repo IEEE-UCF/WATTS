@@ -37,7 +37,9 @@ interface SelectedResume {
 	firstName: string;
 	lastName: string;
 	major: string;
+	additionalMajors: string[];
 	graduationYear: number | null;
+	graduationTerm: string | null;
 	duesPaid: boolean;
 	officerStatus: boolean;
 	resumeUploadedAt: Date | null;
@@ -73,7 +75,9 @@ async function selectResumes(filter: ResumeExportFilter): Promise<SelectedResume
 			firstName: r.firstName,
 			lastName: r.lastName,
 			major: r.major,
+			additionalMajors: r.additionalMajors ?? [],
 			graduationYear: r.graduationYear,
+			graduationTerm: r.graduationTerm ?? null,
 			duesPaid: r.duesPaid,
 			officerStatus: r.officerStatus,
 			resumeUploadedAt: r.resumeUploadedAt,
@@ -204,6 +208,8 @@ function manifestCsv(entries: SelectedResume[]): string {
 		'last_name',
 		'first_name',
 		'major',
+		'additional_majors',
+		'graduation_term',
 		'graduation_year',
 		'resume_updated',
 		'dues_paid',
@@ -216,6 +222,8 @@ function manifestCsv(entries: SelectedResume[]): string {
 			e.lastName,
 			e.firstName,
 			e.major,
+			e.additionalMajors.join('; '),
+			e.graduationTerm ?? '',
 			e.graduationYear ?? '',
 			e.resumeUploadedAt ? e.resumeUploadedAt.toISOString().slice(0, 10) : '',
 			e.duesPaid ? 'yes' : 'no',
