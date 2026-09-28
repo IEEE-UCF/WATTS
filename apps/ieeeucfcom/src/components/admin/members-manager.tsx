@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { trpc } from '@/lib/trpc/client';
 import { officerRoleEnum } from '@watts/db/schema';
+import { formatGraduation, formatMajors } from '@/components/settings/member-fields';
 import { CAPABILITIES, CAPABILITY_KEYS, type Capability } from '@watts/permissions';
 import {
 	Table,
@@ -109,7 +110,7 @@ export function MembersManager() {
 			if (role === 'officer' && !m.officerStatus) return false;
 			if (role === 'none' && (m.administrator || m.officerStatus)) return false;
 			if (!needle) return true;
-			return `${m.firstName} ${m.lastName} ${m.ucfEmail} ${m.personalEmail} ${m.userEmail ?? ''} ${m.major}`
+			return `${m.firstName} ${m.lastName} ${m.ucfEmail} ${m.personalEmail} ${m.userEmail ?? ''} ${formatMajors(m)}`
 				.toLowerCase()
 				.includes(needle);
 		});
@@ -265,8 +266,13 @@ export function MembersManager() {
 										)}
 									</TableCell>
 									<TableCell className="text-muted-foreground">
-										<div className="max-w-[220px] truncate">{m.major}</div>
-										<div className="text-xs">{m.graduationYear}</div>
+										<div
+											className="max-w-[220px] truncate"
+											title={formatMajors(m)}
+										>
+											{formatMajors(m)}
+										</div>
+										<div className="text-xs">{formatGraduation(m)}</div>
 									</TableCell>
 
 									{/* Admin */}

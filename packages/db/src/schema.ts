@@ -179,6 +179,11 @@ export const genderEnum = pgEnum('gender_enum', [
 	'M', 'F', 'NB', 'O', 'PNTS',
 ]);
 
+// Semester a member expects to graduate in; paired with members.graduation_year.
+export const graduationTermEnum = pgEnum('graduation_term_enum', [
+	'spring', 'summer', 'fall',
+]);
+
 // Sponsorship Tiers: Bronze, Silver, Gold
 export const sponsorshipTierEnum = pgEnum('sponsorship_tier_enum', [
 	'Bronze',
@@ -265,6 +270,10 @@ export const Members = pgTable('members', {
 	major: majorEnums('major').notNull(), // Check on this to maybe add like a default list of majors or smth similar
 	gender: genderEnum('gender').notNull(),
 	graduationYear: integer('graduation_year').notNull(),
+	// Nullable: members who registered before this existed only gave a year.
+	graduationTerm: graduationTermEnum('graduation_term'),
+	// Double majors etc. `major` stays the primary (résumé export folders by it).
+	additionalMajors: majorEnums('additional_majors').array().notNull().default(sql`'{}'`),
 	portraitUrl: varchar('portrait_url', { length: 500 }),
 	resumeURL: text('resume_url'), // app-facing retrieval path: /api/files/resume/{memberId}
 	resumeKey: varchar('resume_key', { length: 512 }), // storage key (e.g. resumes/{userId}.pdf)

@@ -20,6 +20,12 @@ import { signIn, useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect, useCallback } from 'react';
 import { trpc } from '@/lib/trpc/client';
+import {
+	AdditionalMajorsPicker,
+	GraduationTermSelect,
+	type GraduationTerm,
+	type Major,
+} from '@/components/settings/member-fields';
 
 export default function RegisterPage() {
 	const { data: session, status } = useSession();
@@ -82,7 +88,9 @@ export default function RegisterPage() {
 					phoneNumber: (formData.get('phone_num') as string) || undefined,
 					gender: formData.get('gender') as 'M' | 'F' | 'NB' | 'O' | 'PNTS',
 					graduationYear: parseInt(formData.get('ucf_grad_year') as string),
+					graduationTerm: formData.get('graduation_term') as GraduationTerm,
 					major: formData.get('major') as (typeof majorEnums)['enumValues'][number],
+					additionalMajors: formData.getAll('additional_majors') as Major[],
 				});
 			} catch (err) {
 				console.error('Registration error:', err);
@@ -305,20 +313,28 @@ export default function RegisterPage() {
 												</Select>
 											</Field>
 
-											<Field>
-												<FieldLabel htmlFor="ucf_grad_year">
-													Graduation Year
-												</FieldLabel>
-												<Input
-													id="ucf_grad_year"
-													name="ucf_grad_year"
-													type="number"
-													placeholder="2027"
-													required
-													min="2024"
-													max="2035"
-												/>
-											</Field>
+											<div className="grid grid-cols-2 gap-4">
+												<Field>
+													<FieldLabel htmlFor="graduation_term">
+														Graduation Semester
+													</FieldLabel>
+													<GraduationTermSelect />
+												</Field>
+												<Field>
+													<FieldLabel htmlFor="ucf_grad_year">
+														Graduation Year
+													</FieldLabel>
+													<Input
+														id="ucf_grad_year"
+														name="ucf_grad_year"
+														type="number"
+														placeholder="2027"
+														required
+														min="2024"
+														max="2035"
+													/>
+												</Field>
+											</div>
 
 											<Field>
 												<FieldLabel htmlFor="major">Major</FieldLabel>
@@ -339,6 +355,13 @@ export default function RegisterPage() {
 														))}
 													</SelectContent>
 												</Select>
+											</Field>
+
+											<Field>
+												<FieldLabel>
+													Additional majors (double major, etc.)
+												</FieldLabel>
+												<AdditionalMajorsPicker primary={major} />
 											</Field>
 										</FieldGroup>
 

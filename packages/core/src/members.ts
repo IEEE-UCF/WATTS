@@ -12,6 +12,7 @@ import {
 	MemberPermissions,
 	majorEnums,
 	officerRoleEnum,
+	graduationTermEnum,
 } from '@watts/db/schema';
 import {
 	CAPABILITY_KEYS,
@@ -24,6 +25,7 @@ import { DomainError } from './errors';
 import { getOfficerGrantableCapabilities } from './settings';
 
 type MajorEnum = (typeof majorEnums.enumValues)[number];
+type GraduationTerm = (typeof graduationTermEnum.enumValues)[number];
 type OfficerRole = (typeof officerRoleEnum.enumValues)[number];
 type Gender = 'M' | 'F' | 'NB' | 'O' | 'PNTS';
 
@@ -166,7 +168,9 @@ export async function listMembersForAdmin(db: WattsDb) {
 			personalEmail: Members.personalEmail,
 			ucfEmail: Members.ucfEmail,
 			major: Members.major,
+			additionalMajors: Members.additionalMajors,
 			graduationYear: Members.graduationYear,
+			graduationTerm: Members.graduationTerm,
 			administrator: Members.administrator,
 			officerStatus: Members.officerStatus,
 			officerRole: Members.officerRole,
@@ -268,7 +272,9 @@ export function listResumesForExport(db: WattsDb) {
 			firstName: Members.firstName,
 			lastName: Members.lastName,
 			major: Members.major,
+			additionalMajors: Members.additionalMajors,
 			graduationYear: Members.graduationYear,
+			graduationTerm: Members.graduationTerm,
 			// Consumed by matchesResumeFilter() / applyResumeSelection() in the export
 			// route. New filter dimension → add its column here as well.
 			duesPaid: Members.duesPaid,
@@ -284,6 +290,21 @@ export function listResumesForExport(db: WattsDb) {
 
 // ---- registration + profile ----
 
+/** "Spring 2027", or just "2027" for members who registered before terms existed. */
+function formatGraduation(m: {
+	graduationYear: number;
+	graduationTerm?: GraduationTerm | null;
+}): string {
+	return m.graduationTerm
+		? `${m.graduationTerm.charAt(0).toUpperCase()}${m.graduationTerm.slice(1)} ${m.graduationYear}`
+		: String(m.graduationYear);
+}
+
+/** Additional majors never repeat the primary one or each other. */
+function withoutPrimary(additional: MajorEnum[] | undefined, primary: MajorEnum): MajorEnum[] {
+	return [...new Set(additional ?? [])].filter((m) => m !== primary);
+}
+
 export interface RegisterMemberInput {
 	userId: string;
 	discordId: string;
@@ -296,7 +317,9 @@ export interface RegisterMemberInput {
 	phoneNumber?: string;
 	gender: Gender;
 	graduationYear: number;
+	graduationTerm?: GraduationTerm;
 	major: MajorEnum;
+	additionalMajors?: MajorEnum[];
 }
 
 /** Create the member profile for a signed-in user. Throws CONFLICT if one exists. */
@@ -324,7 +347,9 @@ export async function registerMember(db: WattsDb, input: RegisterMemberInput) {
 			phoneNumber: input.phoneNumber || null,
 			gender: input.gender,
 			graduationYear: input.graduationYear,
+			graduationTerm: input.graduationTerm ?? null,
 			major: input.major,
+			additionalMajors: withoutPrimary(input.additionalMajors, input.major),
 			officerStatus: false,
 			administrator: false,
 			duesPaid: false,
@@ -348,7 +373,9 @@ export interface UpdateMemberProfileInput {
 	biography?: string;
 	phoneNumber?: string;
 	major: MajorEnum;
+	additionalMajors?: MajorEnum[];
 	graduationYear?: number;
+	graduationTerm?: GraduationTerm | null;
 	gender?: Gender;
 	linkedinURL?: string;
 	githubURL?: string;
@@ -363,9 +390,13 @@ export async function updateMemberProfile(
 	userId: string,
 	patch: UpdateMemberProfileInput,
 ) {
+	const set = { ...patch };
+	if (patch.additionalMajors) {
+		set.additionalMajors = withoutPrimary(patch.additionalMajors, patch.major);
+	}
 	const [updated] = await db
 		.update(Members)
-		.set({ ...patch, updatedAt: new Date() })
+		.set({ ...set, updatedAt: new Date() })
 		.where(eq(Members.userId, userId))
 		.returning();
 	if (!updated) throw new DomainError('NOT_FOUND', 'Profile not found');
@@ -688,8 +719,9 @@ export function formatWhois(result: WhoisResult, opts: { mention?: string } = {}
 	const verbPast = isThey ? 'were' : 'was';
 	const inactive = member.active ? '' : ' _(inactive)_';
 
+	const majors = [member.major, ...(member.additionalMajors ?? [])].join(' + ');
 	const sentences = [
-		`${lead} is **${fullName}**, a **${member.major}** major expecting to graduate in **${member.graduationYear}**.${inactive}`,
+		`${lead} is **${fullName}**, a **${majors}** major expecting to graduate in **${formatGraduation(member)}**.${inactive}`,
 		member.officerStatus && member.officerRole
 			? `${capFirst(pronouns.subject)} ${verbPresent} also an officer, serving as **${member.officerRole}**.`
 			: `${capFirst(pronouns.subject)} ${verbPresent} a general member.`,
