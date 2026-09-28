@@ -59,6 +59,8 @@ import AboutIEEE from '@/components/pg/aboutieee';
 import AboutHeader from '@/components/pg/aboutheader';
 import { TogglePill } from '@/components/ui/toggle-pill';
 import { EventManager } from '@/components/admin/event-manager';
+import { SiteContentManager } from '@/components/admin/site-content/site-content-manager';
+import { ContentPageView } from '@/components/pg/content-page';
 import { MembersManager } from '@/components/admin/members-manager';
 import { ResumeDashboard } from '@/components/admin/resume-dashboard';
 import { DashboardShellView } from '@/components/shell/dashboard-shell';
@@ -302,6 +304,27 @@ export const renders: Record<string, Render> = {
 		</div>
 	),
 	'admin/event-manager': () => <EventManager />,
+	'admin/site-content-manager': () => <SiteContentManager />,
+	'admin/content-page-view': () => (
+		<ContentPageView
+			page={{
+				type: 'committee',
+				id: '00000000-0000-0000-0000-000000000000',
+				slug: 'software',
+				title: 'Software Committee',
+				tagline: 'Build real software for IEEE @ UCF.',
+				body: [
+					'The Software Committee is run by Dawn Balaschak.',
+					'Members build and maintain the tools the branch runs on.',
+				].join('\n\n'),
+				leadNames: ['Dawn Balaschak'],
+				applyUrl: '/connect',
+				hero: null,
+				gallery: [],
+				legacyPhotoUrls: [],
+			}}
+		/>
+	),
 	'admin/members-manager': () => <MembersManager />,
 	'admin/resume-dashboard': () => <ResumeDashboard />,
 	'admin/toggle-pill': (p) => (

@@ -1,6 +1,16 @@
 import type { MetadataRoute } from 'next';
+import { getPublishedSlugs } from '@/lib/site-content';
 
-export default function sitemap(): MetadataRoute.Sitemap {
+// Refreshed hourly so newly published committee/project pages get listed.
+export const revalidate = 3600;
+
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+	const { committees, projects } = await getPublishedSlugs();
+	const contentPages: MetadataRoute.Sitemap = [
+		...committees.map((slug) => `https://www.ieeeucf.com/committees/${slug}`),
+		...projects.map((slug) => `https://www.ieeeucf.com/projects/${slug}`),
+	].map((url) => ({ url, lastModified: new Date(), changeFrequency: 'weekly', priority: 0.6 }));
+
 	return [
 		{
 			url: 'https://www.ieeeucf.com/',
@@ -45,5 +55,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
 			changeFrequency: 'daily',
 			priority: 0.8,
 		},
+		...contentPages,
 	];
 }

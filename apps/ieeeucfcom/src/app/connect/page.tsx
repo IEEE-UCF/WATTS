@@ -1,6 +1,7 @@
 import { Navbar } from '@/components/navbar';
 import { Footer } from '@/components/footer';
-import Image from 'next/image';
+import { SlotImage } from '@/components/slot-image';
+import { getSiteContent } from '@/lib/site-content';
 import Link from 'next/link';
 import { Card, CardContent } from '@watts/ui/card';
 import { Metadata } from 'next';
@@ -19,7 +20,11 @@ export const metadata: Metadata = {
 	},
 };
 
-export default function ConnectPage() {
+// Static + ISR: CMS media refreshes when a change is published.
+export const revalidate = 3600;
+
+export default async function ConnectPage() {
+	const { slots } = await getSiteContent();
 	return (
 		<div className="flex max-w-screen flex-col overflow-hidden">
 			<div className="relative h-[120vh] w-full">
@@ -41,9 +46,10 @@ export default function ConnectPage() {
 				</div>
 
 				<div className="h-full w-full bg-black">
-					<Image
+					<SlotImage
 						className="absolute z-0 h-full w-full object-cover opacity-50"
-						src="/gbms/firstgbm2024.png"
+						slot="connect.hero"
+						media={slots['connect.hero']}
 						alt="About Us Photo"
 						width={2000}
 						height={2000}
@@ -184,9 +190,10 @@ export default function ConnectPage() {
 						</Link>
 					</div>
 
-					<Image
+					<SlotImage
 						className="h-80 w-full rounded-sm object-cover transition-transform hover:scale-101 lg:block lg:h-100 lg:w-150"
-						src="/committees/prodev3.png"
+						slot="connect.prodev"
+						media={slots['connect.prodev']}
 						alt="About Us Photo"
 						width={2000}
 						height={2000}
@@ -238,9 +245,10 @@ export default function ConnectPage() {
 									</span>
 									.
 								</div>
-								<Image
+								<SlotImage
 									className="h-auto w-full rounded-sm object-cover object-center"
-									src="/newmembers/stepone.png"
+									slot="connect.step.1"
+									media={slots['connect.step.1']}
 									alt="IEEE Logo"
 									width={2000}
 									height={2000}
@@ -259,9 +267,10 @@ export default function ConnectPage() {
 									</span>
 									.
 								</div>
-								<Image
+								<SlotImage
 									className="h-auto w-full rounded-sm object-cover object-center"
-									src="/newmembers/steptwo.png"
+									slot="connect.step.2"
+									media={slots['connect.step.2']}
 									alt="IEEE Logo"
 									width={2000}
 									height={2000}
@@ -279,9 +288,10 @@ export default function ConnectPage() {
 										Use your UCF email, not personal email!
 									</span>
 								</div>
-								<Image
+								<SlotImage
 									className="h-auto w-full rounded-sm object-cover object-center"
-									src="/newmembers/stepthree.png"
+									slot="connect.step.3"
+									media={slots['connect.step.3']}
 									alt="IEEE Logo"
 									width={2000}
 									height={2000}
@@ -297,9 +307,10 @@ export default function ConnectPage() {
 									Accept the Terms and Conditions, fill out payment information,
 									and check email to confirm.
 								</div>
-								<Image
+								<SlotImage
 									className="h-auto w-full rounded-sm object-cover object-center"
-									src="/newmembers/stepthree.png"
+									slot="connect.step.4"
+									media={slots['connect.step.4']}
 									alt="IEEE Logo"
 									width={2000}
 									height={2000}

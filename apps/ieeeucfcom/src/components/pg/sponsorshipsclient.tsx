@@ -5,15 +5,32 @@ import Autoplay from 'embla-carousel-autoplay';
 import { Carousel, CarouselContent, CarouselItem } from '@watts/ui/carousel';
 import { useIsMobile } from '@watts/ui/use-mobile';
 import { GlowButton } from '@/components/ui/glow-button';
+import type { PublicSponsor } from '@watts/core/site-content';
 
 // ---------------------------------------------------------------------------
-// Hardcoded sponsor list — swap logos/names/URLs as needed
+// Pre-CMS sponsor list. Shown only until sponsors exist in the database (the one-off
+// import copies exactly this list in); edit sponsors at /admin/site-content.
 // ---------------------------------------------------------------------------
-const SPONSORS: { name: string; logo: string; tier: string }[] = [
+interface SponsorCard {
+	name: string;
+	logo: string;
+	tier: string;
+}
+
+const SPONSORS: SponsorCard[] = [
 	{ name: 'Rex McCrary Foundation', logo: '/sponsors/rex.jpeg', tier: 'Gold' },
 	{ name: 'Northrop Grumman', logo: '/sponsors/northrop.png', tier: 'Gold' },
 	{ name: 'Cadence', logo: '/sponsors/cadence.png', tier: 'Gold' },
 ];
+
+function toCards(sponsors: PublicSponsor[]): SponsorCard[] {
+	if (sponsors.length === 0) return SPONSORS;
+	return sponsors.map((sp) => ({
+		name: sp.companyName,
+		logo: sp.logo?.url ?? '/iconography/ieeeucflogo.png',
+		tier: sp.tier,
+	}));
+}
 
 // ---------------------------------------------------------------------------
 // mailto helper
@@ -36,7 +53,7 @@ export const MailTo: React.FC<MailToProps> = ({ email, subject = '', body = '', 
 // ---------------------------------------------------------------------------
 // Sponsors Carousel
 // ---------------------------------------------------------------------------
-export const SponsorsCarousel: React.FC = () => (
+export const SponsorsCarousel: React.FC<{ sponsors?: PublicSponsor[] }> = ({ sponsors = [] }) => (
 	<div className="w-full py-14">
 		<div className="mb-12 text-center font-heading text-3xl text-ieee-bright-yellow md:text-4xl">
 			OUR SPONSORS
@@ -47,7 +64,7 @@ export const SponsorsCarousel: React.FC = () => (
 			className="w-full"
 		>
 			<CarouselContent className="-ml-6">
-				{SPONSORS.map((sponsor, index) => (
+				{toCards(sponsors).map((sponsor, index) => (
 					<CarouselItem key={index} className="basis-full pl-6 sm:basis-1/2 md:basis-1/3">
 						<div className="group flex flex-col items-center gap-4 px-8 py-6">
 							<div className="relative h-28 w-56 opacity-70 grayscale transition-all duration-300 group-hover:opacity-100 group-hover:grayscale-0">
@@ -78,8 +95,16 @@ export const SponsorsCarousel: React.FC = () => (
 // ---------------------------------------------------------------------------
 const PDF_PATH = '/sponsors/IEEE_UCF_Sponsorship_Packet_2026_to_2027.pdf';
 
-export const PDFViewer: React.FC = () => {
+/** Vercel Blob serves `?download=1` as an attachment; `download` is ignored cross-origin. */
+function downloadHref(url: string): string {
+	return url.includes('.blob.vercel-storage.com') ? `${url}?download=1` : url;
+}
+
+/** `url` = the CMS packet (sponsorships.packet slot); falls back to the bundled PDF. */
+export const PDFViewer: React.FC<{ url?: string | null }> = ({ url }) => {
 	const isMobile = useIsMobile();
+	const pdfUrl = url ?? PDF_PATH;
+	const pdfDownload = downloadHref(pdfUrl);
 
 	// ── Mobile: card with open / download buttons ───────────────────────────
 	if (isMobile) {
@@ -113,13 +138,13 @@ export const PDFViewer: React.FC = () => {
 					</p>
 				</div>
 				<div className="flex w-full max-w-xs flex-row gap-4">
-					<a href={PDF_PATH} target="_blank" rel="noopener noreferrer" className="flex-1">
+					<a href={pdfUrl} target="_blank" rel="noopener noreferrer" className="flex-1">
 						<GlowButton innerClassName="px-7 py-3">
 							<span className="font-heading text-sm text-white">OPEN PDF</span>
 						</GlowButton>
 					</a>
 					<a
-						href={PDF_PATH}
+						href={pdfDownload}
 						download="IEEE-UCF-Sponsorship-Packet-2026-2027.pdf"
 						className="flex-1"
 					>
@@ -135,14 +160,14 @@ export const PDFViewer: React.FC = () => {
 	// ── Desktop: original direct iframe ─────────────────────────────────────
 	return (
 		<>
-			<iframe src={PDF_PATH} width="100%" height="700px" />
+			<iframe src={pdfUrl} width="100%" height="700px" />
 			<div className="my-10 flex flex-row flex-wrap items-center gap-x-5 lg:gap-x-10">
-				<a href={PDF_PATH} download="IEEE-UCF-Sponsorship-Packet-2026-2027.pdf">
+				<a href={pdfDownload} download="IEEE-UCF-Sponsorship-Packet-2026-2027.pdf">
 					<GlowButton innerClassName="px-7 py-3">
 						<span className="text-sm font-bold text-white">DOWNLOAD</span>
 					</GlowButton>
 				</a>
-				<a href={PDF_PATH} target="_blank" rel="noopener noreferrer">
+				<a href={pdfUrl} target="_blank" rel="noopener noreferrer">
 					<GlowButton innerClassName="px-7 py-3">
 						<span className="text-sm font-bold text-white">OPEN IN NEW TAB</span>
 					</GlowButton>

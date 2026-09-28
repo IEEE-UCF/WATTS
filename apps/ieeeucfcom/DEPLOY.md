@@ -117,6 +117,24 @@ code that needs it, then approve the (now no-op) job.
 3. Merge → the `main` push triggers the production build. Run migrations (step 5)
    against the production database as part of that.
 
+## 7. Site-content CMS (one-off import)
+
+Page photos, the officer roster, sponsors and the sponsorship packet are edited at
+`/admin/site-content` (capability `manage_site_content`). Until content is imported,
+every page falls back to the files in `public/`, so the site looks the same. To move
+today's content in, point your shell at production (unpooled `DATABASE_URL`,
+`STORAGE_PROVIDER=vercel`, `BLOB_READ_WRITE_TOKEN`). Then run the read-only
+inspection, the dry run and the import, and click **Refresh public pages** on
+`/admin/site-content`:
+
+```bash
+pnpm --filter @watts/seed inspect:site-content -- --as=you@example.com
+pnpm --filter @watts/seed import:site-content -- --as=you@example.com
+pnpm --filter @watts/seed import:site-content -- --apply --as=you@example.com
+```
+
+Details and rollback: [`docs/site-content/ARCHITECTURE.md`](docs/site-content/ARCHITECTURE.md#import-runbook).
+
 ## Reference
 
 - Env schema: `packages/config/src/env.ts`

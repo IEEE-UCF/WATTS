@@ -1,4 +1,5 @@
-import { AnimatedMedia } from '@/components/animated-media';
+import { SlotImage } from '@/components/slot-image';
+import { getSiteContent } from '@/lib/site-content';
 import { Navbar } from '@/components/navbar';
 import { Footer } from '@/components/footer';
 
@@ -20,7 +21,11 @@ export const metadata: Metadata = {
 	},
 };
 
-export default function EventsPage() {
+// Static + ISR: CMS media refreshes when a change is published.
+export const revalidate = 3600;
+
+export default async function EventsPage() {
+	const { slots } = await getSiteContent();
 	return (
 		<div className="flex max-w-screen flex-col overflow-hidden">
 			<div className="relative h-[120vh] w-full">
@@ -44,9 +49,10 @@ export default function EventsPage() {
 				</div>
 
 				<div className="h-full w-full bg-black">
-					<AnimatedMedia
+					<SlotImage
 						className="absolute z-0 h-full w-full object-cover opacity-70"
-						name="/gbms/gbmgif"
+						slot="events.hero"
+						media={slots['events.hero']}
 						sizes="100vw"
 						alt="Events Photo"
 						width={2000}

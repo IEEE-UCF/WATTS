@@ -2,6 +2,7 @@ import { EventShowcase } from '@/components/dashboard/event-showcase';
 import { Member_QR_Code } from '@/components/dashboard/member-qr-code';
 import { DashboardWidgets } from '@/components/dashboard/dashboard-widgets';
 import { DashboardShell } from '@/components/shell/dashboard-shell';
+import { EditablePagesCard } from '@/components/admin/site-content/page-editor';
 
 export default function Dashboard() {
 	return (
@@ -15,6 +16,7 @@ export default function Dashboard() {
 						<EventShowcase />
 					</div>
 				</div>
+				<EditablePagesCard />
 				<DashboardWidgets />
 			</div>
 		</DashboardShell>

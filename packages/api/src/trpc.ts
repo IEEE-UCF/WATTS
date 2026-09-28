@@ -44,6 +44,12 @@ export interface CreateContextOptions {
 	db: WattsDb;
 	session: ApiSession | null;
 	headers?: Headers;
+	/**
+	 * Called after a site-content change goes live (publish / approve / restore /
+	 * delete / reorder) with the cache tag to invalidate. The Next route handler passes
+	 * `revalidateTag`; this package stays framework-neutral.
+	 */
+	onContentChanged?: (tag: string) => void;
 }
 
 export const createTRPCContext = (opts: CreateContextOptions) => {
@@ -68,6 +74,7 @@ export const createTRPCContext = (opts: CreateContextOptions) => {
 		headers: opts.headers,
 		token: opts.headers?.get('Authorization') ?? null,
 		getRoles,
+		onContentChanged: opts.onContentChanged,
 	};
 };
 

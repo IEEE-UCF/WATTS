@@ -25,7 +25,7 @@ import {
 export const runtime = 'nodejs';
 
 const intentSchema = z.object({
-	kind: z.enum(['resume', 'event-photo', 'event-flyer', 'project-photo']),
+	kind: z.enum(['resume', 'event-photo', 'event-flyer', 'project-photo', 'site-media']),
 	contentType: z.string().min(1).max(100),
 	byteSize: z.number().int().positive(),
 	filename: z.string().max(255).nullish(),
@@ -37,6 +37,13 @@ const intentSchema = z.object({
 	takenAt: z.string().datetime().nullish(),
 	caption: z.string().max(2000).nullish(),
 	tags: z.array(z.string().max(40)).max(20).optional(),
+	// site-media (CMS media library)
+	mediaKind: z.enum(['image', 'animated', 'document']).optional(),
+	scopeType: z.enum(['global', 'committee', 'project']).optional(),
+	scopeId: z.string().uuid().nullish(),
+	purpose: z.literal('officer-portrait').optional(),
+	officerProfileId: z.string().uuid().optional(),
+	alt: z.string().max(500).nullish(),
 });
 
 export async function POST(request: Request): Promise<Response> {
@@ -46,13 +53,13 @@ export async function POST(request: Request): Promise<Response> {
 	if (STORAGE_PROVIDER === 'vercel') {
 		const body = (await request.json()) as HandleUploadBody;
 
-		// event-flyer + project-photo are public-bucket kinds and must be signed with
+		// event-flyer, project-photo and site-media are public-bucket kinds and must be signed with
 		// the public store's token, or Vercel 403s the client's direct PUT. Peek at the
 		// intent's kind before calling handleUpload, since it fixes the token up front.
 		let signingToken = vercelEnv().tokenPrivate;
 		if (body.type === 'blob.generate-client-token') {
 			const kind = JSON.parse(body.payload.clientPayload ?? '{}')?.kind;
-			if (kind === 'event-flyer' || kind === 'project-photo') {
+			if (kind === 'event-flyer' || kind === 'project-photo' || kind === 'site-media') {
 				signingToken = vercelEnv().tokenPublic;
 			}
 		}

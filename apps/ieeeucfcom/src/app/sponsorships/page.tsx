@@ -1,5 +1,6 @@
 // Server component — metadata export works because there's no "use client" here
-import { AnimatedMedia } from '@/components/animated-media';
+import { SlotImage } from '@/components/slot-image';
+import { getSiteContent } from '@/lib/site-content';
 import { Navbar } from '@/components/navbar';
 import { Footer } from '@/components/footer';
 import { Metadata } from 'next';
@@ -21,7 +22,11 @@ export const metadata: Metadata = {
 	},
 };
 
-export default function SponsorshipsPage() {
+// Static + ISR: CMS media refreshes when a change is published.
+export const revalidate = 3600;
+
+export default async function SponsorshipsPage() {
+	const { slots, sponsors } = await getSiteContent();
 	return (
 		<div className="flex max-w-screen flex-col overflow-hidden bg-black">
 			{/* Hero */}
@@ -57,9 +62,10 @@ export default function SponsorshipsPage() {
 				</div>
 
 				<div className="h-full w-full bg-black">
-					<AnimatedMedia
+					<SlotImage
 						className="absolute z-0 h-full w-full object-cover opacity-50"
-						name="/committees/socialgif2"
+						slot="sponsorships.hero"
+						media={slots['sponsorships.hero']}
 						sizes="100vw"
 						alt="About Us Photo"
 						width={2000}
@@ -92,12 +98,12 @@ export default function SponsorshipsPage() {
 
 			{/* Sponsors carousel */}
 			<div className="border-b border-white/10 bg-black px-10">
-				<SponsorsCarousel />
+				<SponsorsCarousel sponsors={sponsors} />
 			</div>
 
 			{/* PDF section — PDFViewer handles mobile vs desktop internally */}
 			<div className="m-4 rounded-xl bg-black p-6 md:m-10 md:p-10">
-				<PDFViewer />
+				<PDFViewer url={slots['sponsorships.packet']?.url} />
 			</div>
 
 			<Footer />

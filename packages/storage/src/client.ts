@@ -205,6 +205,111 @@ export async function uploadProjectPhoto(projectId: string, original: File): Pro
 	return { photoId };
 }
 
+export type SiteMediaKind = 'image' | 'animated' | 'document';
+
+export interface SiteMediaUploadOptions {
+	mediaKind: SiteMediaKind;
+	/** Page the file belongs to; omit for site-wide media (slots, officers, sponsors). */
+	scopeType?: 'global' | 'committee' | 'project';
+	scopeId?: string | null;
+	/** A linked officer uploading their own portrait. */
+	purpose?: 'officer-portrait';
+	officerProfileId?: string;
+	alt?: string | null;
+}
+
+/** Everything the `siteContent.confirmMedia` mutation needs to finalize the upload. */
+export interface SiteMediaConfirmInput extends SiteMediaUploadOptions {
+	assetId: string;
+	contentType: string;
+	byteSize: number;
+	filename: string;
+	width: number | null;
+	height: number | null;
+}
+
+// Mirrors keys.ts `siteMediaKey` (not imported: keys.ts pulls node:crypto).
+function siteMediaPath(assetId: string, contentType: string): string {
+	const ext =
+		contentType === 'application/pdf'
+			? 'pdf'
+			: contentType === 'image/png'
+				? 'png'
+				: contentType === 'image/webp'
+					? 'webp'
+					: 'jpg';
+	return `site-media/${assetId}.${ext}`;
+}
+
+/**
+ * Upload a file to the CMS media library (PUBLIC bucket). Stills are re-encoded to
+ * WebP (keeps transparency for logos) at ≤2400 px / ≤2 MB; animated WebP and PDFs are
+ * uploaded as-is. The caller then runs `siteContent.confirmMedia` with the returned
+ * input, which validates the bytes and creates the `media_assets` row. Uploading does
+ * not change the site — the asset only appears once a revision that uses it goes live.
+ */
+export async function uploadSiteMedia(
+	original: File,
+	opts: SiteMediaUploadOptions,
+): Promise<SiteMediaConfirmInput> {
+	let file: Blob = original;
+	let contentType = original.type;
+	if (opts.mediaKind === 'image') {
+		const { default: imageCompression } = await import('browser-image-compression');
+		file = await imageCompression(original, {
+			maxWidthOrHeight: 2400,
+			maxSizeMB: 2,
+			useWebWorker: true,
+			fileType: 'image/webp',
+		});
+		contentType = 'image/webp';
+	} else if (opts.mediaKind === 'animated' && contentType !== 'image/webp') {
+		throw new Error('Animated media must be an animated WebP (convert GIFs first)');
+	} else if (opts.mediaKind === 'document' && contentType !== 'application/pdf') {
+		throw new Error('Documents must be a PDF');
+	}
+
+	const dims = opts.mediaKind === 'document' ? null : await imageDimensions(file);
+	const assetId = crypto.randomUUID();
+	const confirm: SiteMediaConfirmInput = {
+		...opts,
+		assetId,
+		contentType,
+		byteSize: file.size,
+		filename: original.name,
+		width: dims?.width ?? null,
+		height: dims?.height ?? null,
+	};
+	const intent = {
+		kind: 'site-media' as const,
+		photoId: assetId,
+		contentType,
+		byteSize: file.size,
+		filename: original.name,
+		width: confirm.width,
+		height: confirm.height,
+		mediaKind: opts.mediaKind,
+		scopeType: opts.scopeType ?? 'global',
+		scopeId: opts.scopeId ?? null,
+		purpose: opts.purpose,
+		officerProfileId: opts.officerProfileId,
+		alt: opts.alt ?? null,
+	};
+
+	if (PROVIDER === 'vercel') {
+		const { upload } = await import('@vercel/blob/client');
+		await upload(siteMediaPath(assetId, contentType), file, {
+			access: 'public',
+			contentType,
+			handleUploadUrl: UPLOAD_URL,
+			clientPayload: JSON.stringify(intent),
+		});
+	} else {
+		await localPut(intent, file);
+	}
+	return confirm;
+}
+
 async function imageDimensions(blob: Blob): Promise<{ width: number; height: number }> {
 	const url = URL.createObjectURL(blob);
 	try {

@@ -1,10 +1,11 @@
 'use client';
 import { useState } from 'react';
-import Image from 'next/image';
+import type { PublicAsset } from '@watts/core/site-content';
+import { SlotImage } from '@/components/slot-image';
 import Link from 'next/link';
 import { GlowButton } from '@/components/ui/glow-button';
 
-export default function AboutHeader() {
+export default function AboutHeader({ slots = {} }: { slots?: Record<string, PublicAsset> }) {
 	const [isFlipped, setIsFlipped] = useState<boolean>(true);
 
 	return (
@@ -69,9 +70,10 @@ export default function AboutHeader() {
 			</div>
 
 			<div className="h-full w-full bg-black">
-				<Image
+				<SlotImage
 					className="absolute z-0 h-full w-full object-cover object-center opacity-100"
-					src="/southeastcon/secgroup.jpg"
+					slot="about.hero"
+					media={slots['about.hero']}
 					alt="About Us Photo"
 					width={2000}
 					height={2000}

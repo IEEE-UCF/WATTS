@@ -1,4 +1,5 @@
 import ProjectsPage from '@/components/pg/projectspage';
+import { getSiteContent } from '@/lib/site-content';
 
 import { Metadata } from 'next';
 
@@ -17,10 +18,14 @@ export const metadata: Metadata = {
 	},
 };
 
-export default function Projects() {
+// Static + ISR: CMS media refreshes when a change is published.
+export const revalidate = 3600;
+
+export default async function Projects() {
+	const { slots } = await getSiteContent();
 	return (
 		<div>
-			<ProjectsPage />
+			<ProjectsPage heroMedia={slots['projects.hero']} />
 		</div>
 	);
 }

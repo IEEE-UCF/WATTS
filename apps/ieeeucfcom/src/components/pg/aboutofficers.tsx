@@ -5,6 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import type { PublicOfficer } from '@watts/core/site-content';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -19,6 +20,24 @@ interface Officer {
 	bio?: string;
 }
 
+const FALLBACK_PORTRAIT = '/iconography/ieeeucfsymbol.png';
+
+/** CMS roster (officer_profiles) → the card shape this component renders. */
+function fromProfiles(profiles: PublicOfficer[]): Officer[] {
+	return profiles.map((o) => ({
+		name: o.displayName,
+		type: o.group === 'executive' ? 'Executive' : 'Chair',
+		role: o.roleTitle,
+		major: o.major ?? '',
+		year: o.yearLabel ?? '',
+		linkedin: o.linkedinUrl ?? '',
+		photo: o.portrait?.url ?? FALLBACK_PORTRAIT,
+		bio: o.bio ?? undefined,
+	}));
+}
+
+// The pre-CMS roster. Shown only until officer profiles exist in the database (the
+// one-off import copies exactly this list in); edit officers at /admin/site-content.
 const OFFICERS: Officer[] = [
 	// Executive Board
 	{
@@ -161,13 +180,14 @@ const OfficerImage = ({ src, alt }: { src: string; alt: string }) => {
 			alt={alt}
 			fill
 			className="object-cover"
-			onError={() => setImgSrc('/iconography/ieeeucfsymbol.png')}
+			onError={() => setImgSrc(FALLBACK_PORTRAIT)}
 			sizes="280px"
 		/>
 	);
 };
 
-export default function AboutOfficers() {
+export default function AboutOfficers({ officers = [] }: { officers?: PublicOfficer[] }) {
+	const roster = officers.length > 0 ? fromProfiles(officers) : OFFICERS;
 	const executiveRef = useRef<HTMLDivElement | null>(null);
 	const chairRef = useRef<HTMLDivElement | null>(null);
 
@@ -216,9 +236,11 @@ export default function AboutOfficers() {
 				<span className="font-heading text-base">{officer.role.toUpperCase()}</span>
 				<span className="font-body text-sm">{officer.year}</span>
 				<span className="font-body text-sm">{officer.major}</span>
-				<Link href={officer.linkedin} className="mt-2 inline-block">
-					<FaLinkedin size={25} color="white" />
-				</Link>
+				{officer.linkedin && (
+					<Link href={officer.linkedin} className="mt-2 inline-block">
+						<FaLinkedin size={25} color="white" />
+					</Link>
+				)}
 			</div>
 		</div>
 	);
@@ -232,8 +254,8 @@ export default function AboutOfficers() {
 		));
 	};
 
-	const executives = OFFICERS.filter((o) => o.type === 'Executive');
-	const chairs = OFFICERS.filter((o) => o.type === 'Chair');
+	const executives = roster.filter((o) => o.type === 'Executive');
+	const chairs = roster.filter((o) => o.type === 'Chair');
 
 	return (
 		<div className="flex w-full flex-col items-center justify-center gap-10 p-10">

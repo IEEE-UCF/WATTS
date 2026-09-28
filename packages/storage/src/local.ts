@@ -112,6 +112,18 @@ export const localAdapter: StorageAdapter = {
 		return `${env.publicBaseUrl}/${key}`;
 	},
 
+	async put(opts): Promise<{ url: string }> {
+		await client.send(
+			new PutObjectCommand({
+				Bucket: bucketName(opts.bucket),
+				Key: opts.key,
+				Body: opts.body,
+				ContentType: opts.contentType,
+			}),
+		);
+		return { url: `${env.publicBaseUrl}/${opts.key}` };
+	},
+
 	async list(opts): Promise<{ objects: ListedObject[]; nextCursor?: string }> {
 		const res = await client.send(
 			new ListObjectsV2Command({

@@ -6,6 +6,7 @@ import { Metadata } from 'next';
 import AboutHeader from '@/components/pg/aboutheader';
 import AboutIEEE from '@/components/pg/aboutieee';
 import AboutOfficers from '@/components/pg/aboutofficers';
+import { getSiteContent } from '@/lib/site-content';
 
 const pageTitle = 'About | IEEE UCF';
 const pageDescription =
@@ -22,14 +23,18 @@ export const metadata: Metadata = {
 	},
 };
 
-export default function About() {
+// Static + ISR: CMS media and the officer roster refresh when a change is published.
+export const revalidate = 3600;
+
+export default async function About() {
+	const { slots, officers } = await getSiteContent();
 	return (
 		<div className="flex max-w-screen flex-col overflow-hidden">
 			<div className="relative h-[120vh] w-full">
 				<div className="absolute inset-0 z-4 h-fit w-full items-center px-5">
 					<Navbar />
 				</div>
-				<AboutHeader />
+				<AboutHeader slots={slots} />
 			</div>
 			<div className="relative w-full -translate-y-20 overflow-hidden leading-none">
 				<svg
@@ -57,7 +62,7 @@ export default function About() {
 					<div className="font-heading text-3xl text-ieee-bright-yellow md:text-4xl">
 						IEEE @ UCF IN A NUTSHELL
 					</div>
-					<AboutIEEE />
+					<AboutIEEE slots={slots} />
 				</div>
 			</div>
 			<div className="relative w-full -translate-y-40 overflow-hidden leading-none">
@@ -88,7 +93,7 @@ export default function About() {
 				</svg>
 			</div>
 			<div className="-translate-y-40 bg-ieee-dark-grey">
-				<AboutOfficers />
+				<AboutOfficers officers={officers} />
 			</div>
 			<div className="-mt-40">
 				<Footer />

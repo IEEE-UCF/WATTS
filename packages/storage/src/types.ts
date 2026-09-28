@@ -12,7 +12,9 @@ export type StorageBucket = 'public' | 'private';
 // per event, overwritten in place; the object URL is stored on `events.flyer_url`.
 // project-photo → PUBLIC bucket, gated on the `manage_projects` capability. Many
 // photos per project, appended to `projects.photo_urls`.
-export type UploadKind = 'resume' | 'event-photo' | 'event-flyer' | 'project-photo';
+// site-media → PUBLIC bucket, the CMS media library (`media_assets`). One immutable
+// key per upload; gated on the page scope (see @watts/core/site-content canEditScope).
+export type UploadKind = 'resume' | 'event-photo' | 'event-flyer' | 'project-photo' | 'site-media';
 
 export interface PresignPutOptions {
 	key: string;
@@ -73,6 +75,13 @@ export interface StorageAdapter {
 	head(opts: { key: string; bucket: StorageBucket }): Promise<ObjectHead | null>;
 
 	delete(opts: { key: string; bucket: StorageBucket }): Promise<void>;
+
+	/**
+	 * Server-side write. Only for trusted server code (the one-off CMS import script);
+	 * browser uploads always go through the authorize → upload → finalize flow.
+	 * Returns the object's public URL for the public bucket.
+	 */
+	put(opts: { key: string; bucket: StorageBucket; body: Buffer; contentType: string }): Promise<{ url: string }>;
 
 	/** Public, CDN-style URL for an object in the public bucket. */
 	publicUrl(key: string): string;

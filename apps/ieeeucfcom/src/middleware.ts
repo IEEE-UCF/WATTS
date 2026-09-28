@@ -6,7 +6,8 @@ export async function middleware(request: NextRequest) {
 	const { pathname } = request.nextUrl;
 
 	// Routes that just require a valid logged-in session (no role needed).
-	const protectedRoutes = ['/dashboard', '/settings', '/scan-qr'];
+	// /pages/* = the committee/project page editor; the page itself checks who may edit.
+	const protectedRoutes = ['/dashboard', '/settings', '/scan-qr', '/pages'];
 	const isProtectedRoute = protectedRoutes.some((route) => pathname.startsWith(route));
 
 	// Capability-gated routes: reachable by admins, officers, or a member holding the
@@ -15,6 +16,7 @@ export async function middleware(request: NextRequest) {
 		{ prefix: '/admin/events', capability: 'manage_events' },
 		{ prefix: '/admin/photos', capability: 'manage_event_photos' },
 		{ prefix: '/admin/resumes', capability: 'review_resumes' },
+		{ prefix: '/admin/site-content', capability: 'manage_site_content' },
 	];
 	const capabilityRoute = capabilityRoutes.find((r) => pathname.startsWith(r.prefix));
 

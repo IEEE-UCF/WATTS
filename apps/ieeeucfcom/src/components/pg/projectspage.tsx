@@ -1,7 +1,8 @@
 'use client';
 
 import Image from 'next/image';
-import { AnimatedMedia } from '@/components/animated-media';
+import { SlotImage } from '@/components/slot-image';
+import type { PublicAsset } from '@watts/core/site-content';
 import Link from 'next/link';
 import { Navbar } from '@/components/navbar';
 import { SidebarProvider } from '@watts/ui/sidebar';
@@ -25,7 +26,7 @@ gsap.registerPlugin(ScrollTrigger);
  * interest signal, not a real join flow yet. How this should actually be structured
  * (a real join flow, a contact form, something else) is a later decision.
  */
-function RequestInfoDropdown({ projectId }: { projectId: string }) {
+export function RequestInfoDropdown({ projectId }: { projectId: string }) {
 	const [open, setOpen] = useState(false);
 	const { data: auth } = trpc.auth.getAuthStatus.useQuery();
 	const requestMembership = trpc.project.requestMembership.useMutation();
@@ -104,7 +105,7 @@ function RequestInfoDropdown({ projectId }: { projectId: string }) {
 	);
 }
 
-export default function ProjectsPage() {
+export default function ProjectsPage({ heroMedia }: { heroMedia?: PublicAsset | null }) {
 	const [selectedProject, setSelectedProject] = useState<ProjectWithLead | null>(null);
 	const cardsRef = useRef<HTMLDivElement[]>([]);
 
@@ -174,9 +175,10 @@ export default function ProjectsPage() {
 						</div>
 					</div>
 					<div className="relative h-full w-full bg-black">
-						<AnimatedMedia
+						<SlotImage
 							className="absolute z-0 h-full w-full object-cover object-center opacity-100"
-							name="/projects/sechardwaregif2"
+							slot="projects.hero"
+							media={heroMedia}
 							alt="Projects Photo"
 							width={2000}
 							height={2000}
@@ -322,8 +324,16 @@ export default function ProjectsPage() {
 								height={400}
 							/>
 						</div>
-						<div className="mb-4">
+						<div className="mb-4 flex flex-row flex-wrap items-center gap-3">
 							<RequestInfoDropdown projectId={selectedProject.id} />
+							{selectedProject.published && selectedProject.slug && (
+								<Link
+									href={`/projects/${selectedProject.slug}`}
+									className="text-sm text-ieee-bright-yellow underline"
+								>
+									View project page
+								</Link>
+							)}
 						</div>
 						<div className="flex-1 space-y-4 overflow-auto">
 							<div>

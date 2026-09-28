@@ -35,6 +35,7 @@ export const NAV_GROUPS: NavGroup[] = [
 			{ label: 'Events', href: '/admin/events', requires: 'manage_events' },
 			{ label: 'Photos', href: '/admin/photos', requires: 'manage_event_photos' },
 			{ label: 'Résumés', href: '/admin/resumes', requires: 'review_resumes' },
+			{ label: 'Site content', href: '/admin/site-content', requires: 'manage_site_content' },
 		],
 	},
 ];

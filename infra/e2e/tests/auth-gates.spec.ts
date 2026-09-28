@@ -9,6 +9,9 @@ const gatedRoutes = [
 	'/admin/members',
 	'/admin/photos',
 	'/admin/resumes',
+	'/admin/site-content',
+	'/pages/committee/software/edit',
+	'/pages/committee/software/preview',
 	'/staff',
 ];
 
@@ -18,6 +21,14 @@ for (const path of gatedRoutes) {
 		await expect(page).toHaveURL(/\/auth\/signin/);
 	});
 }
+
+// Committee/project pages only exist once published — an unknown slug is a 404, not a 5xx.
+test('unpublished / unknown committee page is a 404', async ({ page }) => {
+	const res = await page.goto('/committees/does-not-exist');
+	expect(res?.status()).toBe(404);
+	// The site's own 404 page, not the framework default.
+	await expect(page.getByRole('heading', { name: 'PAGE NOT FOUND' })).toBeVisible();
+});
 
 // API routes answer 401 rather than redirecting.
 test('anonymous GET /api/files/resume/export is 401', async ({ request }) => {

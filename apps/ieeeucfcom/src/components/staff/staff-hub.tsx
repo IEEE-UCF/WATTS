@@ -112,7 +112,8 @@ export function StaffHub() {
 		can('manage_events') ||
 		can('scan_attendance') ||
 		can('manage_event_photos') ||
-		can('review_resumes');
+		can('review_resumes') ||
+		can('manage_site_content');
 
 	return (
 		<div className="text-foreground">
@@ -222,6 +223,17 @@ export function StaffHub() {
 							uploaded this week.
 						</p>
 						<LinkCard href="/admin/resumes" label="Open résumés" />
+					</Panel>
+				)}
+
+				{can('manage_site_content') && (
+					<Panel title="Website Content" cap="manage_site_content">
+						<p className="mb-3 text-sm text-muted-foreground">
+							Page photos, the officer roster, sponsors, the sponsorship packet,
+							committee and project pages, and the review queue for changes submitted
+							by chairs and leads.
+						</p>
+						<LinkCard href="/admin/site-content" label="Open site content" />
 					</Panel>
 				)}
 

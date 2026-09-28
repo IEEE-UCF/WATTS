@@ -5,7 +5,7 @@
 // unsupported here. Everything else (validation reads, streaming, delete, list) uses the
 // @vercel/blob SDK. This adapter is exercised on a preview deploy, not locally.
 
-import { head as blobHead, del as blobDel, list as blobList, get as blobGet } from '@vercel/blob';
+import { head as blobHead, del as blobDel, list as blobList, get as blobGet, put as blobPut } from '@vercel/blob';
 import { vercelEnv } from './env';
 import type {
 	GetObjectOptions,
@@ -79,6 +79,17 @@ export const vercelAdapter: StorageAdapter = {
 
 	async delete(opts): Promise<void> {
 		await blobDel(opts.key, { token: token(opts.bucket) });
+	},
+
+	async put(opts): Promise<{ url: string }> {
+		const res = await blobPut(opts.key, opts.body, {
+			access: access(opts.bucket),
+			token: token(opts.bucket),
+			contentType: opts.contentType,
+			addRandomSuffix: false,
+			allowOverwrite: true,
+		});
+		return { url: res.url };
 	},
 
 	publicUrl(key: string): string {

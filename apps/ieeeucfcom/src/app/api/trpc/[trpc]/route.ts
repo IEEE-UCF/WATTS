@@ -1,3 +1,4 @@
+import { revalidateTag } from 'next/cache';
 import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
 import { getServerSession } from 'next-auth';
 import { appRouter, createTRPCContext } from '@watts/api';
@@ -16,6 +17,8 @@ const handler = async (req: Request) => {
 				db,
 				session,
 				headers: req.headers,
+				// Published CMS changes refresh the statically rendered public pages.
+				onContentChanged: (tag) => revalidateTag(tag),
 			}),
 		onError:
 			process.env.NODE_ENV === 'development'
