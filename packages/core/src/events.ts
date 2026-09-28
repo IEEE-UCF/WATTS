@@ -1,4 +1,4 @@
-import { and, asc, eq, gte } from 'drizzle-orm';
+import { and, asc, eq, gte, inArray, lt } from 'drizzle-orm';
 import type { WattsDb } from '@watts/db';
 import { Events, EventAttendees, EventLabels, Members, RoomReservations } from '@watts/db/schema';
 import { DomainError } from './errors';
@@ -84,6 +84,64 @@ export async function getTodaysCheckIns(db: WattsDb) {
 		else byEvent.set(row.eventId, { eventId: row.eventId, eventTitle: row.eventTitle, count: 1 });
 	}
 	return [...byEvent.values()];
+}
+
+/**
+ * Who checked into one event, for the admin post-event summary. A "first-timer" is someone
+ * with no check-in at any event that started before this one.
+ */
+export async function getEventAttendees(db: WattsDb, eventId: string) {
+	const [event] = await db
+		.select({ id: Events.id, title: Events.title, startTime: Events.startTime })
+		.from(Events)
+		.where(eq(Events.id, eventId))
+		.limit(1);
+	if (!event) throw new DomainError('NOT_FOUND', 'Event not found');
+
+	const rows = await db
+		.select({
+			memberId: Members.id,
+			firstName: Members.firstName,
+			lastName: Members.lastName,
+			ucfEmail: Members.ucfEmail,
+			major: Members.major,
+			graduationYear: Members.graduationYear,
+			duesPaid: Members.duesPaid,
+			checkedInAt: EventAttendees.timestamp,
+		})
+		.from(EventAttendees)
+		.innerJoin(Members, eq(Members.id, EventAttendees.memberId))
+		.where(eq(EventAttendees.eventId, eventId))
+		.orderBy(asc(EventAttendees.timestamp));
+
+	const returning = new Set<string>();
+	if (rows.length > 0) {
+		const earlier = await db
+			.selectDistinct({ memberId: EventAttendees.memberId })
+			.from(EventAttendees)
+			.innerJoin(Events, eq(Events.id, EventAttendees.eventId))
+			.where(
+				and(
+					inArray(
+						EventAttendees.memberId,
+						rows.map((r) => r.memberId),
+					),
+					lt(Events.startTime, event.startTime),
+				),
+			);
+		for (const r of earlier) returning.add(r.memberId);
+	}
+
+	const attendees = rows.map((r) => ({ ...r, firstTime: !returning.has(r.memberId) }));
+	return {
+		event,
+		attendees,
+		stats: {
+			total: attendees.length,
+			duesPaid: attendees.filter((a) => a.duesPaid).length,
+			firstTimers: attendees.filter((a) => a.firstTime).length,
+		},
+	};
 }
 
 /**
