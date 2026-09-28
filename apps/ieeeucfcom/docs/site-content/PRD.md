@@ -85,7 +85,7 @@ Officer profiles are separate from member accounts: the roster can include peopl
 ## Rollout
 
 1. Merge. Approve the gated `migrate` job (the migration is expand-only and safe for the old code). The site deploys looking identical.
-2. Run the import against production: first a dry run, then `--apply` ([runbook](ARCHITECTURE.md#import-runbook)). Then click **Refresh public pages**.
+2. Run the import against production: first the read-only inspection, then a dry run, then `--apply` ([runbook](ARCHITECTURE.md#import-runbook)). Then click **Refresh public pages**.
 3. Link officer profiles to members. Grant `manage_site_content` where needed. Assign page editors.
 4. Follow-ups:
    - a styling pass for committee/project pages
@@ -102,4 +102,5 @@ Officer profiles are separate from member accounts: the roster can include peopl
 | Old rows in `sponsorships` appear unexpectedly | The public list only shows sponsors that have a CMS logo |
 | Un-approving content still cached | Every publish/approve/restore revalidates the page cache immediately |
 | Storage/optimizer cost creeps up | Images are compressed on upload, animated media skips the optimizer, and files are immutable so caching is always safe (see ARCHITECTURE.md) |
+| Import or first edit overwrites pre-CMS data (e.g. an existing committee's description) | The first change to any row records its original state as a revision, restorable from History; the read-only inspection shows what will change |
 | Database loss | Neon point-in-time restore (disaster recovery only, not content rollback) |

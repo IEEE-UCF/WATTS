@@ -15,6 +15,10 @@
 //   4. the sample Software committee page (/committees/software): chair = member
 //      "Dawn Balaschak"; skipped (and printed) if that member or committee can't be found
 //
+// Existing rows: a sponsor row with the same company name gets the logo attached (no
+// duplicate); an existing software committee gets the sample page (its old `about` is kept
+// as an "Original content" revision). Run inspect-site-content.ts first to see all of this.
+//
 // Every write is a published revision authored by --as (default DEV_ADMIN_EMAIL), so it
 // shows up in History and can be restored. public/ files are NOT deleted.
 //
@@ -23,22 +27,19 @@
 
 import { readFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
-import { dirname, extname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { extname, join } from 'node:path';
 import { randomUUID, createHash } from 'node:crypto';
 import { loadRootEnv } from '@watts/config/load-env';
 import postgres from 'postgres';
 import { drizzle } from 'drizzle-orm/postgres-js';
-import { and, eq, ilike, isNotNull } from 'drizzle-orm';
+import { and, eq, ilike } from 'drizzle-orm';
 import * as schema from '@watts/db/schema';
+import { APP, PUBLIC, readLegacyOfficers, readLegacySponsors } from './legacy-site-content';
 
 loadRootEnv();
 
 const { Committees, MediaAssets, Members, OfficerProfiles, SiteMediaSlots, Sponsorships, Users } = schema;
 
-const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
-const APP = join(ROOT, 'apps', 'ieeeucfcom');
-const PUBLIC = join(APP, 'public');
 
 const argv = process.argv.slice(2);
 const APPLY = argv.includes('--apply');
@@ -59,36 +60,6 @@ const sharp = createRequire(appRequire.resolve('next/package.json'))('sharp') as
 };
 
 const log = (msg: string) => console.log(`${APPLY ? '' : '[dry run] '}${msg}`);
-
-// ---------------------------------------------------------------------------
-// Read the pre-CMS arrays straight out of the components (single source of truth)
-// ---------------------------------------------------------------------------
-
-async function readArrayLiteral<T>(file: string, marker: string): Promise<T[]> {
-	const text = await readFile(join(APP, file), 'utf8');
-	const start = text.indexOf(marker);
-	if (start === -1) throw new Error(`${marker} not found in ${file}`);
-	const open = text.indexOf('[', start + marker.length - 1);
-	const end = text.indexOf('\n];', open);
-	// The literal is plain data (strings / objects) in our own repo file.
-	return new Function(`return ${text.slice(open, end + 2)}`)() as T[];
-}
-
-interface LegacyOfficer {
-	name: string;
-	type: 'Executive' | 'Chair';
-	role: string;
-	major: string;
-	year: string;
-	linkedin: string;
-	photo: string;
-	bio?: string;
-}
-interface LegacySponsor {
-	name: string;
-	logo: string;
-	tier: 'Gold' | 'Silver' | 'Bronze';
-}
 
 // ---------------------------------------------------------------------------
 // Uploading a public/ file as a media asset
@@ -195,7 +166,7 @@ async function main() {
 	if (anyOfficer) {
 		log('  officer profiles already exist — skipped');
 	} else {
-		const officers = await readArrayLiteral<LegacyOfficer>('src/components/pg/aboutofficers.tsx', 'const OFFICERS: Officer[] = [');
+		const officers = await readLegacyOfficers();
 		const members = await db.select({ id: Members.id, first: Members.firstName, last: Members.lastName }).from(Members);
 		const byName = new Map(members.map((m) => [`${m.first} ${m.last}`.toLowerCase().trim(), m.id]));
 		const unmatched: string[] = [];
@@ -230,18 +201,44 @@ async function main() {
 
 	// 3. sponsors ---------------------------------------------------------------
 	console.log('\n• sponsors');
-	const sponsors = await readArrayLiteral<LegacySponsor>('src/components/pg/sponsorshipsclient.tsx', 'const SPONSORS: SponsorCard[] = [');
+	const sponsors = await readLegacySponsors();
 	for (const [i, sp] of sponsors.entries()) {
-		const [existing] = await db
-			.select()
-			.from(Sponsorships)
-			.where(and(ilike(Sponsorships.companyName, sp.name), isNotNull(Sponsorships.logoAssetId)))
-			.limit(1);
-		if (existing) {
+		const matches = await db.select().from(Sponsorships).where(ilike(Sponsorships.companyName, sp.name));
+		if (matches.some((m) => m.logoAssetId)) {
 			log(`  ${sp.name}: already in the CMS, skipped`);
 			continue;
 		}
-		log(`  ${sp.name} (${sp.tier})`);
+		// A row for this company from before the CMS: give it the logo instead of adding
+		// a duplicate. Its description/website are kept; tier and visibility follow what the
+		// site shows today. The old values are kept in History (baseline revision).
+		const [existing] = matches;
+		if (existing) {
+			log(
+				`  ${sp.name}: existing row (tier ${existing.tier}, ${existing.active ? 'active' : 'inactive'}) — will attach the logo${
+					existing.tier !== sp.tier || !existing.active ? `, set tier ${sp.tier} and active` : ''
+				}`,
+			);
+			const logoAssetId = await uploadPublicFile(sp.logo, 'image', user.id, sp.name);
+			if (APPLY) {
+				await core.submitChange(db, {
+					entityType: 'sponsor',
+					entityId: existing.id,
+					snapshot: {
+						companyName: existing.companyName,
+						tier: sp.tier,
+						description: existing.description,
+						websiteUrl: existing.websiteUrl,
+						logoAssetId,
+						active: true,
+					},
+					actor,
+					direct: true,
+				});
+				await db.update(Sponsorships).set({ sortOrder: i }).where(eq(Sponsorships.id, existing.id));
+			}
+			continue;
+		}
+		log(`  ${sp.name} (${sp.tier}) — new row`);
 		const logoAssetId = await uploadPublicFile(sp.logo, 'image', user.id, sp.name);
 		if (APPLY) {
 			const { id } = await core.createSponsor(
@@ -276,6 +273,16 @@ async function main() {
 		} else {
 			log('  would create the Software committee (chair: Dawn Balaschak)');
 		}
+	}
+	if (committee && !committee.published) {
+		const [chair] = await db
+			.select({ first: Members.firstName, last: Members.lastName })
+			.from(Members)
+			.where(eq(Members.id, committee.chairId))
+			.limit(1);
+		const excerpt = committee.about.replace(/\s+/g, ' ').slice(0, 120);
+		log(`  existing committee "${committee.title}", chair ${chair ? `${chair.first} ${chair.last}` : '(unknown)'}`);
+		log(`  its description will be replaced (the original is kept in History): "${excerpt}${committee.about.length > 120 ? '…' : ''}"`);
 	}
 	if (committee?.published) {
 		log('  already published — skipped');

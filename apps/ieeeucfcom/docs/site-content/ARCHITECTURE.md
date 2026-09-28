@@ -116,16 +116,34 @@ Non-staff can never change `published` on a committee/project page. The router c
 
 The one-off import copies today's hardcoded content into the CMS: slot files, the officer roster with portraits, the sponsors with logos, and the sample Software committee page. It is idempotent: it only fills what is empty and never overwrites CMS content.
 
-```bash
-# 1. Dry run against the target (reads ./.env: DATABASE_URL, STORAGE_PROVIDER, BLOB_* / S3_*)
-pnpm --filter @watts/seed import:site-content
+**What it does with rows that already exist**
+- **`software` committee:** the sample page goes on the existing committee, which keeps its chair. Its `about` is replaced by the placeholder text. A committee page that is already published is left alone.
+- **Sponsors:** a row with the same company name (case-insensitive) gets the logo attached instead of a duplicate. It keeps its description and website; tier and active follow what the site shows today. Rows for companies that aren't on the site stay hidden.
+- **Officers:** the roster is skipped entirely if any officer profile exists. Links to members are made by exact first + last name only.
 
-# 2. Apply, recorded as a specific admin (defaults to DEV_ADMIN_EMAIL)
-pnpm --filter @watts/seed import:site-content -- --apply --as=you@example.com
-```
+Nothing is lost. Before the first CMS change to any row, `publish` records the row's current state as a superseded "Original content" revision, so it can be restored from History.
 
-Then:
-- Open **/admin/site-content** and click **Refresh public pages**. The script writes to the database directly, so the page cache doesn't know yet.
-- Link officers to members (the script prints unmatched names). Publish or adjust the sample Software page.
+**Steps (production)**
+1. Merge, then approve the `migrate` job.
+2. In a terminal at the repo root, point the scripts at production. Shell variables win over `.env`, but `.env.local` overrides both, so make sure it doesn't set these. Get the values from Vercel → Settings → Environment Variables (Production). Use the Neon **unpooled** URL.
+   ```powershell
+   $env:DATABASE_URL = "<DATABASE_URL_UNPOOLED>"
+   $env:STORAGE_PROVIDER = "vercel"
+   $env:BLOB_READ_WRITE_TOKEN = "<BLOB_READ_WRITE_TOKEN>"
+   ```
+3. **Inspect.** This is read-only (a `READ ONLY` transaction). It reports the migration state, the `--as` account, existing committees, sponsors and officer name matches, whether public Blob uploads already work, and existing CMS rows.
+   ```bash
+   pnpm --filter @watts/seed inspect:site-content -- --as=you@example.com
+   ```
+4. **Dry run**, then **apply**:
+   ```bash
+   pnpm --filter @watts/seed import:site-content -- --as=you@example.com
+   pnpm --filter @watts/seed import:site-content -- --apply --as=you@example.com
+   ```
+5. Open **/admin/site-content** and click **Refresh public pages**. The script writes to the database directly, so the page cache doesn't know yet.
+6. Link officers to members (the script prints unmatched names), grant `manage_site_content`, and assign page editors.
+7. Close the terminal, or `Remove-Item Env:DATABASE_URL, Env:STORAGE_PROVIDER, Env:BLOB_READ_WRITE_TOKEN`, so later commands don't hit production.
 
-For production: run it with the production `DATABASE_URL`, `STORAGE_PROVIDER=vercel` and the Blob token loaded. Review the dry run output first. Nothing in `public/` is deleted.
+**If public uploads fail.** The CMS stores files in the *public* Blob bucket, like event flyers and project photos. If the inspection shows no `*.public.blob.vercel-storage.com` files and the import fails on upload, the store is private-only. Create a public Blob store and set `BLOB_RW_TOKEN_PUBLIC` (in Vercel and in your shell).
+
+Nothing in `public/` is deleted.

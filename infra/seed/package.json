@@ -9,7 +9,8 @@
     "seed:event-labels": "tsx src/seed-event-labels.ts",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "import:site-content": "tsx src/import-site-content.ts"
+    "import:site-content": "tsx src/import-site-content.ts",
+    "inspect:site-content": "tsx src/inspect-site-content.ts"
   },
   "dependencies": {
     "@watts/calendar": "workspace:*",

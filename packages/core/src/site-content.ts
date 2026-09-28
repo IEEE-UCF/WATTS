@@ -486,13 +486,43 @@ async function supersedePublished(db: WattsDb, type: ContentEntityType, id: stri
 	}
 }
 
+/**
+ * Rows that existed before the CMS (or before their first edit) have no history, so
+ * the first change would overwrite them with nothing to restore. Before that first
+ * change, record the live state as a superseded "original" revision.
+ */
+async function recordBaseline(db: WattsDb, type: ContentEntityType, id: string) {
+	const [seen] = await db
+		.select({ id: ContentRevisions.id })
+		.from(ContentRevisions)
+		.where(
+			and(
+				eq(ContentRevisions.entityType, type),
+				eq(ContentRevisions.entityId, id),
+				inArray(ContentRevisions.status, ['published', 'superseded']),
+			),
+		)
+		.limit(1);
+	if (seen) return;
+	await db.insert(ContentRevisions).values({
+		entityType: type,
+		entityId: id,
+		snapshot: await readCurrent(db, type, id),
+		status: 'superseded',
+		reviewNote: 'Original content, recorded before the first CMS change',
+	});
+}
+
 async function publish(
 	db: WattsDb,
 	type: ContentEntityType,
 	id: string,
 	snap: ContentSnapshot,
 	actor: ContentActor,
+	opts: { baseline?: boolean } = {},
 ): Promise<string> {
+	// Rows created through the CMS start with this revision, so they need no baseline.
+	if (opts.baseline !== false) await recordBaseline(db, type, id);
 	await applySnapshot(db, type, id, snap, actor);
 	const [rev] = await db
 		.insert(ContentRevisions)
@@ -552,6 +582,7 @@ export async function approveRevision(db: WattsDb, revisionId: string, reviewer:
 	const type = rev.entityType as ContentEntityType;
 	// File/scope rules were enforced against the author when they submitted.
 	await readCurrent(db, type, rev.entityId);
+	await recordBaseline(db, type, rev.entityId);
 	await applySnapshot(db, type, rev.entityId, rev.snapshot as ContentSnapshot, reviewer);
 	await db
 		.update(ContentRevisions)
@@ -711,7 +742,7 @@ export async function createOfficerProfile(db: WattsDb, snap: OfficerSnapshot, a
 		.insert(OfficerProfiles)
 		.values({ ...snap, sortOrder: (last?.sortOrder ?? 0) + 1 })
 		.returning();
-	await publish(db, 'officer_profile', row.id, snap, actor);
+	await publish(db, 'officer_profile', row.id, snap, actor, { baseline: false });
 	return { id: row.id };
 }
 
@@ -767,7 +798,7 @@ export async function createSponsor(db: WattsDb, snap: SponsorSnapshot, actor: C
 		.insert(Sponsorships)
 		.values({ ...snap, sortOrder: (last?.sortOrder ?? 0) + 1 })
 		.returning();
-	await publish(db, 'sponsor', row.id, snap, actor);
+	await publish(db, 'sponsor', row.id, snap, actor, { baseline: false });
 	return { id: row.id };
 }
 

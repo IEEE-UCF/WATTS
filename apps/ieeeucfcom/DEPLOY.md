@@ -122,11 +122,14 @@ code that needs it, then approve the (now no-op) job.
 Page photos, the officer roster, sponsors and the sponsorship packet are edited at
 `/admin/site-content` (capability `manage_site_content`). Until content is imported,
 every page falls back to the files in `public/`, so the site looks the same. To move
-today's content in, run the import with the production env loaded (dry run first),
-then click **Refresh public pages** on `/admin/site-content`:
+today's content in, point your shell at production (unpooled `DATABASE_URL`,
+`STORAGE_PROVIDER=vercel`, `BLOB_READ_WRITE_TOKEN`). Then run the read-only
+inspection, the dry run and the import, and click **Refresh public pages** on
+`/admin/site-content`:
 
 ```bash
-pnpm --filter @watts/seed import:site-content
+pnpm --filter @watts/seed inspect:site-content -- --as=you@example.com
+pnpm --filter @watts/seed import:site-content -- --as=you@example.com
 pnpm --filter @watts/seed import:site-content -- --apply --as=you@example.com
 ```
 
