@@ -246,12 +246,10 @@ export default function ProjectsPage({ heroMedia }: { heroMedia?: PublicAsset | 
 											}),
 										);
 										const allSkills = [...hwSkills, ...swSkills];
-										const maxVisible = 6;
-										const visibleSkills = allSkills.slice(0, maxVisible - 1);
-										const remaining =
-											allSkills.length > maxVisible
-												? allSkills.length - visibleSkills.length
-												: 0;
+										// Fits in the fixed two-row tag area below.
+										const maxVisible = 4;
+										const visibleSkills = allSkills.slice(0, maxVisible);
+										const remaining = allSkills.length - visibleSkills.length;
 										const photoUrl = Array.isArray(project.photoUrls)
 											? (project.photoUrls[0] ?? null)
 											: (project.photoUrls ?? null);
@@ -262,37 +260,44 @@ export default function ProjectsPage({ heroMedia }: { heroMedia?: PublicAsset | 
 												ref={(el) => {
 													if (el) cardsRef.current[index] = el;
 												}}
-												className="flex h-fit w-full flex-col p-3 opacity-0 transition hover:scale-102 md:basis-1/2 lg:basis-1/3"
+												// Every text block below reserves a fixed number of lines, so all
+												// cards are the same height whatever their title/lead/overview/tags.
+												className="flex w-full flex-col p-3 opacity-0 transition hover:scale-102 md:basis-1/2 lg:basis-1/3"
 											>
-												<div className="group relative cursor-pointer transition-transform hover:scale-102">
+												<div className="group relative flex flex-1 cursor-pointer flex-col transition-transform hover:scale-102">
 													<div className="absolute -inset-0.5 rounded-sm bg-gradient-to-r from-ieee-bright-yellow to-ieee-bright-yellow opacity-25 blur transition duration-300 group-hover:opacity-100 group-hover:duration-200"></div>
-													<Card className="relative h-fit border-0 bg-black">
-														<CardContent>
-															<Image
-																className="mb-4 h-80 w-full rounded-sm border-white object-cover object-center"
-																src={photoUrl ?? '/larry.png'}
-																alt={project.title}
-																width={2000}
-																height={2000}
-																sizes="(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw"
-															/>
-															<div className="mb-2 flex flex-wrap items-center gap-2 text-xl font-bold text-white">
-																{project.title}
+													<Card className="relative flex-1 border-0 bg-black">
+														<CardContent className="flex flex-1 flex-col">
+															<div className="relative mb-4">
+																<Image
+																	className="h-80 w-full rounded-sm border-white object-cover object-center"
+																	src={photoUrl ?? '/larry.png'}
+																	alt={project.title}
+																	width={2000}
+																	height={2000}
+																	sizes="(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw"
+																/>
 																{project.status === 'past' && (
-																	<span className="rounded-sm bg-ieee-dark-grey px-2 py-0.5 font-subheading text-xs font-normal text-muted-foreground uppercase">
+																	<span className="absolute top-2 left-2 rounded-sm bg-black/80 px-2 py-0.5 font-subheading text-xs text-white uppercase">
 																		Past project
 																	</span>
 																)}
 															</div>
-															{project.lead && (
-																<div className="mb-2 text-muted-foreground">
-																	Project Lead: {project.lead}
-																</div>
-															)}
-															<div className="mb-4 text-muted-foreground">
-																{project.overview?.slice(0, 120)}...
+															<div
+																className="mb-2 line-clamp-2 min-h-14 text-xl font-bold text-white"
+																title={project.title}
+															>
+																{project.title}
 															</div>
-															<div className="mb-4 flex flex-wrap gap-2">
+															<div className="mb-2 line-clamp-1 min-h-6 text-muted-foreground">
+																{project.lead
+																	? `Project Lead: ${project.lead}`
+																	: ''}
+															</div>
+															<div className="mb-4 line-clamp-3 min-h-18 text-muted-foreground">
+																{project.overview}
+															</div>
+															<div className="mb-4 flex h-16 flex-wrap content-start gap-2 overflow-hidden">
 																{visibleSkills.map((skill, idx) => (
 																	<div
 																		key={idx}
@@ -308,7 +313,7 @@ export default function ProjectsPage({ heroMedia }: { heroMedia?: PublicAsset | 
 																)}
 															</div>
 															<div
-																className="relative flex w-full cursor-pointer flex-row justify-between text-white transition hover:scale-103 hover:text-amber-300"
+																className="relative mt-auto flex w-full cursor-pointer flex-row justify-between text-white transition hover:scale-103 hover:text-amber-300"
 																onClick={() => viewSidebar(project)}
 															>
 																LEARN MORE
