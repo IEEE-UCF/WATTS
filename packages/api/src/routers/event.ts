@@ -21,6 +21,7 @@ import {
 	importEventsFromGoogle,
 	checkInMember,
 	getTodaysCheckIns,
+	getEventAttendees,
 	getRoomReservationAlerts,
 } from '@watts/core/events';
 import { listLabels } from '@watts/core/event-labels';
@@ -128,6 +129,18 @@ export const eventRouter = createTRPCRouter({
 
 	// Staff Hub's Event Ops panel.
 	todaysCheckIns: scanAttendance.query(async ({ ctx }) => getTodaysCheckIns(ctx.db)),
+
+	// Admin event manager's per-event attendee list. manage_events, not scan_attendance:
+	// door volunteers can be granted scanning, but this list carries member emails.
+	getAttendees: manageEvents
+		.input(z.object({ eventId: z.string().uuid() }))
+		.query(async ({ ctx, input }) => {
+			try {
+				return await getEventAttendees(ctx.db, input.eventId);
+			} catch (error) {
+				mapDomainError(error);
+			}
+		}),
 
 	// Staff Hub's Event Ops panel + the admin overview's "reservations needing attention"
 	// KPI — the web-side read of the same alert apps/dbot's discordEventSync.ts posts to

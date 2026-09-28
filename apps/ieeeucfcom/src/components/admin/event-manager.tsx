@@ -4,6 +4,7 @@ import { useMemo, useRef, useState } from 'react';
 import { trpc } from '@/lib/trpc/client';
 import type { RouterOutputs } from '@watts/api';
 import { uploadEventFlyer } from '@watts/storage/client';
+import { EventAttendeesSheet } from './event-attendees-sheet';
 import {
 	Table,
 	TableHeader,
@@ -665,6 +666,7 @@ export function EventManager() {
 
 	const [showForm, setShowForm] = useState(false);
 	const [editing, setEditing] = useState<AdminEvent | null>(null);
+	const [attendeesFor, setAttendeesFor] = useState<string | null>(null);
 	const [showArchived, setShowArchived] = useState(false);
 	const [showPast, setShowPast] = useState(false);
 	const [flyerBusy, setFlyerBusy] = useState<string | null>(null);
@@ -1052,6 +1054,13 @@ export function EventManager() {
 										</button>
 										<button
 											type="button"
+											onClick={() => setAttendeesFor(ev.id)}
+											className="text-blue-400 hover:underline"
+										>
+											attendees
+										</button>
+										<button
+											type="button"
 											disabled={setHidden.isPending}
 											onClick={() =>
 												setHidden.mutate({
@@ -1125,6 +1134,8 @@ export function EventManager() {
 					</TableBody>
 				</Table>
 			)}
+
+			<EventAttendeesSheet eventId={attendeesFor} onClose={() => setAttendeesFor(null)} />
 
 			{pendingDelete && (
 				<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
