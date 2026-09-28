@@ -14,7 +14,7 @@
  */
 
 'use client';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 
 /**
  * Interface for scanned member data
@@ -22,12 +22,22 @@ import { useState } from 'react';
  * @property {string} id - The member's unique ID (from QR code)
  * @property {string} timestamp - When the member was scanned (for check-in record)
  * @property {any} data - Optional additional member data (name, chapter, etc.)
+ * @property {number} scanId - Unique per scan, so a rescan of the same member is a new value
  */
 export interface ScannedMember {
 	id: string;
 	timestamp: string;
 	data?: any;
+	scanId: number;
 }
+
+export interface MemberScannerOptions {
+	/** Keep the camera running after each scan instead of stopping on a result. */
+	continuous?: boolean;
+}
+
+/** In continuous mode, the same code held in front of the camera is ignored for this long. */
+const REPEAT_SCAN_WINDOW_MS = 3000;
 
 /**
  * Custom hook for IEEE member QR code scanning
@@ -41,7 +51,7 @@ export interface ScannedMember {
  *
  * @returns {Object} Scanner state and methods
  */
-export function useMemberScanner() {
+export function useMemberScanner({ continuous = false }: MemberScannerOptions = {}) {
 	// ============================================
 	// STATE MANAGEMENT
 	// ============================================
@@ -79,6 +89,10 @@ export function useMemberScanner() {
 	 */
 	const [scanHistory, setScanHistory] = useState<ScannedMember[]>([]);
 
+	/** Last member id seen and when, for ignoring repeat reads in continuous mode */
+	const lastScan = useRef<{ id: string; at: number } | null>(null);
+	const nextScanId = useRef(0);
+
 	// ============================================
 	// EVENT HANDLERS
 	// ============================================
@@ -97,7 +111,7 @@ export function useMemberScanner() {
 	 * 2. Tries to parse as JSON (for structured member data)
 	 * 3. Creates member record with ID and timestamp
 	 * 4. Adds to scan history
-	 * 5. Stops scanner to show results
+	 * 5. Stops scanner to show results (unless continuous)
 	 * 6. Triggers haptic feedback (if device supports it)
 	 */
 	const handleScan = (result: any) => {
@@ -105,47 +119,51 @@ export function useMemberScanner() {
 		if (result && result.length > 0) {
 			// Extract the actual string data from the QR code
 			const rawValue = result[0].rawValue;
-			setScannedData(rawValue);
-			setError('');
 
 			// Try to parse the QR code data as JSON
 			// Our QR generator creates JSON like: {"id":"123","name":"John","chapter":"UCF"}
+			// If parsing fails, the QR code is plain text and the whole string is the member ID
+			let parsedData: any;
 			try {
-				const parsedData = JSON.parse(rawValue);
-
-				// Create a member record with the parsed JSON data
-				const member: ScannedMember = {
-					id: parsedData.id || rawValue, // Use ID from JSON, fallback to raw string
-					timestamp: new Date().toLocaleString(), // Current time for check-in record
-					data: parsedData, // Store all the JSON data for display
-				};
-
-				// Update state with the scanned member
-				setMemberInfo(member);
-
-				// Add to history (newest first)
-				setScanHistory((prev) => [member, ...prev]);
-
-				// Stop scanning to show success screen
-				setIsScanning(false);
-
-				// Provide haptic feedback on mobile devices (vibration)
-				// This gives tactile confirmation that scan was successful
-				if (navigator.vibrate) {
-					navigator.vibrate(200); // Vibrate for 200ms
-				}
+				parsedData = JSON.parse(rawValue);
 			} catch {
-				// If parsing fails, the QR code contains plain text (not JSON)
-				// Treat the entire string as the member ID
-				const member: ScannedMember = {
-					id: rawValue, // Use the raw string as the ID
-					timestamp: new Date().toLocaleString(),
-					// No additional data since it wasn't JSON
-				};
+				parsedData = undefined;
+			}
+			const id: string = parsedData?.id || rawValue;
 
-				setMemberInfo(member);
-				setScanHistory((prev) => [member, ...prev]);
-				setIsScanning(false);
+			// The camera reports the same code many times while it's held up; in continuous
+			// mode only the first read within the window counts.
+			const now = Date.now();
+			if (
+				continuous &&
+				lastScan.current?.id === id &&
+				now - lastScan.current.at < REPEAT_SCAN_WINDOW_MS
+			) {
+				return;
+			}
+			lastScan.current = { id, at: now };
+
+			setScannedData(rawValue);
+			setError('');
+
+			const member: ScannedMember = {
+				id,
+				timestamp: new Date().toLocaleString(), // Current time for check-in record
+				data: parsedData, // Store all the JSON data for display
+				scanId: ++nextScanId.current,
+			};
+
+			// Update state with the scanned member, and add to history (newest first)
+			setMemberInfo(member);
+			setScanHistory((prev) => [member, ...prev]);
+
+			// Stop scanning to show the result screen
+			if (!continuous) setIsScanning(false);
+
+			// Provide haptic feedback on mobile devices (vibration)
+			// This gives tactile confirmation that scan was successful
+			if (navigator.vibrate) {
+				navigator.vibrate(200); // Vibrate for 200ms
 			}
 		}
 	};
@@ -175,6 +193,7 @@ export function useMemberScanner() {
 		setScannedData('');
 		setMemberInfo(null);
 		setError('');
+		lastScan.current = null;
 		setIsScanning(true); // Reactivate camera
 	};
 
