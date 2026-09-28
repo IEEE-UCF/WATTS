@@ -534,6 +534,26 @@ export function ProjectManager() {
 	const invalidate = () => void utils.project.getAll.invalidate();
 
 	const del = trpc.project.delete.useMutation({ onSuccess: invalidate });
+	const reorder = trpc.project.reorder.useMutation({ onSuccess: invalidate });
+	const setStatus = trpc.project.update.useMutation({ onSuccess: invalidate });
+	const orderBusy = reorder.isPending || setStatus.isPending;
+
+	// getAll already returns current before past, each in sort order.
+	const groups = useMemo(
+		() =>
+			(['current', 'past'] as const).map((status) => ({
+				status,
+				items: (projects ?? []).filter((p) => p.status === status),
+			})),
+		[projects],
+	);
+
+	function move(items: AdminProject[], from: number, to: number) {
+		const ids = items.map((p) => p.id);
+		const [id] = ids.splice(from, 1);
+		ids.splice(to, 0, id);
+		reorder.mutate({ ids });
+	}
 
 	function toggle(id: string, panel: 'photos' | 'members') {
 		setExpanded((cur) => (cur?.id === id && cur.panel === panel ? null : { id, panel }));
@@ -577,6 +597,7 @@ export function ProjectManager() {
 				<Table>
 					<TableHeader className="bg-card/60 text-xs uppercase">
 						<TableRow>
+							<TableHead className="w-20">Order</TableHead>
 							<TableHead>Project</TableHead>
 							<TableHead>Lead</TableHead>
 							<TableHead>Photos</TableHead>
@@ -584,102 +605,173 @@ export function ProjectManager() {
 						</TableRow>
 					</TableHeader>
 					<TableBody>
-						{(projects ?? []).map((p) => (
-							<Fragment key={p.id}>
-								<TableRow inactive={!p.active}>
-									<TableCell>
-										<div className="font-medium">{p.title}</div>
-										<div className="text-xs text-muted-foreground-dim">
-											{p.overview.slice(0, 80)}
-										</div>
-									</TableCell>
-									<TableCell className="text-xs text-muted-foreground">
-										{p.lead ?? '—'}
-									</TableCell>
-									<TableCell>
-										<button
-											type="button"
-											onClick={() => toggle(p.id, 'photos')}
-											className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground"
-											title="Manage photos"
-										>
-											{p.photoUrls?.[0] ? (
-												// eslint-disable-next-line @next/next/no-img-element
-												<img
-													src={p.photoUrls[0]}
-													alt="Main photo"
-													className="h-10 w-10 rounded border border-ieee-dark-yellow object-cover"
-												/>
-											) : (
-												<span className="flex h-10 w-10 items-center justify-center rounded border border-dashed border-input">
-													—
-												</span>
-											)}
-											{(p.photoUrls ?? []).length === 0
-												? 'no photos'
-												: `${p.photoUrls!.length} photo${p.photoUrls!.length === 1 ? '' : 's'}`}
-										</button>
-									</TableCell>
-									<TableCell>
-										<div className="flex justify-end gap-3 text-xs">
-											<button
-												type="button"
-												onClick={() => openEdit(p)}
-												className="text-blue-400 hover:underline"
-											>
-												edit
-											</button>
-											<button
-												type="button"
-												onClick={() => toggle(p.id, 'photos')}
-												className="text-blue-400 hover:underline"
-											>
-												{expanded?.id === p.id &&
-												expanded.panel === 'photos'
-													? 'hide photos'
-													: 'photos'}
-											</button>
-											<button
-												type="button"
-												onClick={() => toggle(p.id, 'members')}
-												className="text-blue-400 hover:underline"
-											>
-												{expanded?.id === p.id &&
-												expanded.panel === 'members'
-													? 'hide members'
-													: 'members'}
-											</button>
-											<button
-												type="button"
-												onClick={() => del.mutate({ id: p.id })}
-												className="text-red-400 hover:underline"
-											>
-												delete
-											</button>
-										</div>
+						{groups.map(({ status, items }) => (
+							<Fragment key={status}>
+								<TableRow>
+									<TableCell colSpan={5} className="bg-card/40 py-2">
+										<span className="text-sm font-semibold text-foreground">
+											{status === 'current' ? 'Current' : 'Past'} (
+											{items.length})
+										</span>
+										<span className="ml-2 text-xs text-muted-foreground">
+											{status === 'current'
+												? 'Top of this list is shown first on the public Projects page.'
+												: 'Shown at the bottom of the Projects page, without "Get involved".'}
+										</span>
 									</TableCell>
 								</TableRow>
-								{expanded?.id === p.id && (
-									<TableRow>
-										<TableCell colSpan={4}>
-											<div className="rounded-md border border-input p-3">
-												{expanded.panel === 'photos' ? (
-													<ProjectPhotos
-														projectId={p.id}
-														photoUrls={p.photoUrls ?? []}
-														onChanged={invalidate}
-													/>
-												) : (
-													<MembershipPanel projectId={p.id} />
-												)}
-											</div>
-										</TableCell>
-									</TableRow>
-								)}
+								{items.map((p, i) => (
+									<Fragment key={p.id}>
+										<TableRow inactive={!p.active}>
+											<TableCell>
+												<div className="flex items-center gap-1 text-xs">
+													<button
+														type="button"
+														disabled={orderBusy || i === 0}
+														onClick={() => move(items, i, i - 1)}
+														aria-label={`Move ${p.title} up`}
+														className="rounded px-1 text-blue-400 hover:bg-secondary disabled:opacity-30"
+													>
+														↑
+													</button>
+													<button
+														type="button"
+														disabled={
+															orderBusy || i === items.length - 1
+														}
+														onClick={() => move(items, i, i + 1)}
+														aria-label={`Move ${p.title} down`}
+														className="rounded px-1 text-blue-400 hover:bg-secondary disabled:opacity-30"
+													>
+														↓
+													</button>
+													<span className="text-muted-foreground-dim tabular-nums">
+														{i + 1}
+													</span>
+												</div>
+											</TableCell>
+											<TableCell>
+												<div className="flex flex-wrap items-center gap-2 font-medium">
+													{p.title}
+													{status === 'current' && i === 0 && (
+														<span className="rounded bg-ieee-dark-yellow px-1.5 py-0.5 text-[10px] font-semibold text-black uppercase">
+															Shown first
+														</span>
+													)}
+												</div>
+												<div className="text-xs text-muted-foreground-dim">
+													{p.overview.slice(0, 80)}
+												</div>
+												<label className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
+													Status
+													<select
+														value={p.status}
+														disabled={orderBusy}
+														onChange={(e) =>
+															setStatus.mutate({
+																id: p.id,
+																data: {
+																	status: e.target.value as
+																		'current' | 'past',
+																},
+															})
+														}
+														className="rounded border border-input bg-card px-1 py-0.5 text-foreground"
+													>
+														<option value="current">Current</option>
+														<option value="past">Past</option>
+													</select>
+												</label>
+											</TableCell>
+											<TableCell className="text-xs text-muted-foreground">
+												{p.lead ?? '—'}
+											</TableCell>
+											<TableCell>
+												<button
+													type="button"
+													onClick={() => toggle(p.id, 'photos')}
+													className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground"
+													title="Manage photos"
+												>
+													{p.photoUrls?.[0] ? (
+														// eslint-disable-next-line @next/next/no-img-element
+														<img
+															src={p.photoUrls[0]}
+															alt="Main photo"
+															className="h-10 w-10 rounded border border-ieee-dark-yellow object-cover"
+														/>
+													) : (
+														<span className="flex h-10 w-10 items-center justify-center rounded border border-dashed border-input">
+															—
+														</span>
+													)}
+													{(p.photoUrls ?? []).length === 0
+														? 'no photos'
+														: `${p.photoUrls!.length} photo${p.photoUrls!.length === 1 ? '' : 's'}`}
+												</button>
+											</TableCell>
+											<TableCell>
+												<div className="flex justify-end gap-3 text-xs">
+													<button
+														type="button"
+														onClick={() => openEdit(p)}
+														className="text-blue-400 hover:underline"
+													>
+														edit
+													</button>
+													<button
+														type="button"
+														onClick={() => toggle(p.id, 'photos')}
+														className="text-blue-400 hover:underline"
+													>
+														{expanded?.id === p.id &&
+														expanded.panel === 'photos'
+															? 'hide photos'
+															: 'photos'}
+													</button>
+													<button
+														type="button"
+														onClick={() => toggle(p.id, 'members')}
+														className="text-blue-400 hover:underline"
+													>
+														{expanded?.id === p.id &&
+														expanded.panel === 'members'
+															? 'hide members'
+															: 'members'}
+													</button>
+													<button
+														type="button"
+														onClick={() => del.mutate({ id: p.id })}
+														className="text-red-400 hover:underline"
+													>
+														delete
+													</button>
+												</div>
+											</TableCell>
+										</TableRow>
+										{expanded?.id === p.id && (
+											<TableRow>
+												<TableCell colSpan={5}>
+													<div className="rounded-md border border-input p-3">
+														{expanded.panel === 'photos' ? (
+															<ProjectPhotos
+																projectId={p.id}
+																photoUrls={p.photoUrls ?? []}
+																onChanged={invalidate}
+															/>
+														) : (
+															<MembershipPanel projectId={p.id} />
+														)}
+													</div>
+												</TableCell>
+											</TableRow>
+										)}
+									</Fragment>
+								))}
 							</Fragment>
 						))}
 						{(projects ?? []).length === 0 && (
-							<TableEmpty colSpan={4}>No projects yet.</TableEmpty>
+							<TableEmpty colSpan={5}>No projects yet.</TableEmpty>
 						)}
 					</TableBody>
 				</Table>
