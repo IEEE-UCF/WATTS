@@ -50,10 +50,35 @@ const ROOM_RESERVATION_LABELS: Record<RoomReservationStatus, string> = {
 	rejected: 'Rejected',
 };
 
+const FLYER_ACCEPT = 'image/jpeg,image/png,image/webp';
+/** An upcoming event with no flyer this close to its start gets the loud "missing" badge. */
+const FLYER_URGENT_DAYS = 7;
+
+/** Upload to storage, then record it on the event — shared by the form and the table row. */
+function useFlyerUpload() {
+	const confirmFlyer = trpc.event.confirmFlyer.useMutation();
+	return async (eventId: string, file: File) => {
+		await uploadEventFlyer(eventId, file);
+		await confirmFlyer.mutateAsync({ eventId, filename: file.name });
+	};
+}
+
+/** What the form reports back after a save, so the page can nag about a missing flyer. */
+interface SavedEvent {
+	title: string;
+	hasFlyer: boolean;
+	flyerError?: string;
+}
+
+/** Postgres wire string ("2026-09-30 18:00:00+00") → Date; Safari rejects the raw form. */
+function parseWire(raw: string): Date {
+	return new Date(raw.replace(' ', 'T').replace(/([+-]\d{2})$/, '$1:00'));
+}
+
 /** Postgres wire string → value for a <input type="datetime-local"> in the browser's local tz. */
 function toLocalInput(raw: string | null | undefined): string {
 	if (!raw) return '';
-	const d = new Date(raw.replace(' ', 'T').replace(/([+-]\d{2})$/, '$1:00'));
+	const d = parseWire(raw);
 	if (Number.isNaN(d.getTime())) return '';
 	return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
 }
@@ -131,23 +156,22 @@ function EventForm({
 }: {
 	labels: Label[];
 	editing: AdminEvent | null;
-	onDone: () => void;
+	onDone: (saved?: SavedEvent) => void;
 }) {
 	const [form, setForm] = useState<FormState>(editing ? fromEvent(editing) : emptyForm());
+	const [flyerFile, setFlyerFile] = useState<File | null>(null);
+	const [uploadingFlyer, setUploadingFlyer] = useState(false);
 	const utils = trpc.useUtils();
+	const uploadFlyer = useFlyerUpload();
 
 	const invalidate = () => {
 		void utils.event.getAllForAdmin.invalidate();
 		void utils.event.getAll.invalidate();
 	};
 
-	const finish = () => {
-		invalidate();
-		onDone();
-	};
-	const create = trpc.event.create.useMutation({ onSuccess: finish });
-	const update = trpc.event.update.useMutation({ onSuccess: finish });
-	const pending = create.isPending || update.isPending;
+	const create = trpc.event.create.useMutation();
+	const update = trpc.event.update.useMutation();
+	const pending = create.isPending || update.isPending || uploadingFlyer;
 	const error = create.error?.message ?? update.error?.message ?? null;
 
 	function set<K extends keyof FormState>(key: K, value: FormState[K]) {
@@ -181,8 +205,33 @@ function EventForm({
 					: form.roomReservationNumber || undefined,
 			pingCreatorOnUpdate: form.pingCreatorOnUpdate,
 		};
-		if (editing) await update.mutateAsync({ id: editing.id, data: payload });
-		else await create.mutateAsync(payload);
+		let eventId: string | undefined;
+		try {
+			if (editing) {
+				await update.mutateAsync({ id: editing.id, data: payload });
+				eventId = editing.id;
+			} else {
+				eventId = (await create.mutateAsync(payload))?.event.id;
+			}
+		} catch {
+			return; // shown via create.error / update.error
+		}
+
+		// The event exists now, so the flyer has an id to attach to.
+		const saved: SavedEvent = { title: form.title, hasFlyer: Boolean(editing?.flyerUrl) };
+		if (flyerFile && eventId) {
+			setUploadingFlyer(true);
+			try {
+				await uploadFlyer(eventId, flyerFile);
+				saved.hasFlyer = true;
+			} catch (err) {
+				saved.flyerError = err instanceof Error ? err.message : 'Flyer upload failed';
+			} finally {
+				setUploadingFlyer(false);
+			}
+		}
+		invalidate();
+		onDone(saved);
 	}
 
 	const field = 'w-full rounded-md border border-input bg-card px-3 py-2 text-sm text-foreground';
@@ -406,6 +455,34 @@ function EventForm({
 				)}
 			</div>
 
+			<div className="flex flex-wrap items-center gap-4">
+				{editing?.flyerUrl && !flyerFile && (
+					// eslint-disable-next-line @next/next/no-img-element
+					<img
+						src={editing.flyerUrl}
+						alt="current flyer"
+						className="h-16 w-16 rounded object-cover"
+					/>
+				)}
+				<label className="block">
+					<span className="mb-1 block text-xs text-muted-foreground">
+						{editing?.flyerUrl ? 'Replace flyer (optional)' : 'Flyer'}
+					</span>
+					<input
+						id="flyer"
+						type="file"
+						accept={FLYER_ACCEPT}
+						onChange={(e) => setFlyerFile(e.target.files?.[0] ?? null)}
+						className="text-sm text-muted-foreground"
+					/>
+				</label>
+				{!editing?.flyerUrl && !flyerFile && (
+					<span className="text-xs text-amber-400">
+						No flyer yet — you can add one later, but don&apos;t forget.
+					</span>
+				)}
+			</div>
+
 			{error && <p className="text-sm text-red-400">{error}</p>}
 
 			<div className="flex gap-3">
@@ -414,11 +491,17 @@ function EventForm({
 					disabled={pending}
 					className="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
 				>
-					{pending ? 'Saving…' : editing ? 'Save changes' : 'Create event'}
+					{uploadingFlyer
+						? 'Uploading flyer…'
+						: pending
+							? 'Saving…'
+							: editing
+								? 'Save changes'
+								: 'Create event'}
 				</button>
 				<button
 					type="button"
-					onClick={onDone}
+					onClick={() => onDone()}
 					className="rounded-md border border-input px-4 py-2 text-sm text-muted-foreground"
 				>
 					Cancel
@@ -593,7 +676,9 @@ export function EventManager() {
 	const [pendingDelete, setPendingDelete] = useState<PendingDelete | null>(null);
 	const [purgeText, setPurgeText] = useState('');
 	const [importPreview, setImportPreview] = useState<ImportPreview | null>(null);
-	const [banner, setBanner] = useState<{ kind: 'ok' | 'err'; text: string } | null>(null);
+	const [banner, setBanner] = useState<{ kind: 'ok' | 'warn' | 'err'; text: string } | null>(
+		null,
+	);
 
 	const invalidate = () => {
 		void utils.event.getAllForAdmin.invalidate();
@@ -611,7 +696,7 @@ export function EventManager() {
 	});
 	const setHidden = trpc.event.update.useMutation({ onSuccess: invalidate });
 	const resync = trpc.event.resync.useMutation({ onSuccess: invalidate });
-	const confirmFlyer = trpc.event.confirmFlyer.useMutation();
+	const uploadFlyer = useFlyerUpload();
 	const importGoogle = trpc.event.importFromGoogle.useMutation();
 	const deleteBusy = del.isPending || hardDel.isPending;
 
@@ -711,8 +796,7 @@ export function EventManager() {
 		if (!file || !eventId) return;
 		setFlyerBusy(eventId);
 		try {
-			await uploadEventFlyer(eventId, file);
-			await confirmFlyer.mutateAsync({ eventId, filename: file.name });
+			await uploadFlyer(eventId, file);
 			invalidate();
 			setBanner({ kind: 'ok', text: 'Flyer uploaded.' });
 		} catch (err) {
@@ -725,6 +809,33 @@ export function EventManager() {
 		}
 	}
 
+	function onFormDone(saved?: SavedEvent) {
+		setShowForm(false);
+		if (!saved) return;
+		if (saved.flyerError) {
+			setBanner({
+				kind: 'err',
+				text: `Saved “${saved.title}”, but the flyer upload failed: ${saved.flyerError}`,
+			});
+		} else if (!saved.hasFlyer) {
+			setBanner({
+				kind: 'warn',
+				text: `Saved “${saved.title}”. No flyer yet — upload one before it goes out.`,
+			});
+		} else {
+			setBanner({ kind: 'ok', text: `Saved “${saved.title}”.` });
+		}
+	}
+
+	/** Upcoming, live events without a flyer get flagged; past ones just say "none". */
+	function flyerUrgency(ev: AdminEvent): 'urgent' | 'missing' | null {
+		if (ev.flyerUrl || !ev.active) return null;
+		const now = Date.now();
+		if (parseWire(ev.endTimeRaw ?? ev.startTimeRaw).getTime() < now) return null;
+		const daysOut = (parseWire(ev.startTimeRaw).getTime() - now) / 86_400_000;
+		return daysOut <= FLYER_URGENT_DAYS ? 'urgent' : 'missing';
+	}
+
 	return (
 		<div className="text-foreground">
 			<LabelBar labels={labels ?? []} />
@@ -734,7 +845,9 @@ export function EventManager() {
 					className={`mb-4 flex items-start justify-between gap-3 rounded-md border px-3 py-2 text-sm ${
 						banner.kind === 'ok'
 							? 'border-green-800 bg-green-900/30 text-green-200'
-							: 'border-red-800 bg-red-900/30 text-red-200'
+							: banner.kind === 'warn'
+								? 'border-amber-800 bg-amber-900/30 text-amber-200'
+								: 'border-red-800 bg-red-900/30 text-red-200'
 					}`}
 				>
 					<span>{banner.text}</span>
@@ -829,14 +942,14 @@ export function EventManager() {
 					key={editing?.id ?? 'new'}
 					labels={labels ?? []}
 					editing={editing}
-					onDone={() => setShowForm(false)}
+					onDone={onFormDone}
 				/>
 			)}
 
 			<input
 				ref={flyerRef}
 				type="file"
-				accept="image/jpeg,image/png,image/webp"
+				accept={FLYER_ACCEPT}
 				className="hidden"
 				onChange={onFlyerFile}
 			/>
@@ -911,6 +1024,17 @@ export function EventManager() {
 											alt="flyer"
 											className="h-10 w-10 rounded object-cover"
 										/>
+									) : flyerUrgency(ev) === 'urgent' ? (
+										<span
+											title={`Starts within ${FLYER_URGENT_DAYS} days and has no flyer`}
+											className="rounded bg-red-900/70 px-2 py-0.5 text-xs font-semibold text-red-300"
+										>
+											missing
+										</span>
+									) : flyerUrgency(ev) === 'missing' ? (
+										<span className="rounded bg-amber-900/50 px-2 py-0.5 text-xs text-amber-300">
+											missing
+										</span>
 									) : (
 										<span className="text-xs text-muted-foreground-dim">
 											none
