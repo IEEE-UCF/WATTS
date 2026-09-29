@@ -1,88 +1,196 @@
-import Image from 'next/image';
 import Link from 'next/link';
 import type { PublicContentPage } from '@watts/core/site-content';
-import { Navbar } from '@/components/navbar';
 import { Footer } from '@/components/footer';
-import { GlowButton } from '@/components/ui/glow-button';
-import { ContentGallery } from '@/components/pg/content-gallery';
-import { RequestInfoDropdown } from '@/components/pg/projectspage';
+import { CtaBand } from '@/components/pg/detail/cta-band';
+import { DetailGallery, type GalleryImage } from '@/components/pg/detail/detail-gallery';
+import { DetailSection, Prose, TagGroup } from '@/components/pg/detail/detail-section';
+import { FactsBar, type Fact } from '@/components/pg/detail/facts-bar';
+import { JoinProjectButton } from '@/components/pg/detail/join-project-button';
+import { Avatar, PeopleGrid } from '@/components/pg/detail/people-grid';
+import { PosterHero, type HeroImage, type HeroTag } from '@/components/pg/detail/poster-hero';
+
+const OUTLINE_BUTTON =
+	'inline-block rounded-xs border border-white px-6 py-[15px] font-heading text-sm text-white transition-colors hover:border-ieee-bright-yellow hover:text-ieee-bright-yellow';
+
+/** Curated gallery first; projects fall back to their older `photo_urls`. */
+function galleryOf(page: PublicContentPage): GalleryImage[] {
+	if (page.gallery.length > 0) {
+		return page.gallery.map((a) => ({
+			key: a.id,
+			url: a.url,
+			alt: a.alt ?? page.title,
+			animated: a.kind === 'animated',
+		}));
+	}
+	return page.legacyPhotoUrls.map((url, i) => ({
+		key: url,
+		url,
+		alt: `${page.title} photo ${i + 1}`,
+	}));
+}
+
+/** Hero image: the chosen cover, else the first gallery photo (a project's main photo). */
+function heroOf(page: PublicContentPage, gallery: GalleryImage[]): HeroImage | null {
+	if (page.hero) {
+		return {
+			url: page.hero.url,
+			alt: page.hero.alt ?? page.title,
+			animated: page.hero.kind === 'animated',
+		};
+	}
+	const first = gallery[0];
+	return first ? { url: first.url, alt: first.alt, animated: first.animated } : null;
+}
 
 /**
- * Shared public layout for /committees/[slug] and /projects/[slug]. Intentionally
- * plain — content first, styling pass later (see docs/site-content/PRD.md).
+ * Public layout for /projects/[slug] and /committees/[slug] (also the editor's
+ * preview). Poster hero, a strip of facts filled in from the record, the hand-written
+ * body, then team, gallery and a call to action. Sections with no data are left out.
  */
 export function ContentPageView({ page }: { page: PublicContentPage }) {
-	const paragraphs = page.body
-		.split(/\n\s*\n/)
-		.map((p) => p.trim())
-		.filter(Boolean);
-	const kind = page.type === 'committee' ? 'Committee' : 'Project';
+	const gallery = galleryOf(page);
+	const hero = heroOf(page, gallery);
+	const project = page.project;
+	const isCommittee = page.type === 'committee';
+	const isCurrent = project?.status !== 'past';
+	const leads = project?.team.filter((p) => p.isLead) ?? [];
+	// A lone photo is already the hero; don't repeat it as a one-tile gallery.
+	const showGallery =
+		gallery.length > 1 || (gallery.length === 1 && gallery[0].url !== hero?.url);
+
+	const tags: HeroTag[] = [{ label: isCommittee ? 'Committee' : 'Project', tone: 'solid' }];
+	if (project) tags.push({ label: isCurrent ? 'Current' : 'Past project', tone: 'outline' });
+	if (project?.category) tags.push({ label: project.category, tone: 'muted' });
+
+	const leadNames = page.leadNames.join(', ');
+	const facts: Fact[] = isCommittee
+		? [{ label: 'Chair', value: leadNames }]
+		: [
+				{
+					label: leads.length > 1 ? 'Project leads' : 'Project lead',
+					value: leadNames,
+					leading: leads[0] ? <Avatar person={leads[0]} size="sm" /> : undefined,
+				},
+				{
+					label: 'Team',
+					value: project?.team.length
+						? `${project.team.length} member${project.team.length === 1 ? '' : 's'}`
+						: null,
+				},
+				{ label: 'Category', value: project?.category },
+				{ label: 'Status', value: isCurrent ? 'Active' : 'Completed' },
+			];
+
+	const hasTags = Boolean(
+		project && (project.skills.length || project.hardware.length || project.software.length),
+	);
+
+	const heroActions = isCommittee ? (
+		<Link
+			href={page.applyUrl ?? '/connect'}
+			className="inline-block rounded-xs bg-ieee-bright-yellow px-9 py-4 font-display text-sm tracking-[0.08em] text-black hover:bg-ieee-dark-yellow"
+		>
+			APPLY
+		</Link>
+	) : isCurrent ? (
+		<>
+			<JoinProjectButton projectId={page.id} />
+			<Link href="/projects" className={OUTLINE_BUTTON}>
+				All projects
+			</Link>
+		</>
+	) : (
+		<Link href="/projects" className={OUTLINE_BUTTON}>
+			All projects
+		</Link>
+	);
 
 	return (
 		<div className="flex min-h-screen max-w-screen flex-col overflow-x-hidden bg-black text-white">
-			<div className="relative w-full">
-				{page.hero && (
-					<Image
-						src={page.hero.url}
-						alt={page.hero.alt ?? page.title}
-						fill
-						sizes="100vw"
-						priority
-						className="object-cover opacity-40"
-						unoptimized={page.hero.kind === 'animated'}
-					/>
+			<PosterHero
+				image={hero}
+				tags={tags}
+				title={page.title}
+				tagline={page.tagline}
+				actions={heroActions}
+			/>
+
+			<FactsBar facts={facts} />
+
+			<main className="flex flex-1 flex-col gap-16 pt-14 pb-20 md:gap-20 md:pt-18">
+				<div className="mx-auto grid w-full max-w-6xl gap-12 px-6 md:px-10 lg:grid-cols-3 lg:gap-14">
+					<div
+						className={`flex flex-col gap-5 ${hasTags ? 'lg:col-span-2' : 'lg:col-span-3'}`}
+					>
+						<h2 className="font-heading text-xs tracking-[0.16em] text-ieee-bright-yellow uppercase md:text-sm">
+							{isCommittee ? 'About' : 'Overview'}
+						</h2>
+						<Prose text={page.body} />
+					</div>
+					{project && hasTags && (
+						<aside className="flex flex-col gap-6">
+							<TagGroup
+								label="Skills you'll use"
+								tags={project.skills}
+								tone="skill"
+							/>
+							<TagGroup label="Hardware" tags={project.hardware} tone="hardware" />
+							<TagGroup label="Software" tags={project.software} tone="software" />
+						</aside>
+					)}
+				</div>
+
+				{project && project.team.length > 0 && (
+					<DetailSection title="The team">
+						<PeopleGrid
+							people={project.team}
+							trailing={
+								isCurrent ? (
+									<>
+										<div className="flex size-20 items-center justify-center rounded-full border-2 border-dashed border-ieee-grey font-display text-3xl text-ieee-bright-yellow md:size-28">
+											+
+										</div>
+										<span className="font-heading text-sm text-ieee-bright-yellow md:text-base">
+											You?
+										</span>
+										<span className="font-body text-xs text-ieee-light-grey md:text-sm">
+											Request to join below
+										</span>
+									</>
+								) : undefined
+							}
+						/>
+					</DetailSection>
 				)}
-				<div className="relative z-10 px-5">
-					<Navbar />
-				</div>
-				<div className="relative z-10 mx-auto flex max-w-4xl flex-col gap-3 px-6 py-16 md:py-24">
-					<p className="font-heading text-sm tracking-widest text-ieee-bright-yellow uppercase">
-						{kind}
-					</p>
-					<h1 className="font-heading text-4xl text-ieee-bright-yellow md:text-6xl">
-						{page.title}
-					</h1>
-					{page.tagline && (
-						<p className="font-subheading text-xl text-white md:text-2xl">
-							{page.tagline}
-						</p>
-					)}
-					{page.leadNames.length > 0 && (
-						<p className="font-body text-muted-foreground">
-							{page.type === 'committee' ? 'Led by ' : 'Project lead: '}
-							<span className="text-white">{page.leadNames.join(', ')}</span>
-						</p>
-					)}
-				</div>
-			</div>
 
-			<main className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-10 px-6 pb-20">
-				<section className="flex flex-col gap-4 font-body text-lg leading-relaxed">
-					{paragraphs.map((p, i) => (
-						<p key={i}>{p}</p>
-					))}
-				</section>
+				{showGallery && (
+					<DetailSection title="Gallery">
+						<DetailGallery images={gallery} />
+					</DetailSection>
+				)}
 
-				<section>
-					{page.type === 'committee' ? (
-						<Link href={page.applyUrl ?? '/connect'} className="inline-block">
-							<GlowButton innerClassName="px-10 py-4">
-								<span className="font-heading text-lg text-white">APPLY</span>
-							</GlowButton>
-						</Link>
-					) : (
-						<RequestInfoDropdown projectId={page.id} />
-					)}
-				</section>
-
-				<section className="flex flex-col gap-4">
-					<h2 className="font-heading text-2xl text-ieee-bright-yellow">PHOTOS</h2>
-					<ContentGallery
-						title={page.title}
-						assets={page.gallery}
-						legacyUrls={page.legacyPhotoUrls}
+				{isCommittee ? (
+					<CtaBand
+						title="Want to help run this committee?"
+						subtitle="Applications are reviewed by the chair."
+						action={
+							<Link
+								href={page.applyUrl ?? '/connect'}
+								className="inline-block rounded-xs bg-black px-8 py-4 font-display text-sm tracking-[0.08em] text-ieee-bright-yellow"
+							>
+								APPLY
+							</Link>
+						}
 					/>
-				</section>
+				) : (
+					isCurrent && (
+						<CtaBand
+							title="Want to build this with us?"
+							subtitle="The project lead reviews every request."
+							action={<JoinProjectButton projectId={page.id} variant="inverse" />}
+						/>
+					)
+				)}
 			</main>
 
 			<Footer />
