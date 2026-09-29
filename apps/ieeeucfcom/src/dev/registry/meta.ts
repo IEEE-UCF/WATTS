@@ -403,7 +403,26 @@ export const entriesMeta: EntryMeta[] = [
 		status: 'ok',
 		source: '@/components/pg/content-page',
 		surface: 'marketing',
-		notes: 'Public committee page (poster layout) with sample data (no DB).',
+		notes: 'Public committee page (poster layout) with sample data (no DB): chair card, member count, upcoming and past events.',
+	},
+	{
+		slug: 'marketing/event-detail-page',
+		name: 'EventPageView',
+		group: 'marketing',
+		status: 'ok',
+		source: '@/components/pg/event-page',
+		surface: 'marketing',
+		notes: 'Public /events/[slug] page with sample data. Upcoming: flyer, when/where, RSVP, add to calendar. Past: photos and an attendance count (never names).',
+		controls: [
+			{ name: 'state', type: 'select', options: ['upcoming', 'past'], default: 'upcoming' },
+			{ name: 'rsvp', label: 'Has RSVP link', type: 'boolean', default: true },
+			{ name: 'dues', label: 'Dues required', type: 'boolean', default: false },
+		],
+		variants: [
+			{ name: 'Upcoming', props: { state: 'upcoming', rsvp: true, dues: false } },
+			{ name: 'Upcoming, dues only', props: { state: 'upcoming', rsvp: true, dues: true } },
+			{ name: 'Past, with photos', props: { state: 'past' } },
+		],
 	},
 	{
 		slug: 'marketing/project-detail-page',

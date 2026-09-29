@@ -21,18 +21,19 @@ if (!DATABASE_URL) {
 	process.exit(1);
 }
 
-// Same rules as slugifyTitle in packages/core/src/projects.ts.
+// Same rules as slugify in packages/core/src/slugs.ts (used by slugifyTitle).
 function slugifyTitle(title) {
-	return (
-		title
-			.normalize('NFKD')
-			.replace(/[̀-ͯ]/g, '')
-			.toLowerCase()
-			.replace(/[^a-z0-9]+/g, '-')
-			.replace(/^-+|-+$/g, '')
-			.slice(0, 56)
-			.replace(/-+$/, '') || 'project'
-	);
+	const full = title
+		.normalize('NFKD')
+		.replace(/[\u0300-\u036f]/g, '')
+		.toLowerCase()
+		.replace(/[^a-z0-9]+/g, '-')
+		.replace(/^-+|-+$/g, '');
+	if (full.length <= 56) return full || 'project';
+	const cut = full.slice(0, 57);
+	const lastDash = cut.lastIndexOf('-');
+	const trimmed = (lastDash > 0 ? cut.slice(0, lastDash) : full.slice(0, 56)).replace(/-+$/, '');
+	return trimmed || 'project';
 }
 
 const db = new pg.Client({ connectionString: DATABASE_URL });

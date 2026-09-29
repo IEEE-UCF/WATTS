@@ -349,7 +349,7 @@ function EventForm({
 				</label>
 				<label className="block">
 					<span className="mb-1 block text-xs text-muted-foreground">
-						Slug (optional)
+						Page address (made from the title and date if left blank)
 					</span>
 					<input
 						id="slug"
@@ -990,6 +990,16 @@ export function EventManager() {
 									</div>
 									<div className="text-xs text-muted-foreground-dim">
 										{ev.location}
+										{ev.slug && ev.active && !ev.hidden && (
+											<a
+												href={`/events/${ev.slug}`}
+												target="_blank"
+												rel="noreferrer"
+												className="ml-2 text-blue-400 hover:underline"
+											>
+												View page ↗
+											</a>
+										)}
 									</div>
 								</TableCell>
 								<TableCell className="text-xs text-muted-foreground">

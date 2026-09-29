@@ -11,7 +11,7 @@
 // partial failure leaves the live row and the history consistent enough to retry
 // (apply live first, then record the revision).
 
-import { and, asc, desc, eq, gt, inArray, isNotNull, isNull, or } from 'drizzle-orm';
+import { and, asc, count, desc, eq, gt, inArray, isNotNull, isNull, or } from 'drizzle-orm';
 import type { WattsDb } from '@watts/db';
 import {
 	Committees,
@@ -29,6 +29,7 @@ import {
 } from '@watts/db/schema';
 import { hasCapability, type CapabilitySubject } from '@watts/permissions';
 import { DomainError } from './errors';
+import { listCommitteeEvents, type EventSummary } from './event-page';
 import { getSlotDefinition, SITE_MEDIA_SLOTS, type SlotKind } from './site-media-slots';
 
 // ---------------------------------------------------------------------------
@@ -1071,6 +1072,15 @@ export interface PublicContentPage {
 	legacyPhotoUrls: string[];
 	/** Facts filled in from the project record (null on committee pages). */
 	project: PublicProjectFacts | null;
+	/** Facts filled in from the committee record (null on project pages). */
+	committee: PublicCommitteeFacts | null;
+}
+
+export interface PublicCommitteeFacts {
+	chair: (PublicPerson & { bio: string | null; linkedinUrl: string | null }) | null;
+	memberCount: number;
+	upcoming: EventSummary[];
+	past: EventSummary[];
 }
 
 /** A person shown on a public page: name, portrait and a short "Major · '27" line. */
@@ -1130,11 +1140,25 @@ async function buildCommitteePage(
 ): Promise<PublicContentPage> {
 	const [chair] = k.chairId
 		? await db
-			.select({ first: Members.firstName, last: Members.lastName })
+			.select({
+				id: Members.id,
+				first: Members.firstName,
+				last: Members.lastName,
+				portraitUrl: Members.portraitUrl,
+				major: Members.major,
+				graduationYear: Members.graduationYear,
+				bio: Members.biography,
+				linkedinUrl: Members.linkedinURL,
+			})
 			.from(Members)
 			.where(eq(Members.id, k.chairId))
 			.limit(1)
 		: [];
+	const [{ n: memberCount }] = await db
+		.select({ n: count() })
+		.from(CommitteeMembers)
+		.where(eq(CommitteeMembers.committeeId, k.id));
+	const events = await listCommitteeEvents(db, k.id);
 	const assets = await getAssetsByIds(db, [snap.heroAssetId ?? '', ...snap.galleryAssetIds]);
 	return {
 		type: 'committee',
@@ -1149,6 +1173,18 @@ async function buildCommitteePage(
 		gallery: snap.galleryAssetIds.map((id) => assets.get(id)).filter((a): a is PublicAsset => Boolean(a)),
 		legacyPhotoUrls: [],
 		project: null,
+		committee: {
+			chair: chair
+				? {
+						...toPublicPerson({ ...chair, isLead: true }),
+						bio: chair.bio?.trim() || null,
+						linkedinUrl: chair.linkedinUrl?.trim() || null,
+					}
+				: null,
+			memberCount: Number(memberCount),
+			upcoming: events.upcoming,
+			past: events.past,
+		},
 	};
 }
 
@@ -1201,6 +1237,7 @@ async function buildProjectPage(
 			software: splitTags(p.softwareInfo),
 			team: members.map(toPublicPerson),
 		},
+		committee: null,
 	};
 }
 

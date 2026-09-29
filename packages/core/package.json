@@ -9,6 +9,7 @@
     "./committees": "./src/committees.ts",
     "./errors": "./src/errors.ts",
     "./event-labels": "./src/event-labels.ts",
+    "./event-page": "./src/event-page.ts",
     "./events": "./src/events.ts",
     "./meetings": "./src/meetings.ts",
     "./members": "./src/members.ts",

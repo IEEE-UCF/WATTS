@@ -77,12 +77,34 @@ import { ProjectPhotos } from '@/components/admin/project-photos';
 import { FormPopup } from '@/components/dashboard/newEventForm';
 import { ThemePlayground } from '@/components/theme-playground';
 import { AnimatedMediaCompare } from '@/dev/components/animated-media-compare';
+import { EventPageView } from '@/components/pg/event-page';
+import type { EventSummary } from '@watts/core/event-page';
 
 type Render = ComponentType<Record<string, unknown>>;
 
 const NoDemo = ({ label }: { label: string }) => (
 	<p className="text-sm text-muted-foreground">{label}</p>
 );
+
+/** A sample event `days` from now at 7 PM Eastern (negative = past). */
+function sampleEvent(id: string, days: number, title: string, attended?: number): EventSummary {
+	const start = new Date(Date.now() + days * 86_400_000);
+	start.setUTCHours(23, 0, 0, 0);
+	const end = new Date(start.getTime() + 90 * 60_000);
+	return {
+		id,
+		slug: null,
+		title,
+		startTime: start.toISOString(),
+		endTime: end.toISOString(),
+		allDay: false,
+		timeZone: 'America/New_York',
+		location: 'Sample building, room 101',
+		flyerUrl: days < 0 ? null : '/events/gbm.png',
+		label: { name: 'Workshop', hex: null },
+		attendanceCount: days < 0 ? (attended ?? 0) : null,
+	};
+}
 
 export const renders: Record<string, Render> = {
 	'ui/button': (p) => (
@@ -326,15 +348,34 @@ export const renders: Record<string, Render> = {
 				title: 'Software Committee',
 				tagline: 'Build real software for IEEE @ UCF.',
 				body: [
-					'The Software Committee is run by Dawn Balaschak.',
+					'Sample about text, written by the chair.',
 					'Members build and maintain the tools the branch runs on.',
 				].join('\n\n'),
-				leadNames: ['Dawn Balaschak'],
+				leadNames: ['Sample Chair'],
 				applyUrl: '/connect',
 				hero: null,
 				gallery: [],
 				legacyPhotoUrls: [],
 				project: null,
+				committee: {
+					chair: {
+						id: 'c',
+						name: 'Sample Chair',
+						initials: 'SC',
+						portraitUrl: null,
+						detail: "Computer Science · '27",
+						isLead: true,
+						bio: 'A short bio from the member profile.',
+						linkedinUrl: null,
+					},
+					memberCount: 12,
+					upcoming: [0, 7].map((d, i) =>
+						sampleEvent(`u${i}`, d + 3, `Sample workshop ${i + 1}`),
+					),
+					past: [-7, -21, -35].map((d, i) =>
+						sampleEvent(`p${i}`, d, `Sample meeting ${i + 1}`, 18 - i * 4),
+					),
+				},
 			}}
 		/>
 	),
@@ -388,6 +429,39 @@ export const renders: Record<string, Render> = {
 									person('4', 'Riley Member', "Mechanical Engineering · '27"),
 								],
 					},
+					committee: null,
+				}}
+			/>
+		);
+	},
+	'marketing/event-detail-page': (p) => {
+		const past = p.state === 'past';
+		const base = sampleEvent('e', past ? -3 : 3, 'GBM #3: Industry Night', 42);
+		return (
+			<EventPageView
+				pageUrl="https://www.ieeeucf.com/events/sample"
+				event={{
+					...base,
+					slug: 'sample',
+					flyerUrl: '/events/gbm.png',
+					label: { name: 'General Body Meeting', hex: null },
+					description:
+						'Sample description from the event form. Sponsors give short talks, then tables open for résumé reviews.',
+					rsvpLink: p.rsvp === false ? null : 'https://example.com/rsvp',
+					requiresDues: Boolean(p.dues),
+					room: null,
+					committee: { title: 'Professional Development', slug: null },
+					isPast: past,
+					photos: past
+						? [
+								'/committees/prodev1.jpg',
+								'/committees/prodev2.jpg',
+								'/events/mentor.png',
+							].map((url, i) => ({ id: String(i), url, caption: null }))
+						: [],
+					more: [4, 8, 11].map((d, i) =>
+						sampleEvent(`m${i}`, d, `Sample event ${i + 1}`),
+					),
 				}}
 			/>
 		);
