@@ -21,6 +21,7 @@ import {
 	Members,
 	OfficerProfiles,
 	PageEditors,
+	ProjectCategories,
 	ProjectMembers,
 	Projects,
 	SiteMediaSlots,
@@ -1068,6 +1069,57 @@ export interface PublicContentPage {
 	gallery: PublicAsset[];
 	/** Project pages: legacy `photo_urls` shown when no gallery has been curated yet. */
 	legacyPhotoUrls: string[];
+	/** Facts filled in from the project record (null on committee pages). */
+	project: PublicProjectFacts | null;
+}
+
+/** A person shown on a public page: name, portrait and a short "Major · '27" line. */
+export interface PublicPerson {
+	id: string;
+	name: string;
+	initials: string;
+	portraitUrl: string | null;
+	detail: string | null;
+	isLead: boolean;
+}
+
+export interface PublicProjectFacts {
+	status: 'current' | 'past';
+	category: string | null;
+	skills: string[];
+	hardware: string[];
+	software: string[];
+	/** Leads first, then everyone else by name. */
+	team: PublicPerson[];
+}
+
+/** "Python, C++ ,, ROS" → ["Python", "C++", "ROS"]. The tag fields are comma-separated text. */
+export function splitTags(value: string | null | undefined): string[] {
+	return (value ?? '')
+		.split(',')
+		.map((t) => t.trim())
+		.filter(Boolean);
+}
+
+function toPublicPerson(m: {
+	id: string;
+	first: string;
+	last: string;
+	portraitUrl: string | null;
+	major: string;
+	graduationYear: number;
+	isLead: boolean;
+}): PublicPerson {
+	// Majors are stored as catalog names, e.g. "Computer Engineering (BS)".
+	const major = m.major.replace(/\s*\([^)]*\)\s*$/, '');
+	return {
+		id: m.id,
+		name: `${m.first} ${m.last}`.trim(),
+		initials: `${m.first.charAt(0)}${m.last.charAt(0)}`.toUpperCase(),
+		portraitUrl: m.portraitUrl,
+		detail: `${major} · '${String(m.graduationYear).slice(-2)}`,
+		isLead: m.isLead,
+	};
 }
 
 /** Render model for a committee page from `snap` (live fields or a revision snapshot). */
@@ -1096,6 +1148,7 @@ async function buildCommitteePage(
 		hero: snap.heroAssetId ? (assets.get(snap.heroAssetId) ?? null) : null,
 		gallery: snap.galleryAssetIds.map((id) => assets.get(id)).filter((a): a is PublicAsset => Boolean(a)),
 		legacyPhotoUrls: [],
+		project: null,
 	};
 }
 
@@ -1105,11 +1158,28 @@ async function buildProjectPage(
 	p: typeof Projects.$inferSelect,
 	snap: ProjectPageSnapshot,
 ): Promise<PublicContentPage> {
-	const leads = await db
-		.select({ first: Members.firstName, last: Members.lastName })
+	const members = await db
+		.select({
+			id: Members.id,
+			first: Members.firstName,
+			last: Members.lastName,
+			portraitUrl: Members.portraitUrl,
+			major: Members.major,
+			graduationYear: Members.graduationYear,
+			isLead: ProjectMembers.isLead,
+		})
 		.from(ProjectMembers)
 		.innerJoin(Members, eq(Members.id, ProjectMembers.memberId))
-		.where(and(eq(ProjectMembers.projectId, p.id), eq(ProjectMembers.isLead, true)));
+		.where(and(eq(ProjectMembers.projectId, p.id), eq(Members.active, true)))
+		.orderBy(desc(ProjectMembers.isLead), asc(Members.firstName), asc(Members.lastName));
+	const leads = members.filter((m) => m.isLead);
+	const [category] = p.categoryId
+		? await db
+			.select({ name: ProjectCategories.name })
+			.from(ProjectCategories)
+			.where(eq(ProjectCategories.id, p.categoryId))
+			.limit(1)
+		: [];
 	const assets = await getAssetsByIds(db, [snap.heroAssetId ?? '', ...snap.galleryAssetIds]);
 	return {
 		type: 'project',
@@ -1123,6 +1193,14 @@ async function buildProjectPage(
 		hero: snap.heroAssetId ? (assets.get(snap.heroAssetId) ?? null) : null,
 		gallery: snap.galleryAssetIds.map((id) => assets.get(id)).filter((a): a is PublicAsset => Boolean(a)),
 		legacyPhotoUrls: p.photoUrls ?? [],
+		project: {
+			status: p.status,
+			category: category?.name ?? null,
+			skills: splitTags(p.skills),
+			hardware: splitTags(p.hardwareInfo),
+			software: splitTags(p.softwareInfo),
+			team: members.map(toPublicPerson),
+		},
 	};
 }
 

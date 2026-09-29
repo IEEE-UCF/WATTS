@@ -334,9 +334,64 @@ export const renders: Record<string, Render> = {
 				hero: null,
 				gallery: [],
 				legacyPhotoUrls: [],
+				project: null,
 			}}
 		/>
 	),
+	'marketing/project-detail-page': (p) => {
+		const empty = Boolean(p.empty);
+		const person = (id: string, name: string, detail: string, isLead = false) => ({
+			id,
+			name,
+			initials: name
+				.split(' ')
+				.map((w) => w[0])
+				.join(''),
+			portraitUrl: null,
+			detail,
+			isLead,
+		});
+		return (
+			<ContentPageView
+				page={{
+					type: 'project',
+					id: '00000000-0000-0000-0000-000000000000',
+					slug: 'gnor',
+					title: 'GNOR',
+					tagline: empty ? null : 'Building an autonomous rover, one sensor at a time.',
+					body: empty
+						? 'A short overview from the project record.'
+						: 'Sample overview. Leads expand this on the page: goals, progress so far, and what new members will work on.\n\nA second paragraph for spacing.',
+					leadNames: ['Sample Lead'],
+					applyUrl: null,
+					hero: null,
+					gallery: [],
+					legacyPhotoUrls: empty
+						? []
+						: [
+								'/projects/gnor.png',
+								'/projects/micromouse.png',
+								'/projects/pegasuscpu.png',
+							],
+					project: {
+						status: p.status === 'past' ? 'past' : 'current',
+						category: empty ? null : 'Robotics',
+						skills: empty ? [] : ['Embedded C', 'PCB design', 'Computer vision'],
+						hardware: empty ? [] : ['Jetson Nano', 'LiDAR'],
+						software: empty ? [] : ['Python', 'ROS 2'],
+						team: empty
+							? []
+							: [
+									person('1', 'Sample Lead', "Computer Engineering · '26", true),
+									person('2', 'Alex Member', "Electrical Engineering · '27"),
+									person('3', 'Sam Member', "Computer Science · '28"),
+									person('4', 'Riley Member', "Mechanical Engineering · '27"),
+								],
+					},
+				}}
+			/>
+		);
+	},
 	'admin/members-manager': () => <MembersManager />,
 	'admin/resume-dashboard': () => <ResumeDashboard />,
 	'admin/toggle-pill': (p) => (
