@@ -2,6 +2,7 @@ import { and, asc, eq, inArray, like, or, sql } from 'drizzle-orm';
 import type { WattsDb } from '@watts/db';
 import { Projects, ProjectMembers, ProjectMembershipRequests, Members } from '@watts/db/schema';
 import { DomainError } from './errors';
+import { firstFreeSlug, slugify } from './slugs';
 
 export interface CreateProjectInput {
 	title: string;
@@ -95,32 +96,16 @@ async function nextSortOrder(db: WattsDb, status: ProjectStatus): Promise<number
 
 /** "Pegasus CPU (v2)!" → "pegasus-cpu-v2". Leaves room under the 64-char column for a "-2" suffix. */
 export function slugifyTitle(title: string): string {
-	return (
-		title
-			.normalize('NFKD')
-			.replace(/[\u0300-\u036f]/g, '')
-			.toLowerCase()
-			.replace(/[^a-z0-9]+/g, '-')
-			.replace(/^-+|-+$/g, '')
-			.slice(0, 56)
-			.replace(/-+$/, '') || 'project'
-	);
+	return slugify(title, 56, 'project');
 }
 
 /** `base`, or `base-2`, `base-3`… — the first one no other project uses. */
 export async function uniqueProjectSlug(db: WattsDb, base: string): Promise<string> {
-	const taken = new Set(
-		(
-			await db
-				.select({ slug: Projects.slug })
-				.from(Projects)
-				.where(or(eq(Projects.slug, base), like(Projects.slug, `${base}-%`)))
-		).map((r) => r.slug),
-	);
-	if (!taken.has(base)) return base;
-	for (let n = 2; ; n++) {
-		if (!taken.has(`${base}-${n}`)) return `${base}-${n}`;
-	}
+	const rows = await db
+		.select({ slug: Projects.slug })
+		.from(Projects)
+		.where(or(eq(Projects.slug, base), like(Projects.slug, `${base}-%`)));
+	return firstFreeSlug(base, new Set(rows.map((r) => r.slug)));
 }
 
 export async function createProject(db: WattsDb, input: CreateProjectInput) {

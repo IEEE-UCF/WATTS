@@ -4,10 +4,12 @@ import { Footer } from '@/components/footer';
 import { CtaBand } from '@/components/pg/detail/cta-band';
 import { DetailGallery, type GalleryImage } from '@/components/pg/detail/detail-gallery';
 import { DetailSection, Prose, TagGroup } from '@/components/pg/detail/detail-section';
+import { EventCards, EventRows } from '@/components/pg/detail/event-list';
 import { FactsBar, type Fact } from '@/components/pg/detail/facts-bar';
 import { JoinProjectButton } from '@/components/pg/detail/join-project-button';
 import { Avatar, PeopleGrid } from '@/components/pg/detail/people-grid';
 import { PosterHero, type HeroImage, type HeroTag } from '@/components/pg/detail/poster-hero';
+import { shortDate } from '@/lib/event-dates';
 
 const OUTLINE_BUTTON =
 	'inline-block rounded-xs border border-white px-6 py-[15px] font-heading text-sm text-white transition-colors hover:border-ieee-bright-yellow hover:text-ieee-bright-yellow';
@@ -53,6 +55,8 @@ export function ContentPageView({ page }: { page: PublicContentPage }) {
 	const project = page.project;
 	const isCommittee = page.type === 'committee';
 	const isCurrent = project?.status !== 'past';
+	const committee = page.committee;
+	const chair = committee?.chair ?? null;
 	const leads = project?.team.filter((p) => p.isLead) ?? [];
 	// A lone photo is already the hero; don't repeat it as a one-tile gallery.
 	const showGallery =
@@ -64,7 +68,25 @@ export function ContentPageView({ page }: { page: PublicContentPage }) {
 
 	const leadNames = page.leadNames.join(', ');
 	const facts: Fact[] = isCommittee
-		? [{ label: 'Chair', value: leadNames }]
+		? [
+				{
+					label: 'Chair',
+					value: chair?.name ?? leadNames,
+					leading: chair ? <Avatar person={chair} size="sm" /> : undefined,
+				},
+				{
+					label: 'Members',
+					value: committee?.memberCount
+						? `${committee.memberCount} on the committee`
+						: null,
+				},
+				{
+					label: 'Next event',
+					value: committee?.upcoming[0]
+						? `${shortDate(committee.upcoming[0])} · ${committee.upcoming[0].title}`
+						: null,
+				},
+			]
 		: [
 				{
 					label: leads.length > 1 ? 'Project leads' : 'Project lead',
@@ -84,6 +106,7 @@ export function ContentPageView({ page }: { page: PublicContentPage }) {
 	const hasTags = Boolean(
 		project && (project.skills.length || project.hardware.length || project.software.length),
 	);
+	const hasAside = hasTags || Boolean(chair);
 
 	const heroActions = isCommittee ? (
 		<Link
@@ -120,7 +143,7 @@ export function ContentPageView({ page }: { page: PublicContentPage }) {
 			<main className="flex flex-1 flex-col gap-16 pt-14 pb-20 md:gap-20 md:pt-18">
 				<div className="mx-auto grid w-full max-w-6xl gap-12 px-6 md:px-10 lg:grid-cols-3 lg:gap-14">
 					<div
-						className={`flex flex-col gap-5 ${hasTags ? 'lg:col-span-2' : 'lg:col-span-3'}`}
+						className={`flex flex-col gap-5 ${hasAside ? 'lg:col-span-2' : 'lg:col-span-3'}`}
 					>
 						<h2 className="font-heading text-xs tracking-[0.16em] text-ieee-bright-yellow uppercase md:text-sm">
 							{isCommittee ? 'About' : 'Overview'}
@@ -138,7 +161,50 @@ export function ContentPageView({ page }: { page: PublicContentPage }) {
 							<TagGroup label="Software" tags={project.software} tone="software" />
 						</aside>
 					)}
+					{chair && (
+						<aside className="flex flex-col items-start gap-4 self-start rounded-sm border border-ieee-dark-grey bg-ieee-near-black p-7">
+							<span className="font-subheading text-xs tracking-[0.14em] text-ieee-light-grey">
+								CHAIR
+							</span>
+							<Avatar person={chair} size="lg" />
+							<div className="flex flex-col">
+								<span className="font-heading text-xl">{chair.name}</span>
+								{chair.detail && (
+									<span className="font-body text-sm text-[#d6d8da]">
+										{chair.detail}
+									</span>
+								)}
+							</div>
+							{chair.bio && (
+								<p className="font-body text-sm leading-relaxed text-[#d6d8da]">
+									{chair.bio}
+								</p>
+							)}
+							{chair.linkedinUrl && (
+								<a
+									href={chair.linkedinUrl}
+									target="_blank"
+									rel="noreferrer"
+									className="font-heading text-sm text-ieee-bright-yellow hover:underline"
+								>
+									LinkedIn
+								</a>
+							)}
+						</aside>
+					)}
 				</div>
+
+				{committee && committee.upcoming.length > 0 && (
+					<DetailSection title="Upcoming">
+						<EventRows events={committee.upcoming} />
+					</DetailSection>
+				)}
+
+				{committee && committee.past.length > 0 && (
+					<DetailSection title="Past events">
+						<EventCards events={committee.past} showAttendance />
+					</DetailSection>
+				)}
 
 				{project && project.team.length > 0 && (
 					<DetailSection title="The team">
