@@ -5,7 +5,9 @@ import {
 	getPublicSiteContent,
 	getPublishedCommitteePage,
 	getPublishedProjectPage,
+	listPublishedCommittees,
 	listPublishedPageSlugs,
+	type CommitteeCard,
 	type PublicContentPage,
 	type PublicSiteContent,
 } from '@watts/core/site-content';
@@ -58,6 +60,25 @@ export function getCommitteePage(slug: string): Promise<PublicContentPage | null
 
 export function getProjectPage(slug: string): Promise<PublicContentPage | null> {
 	return cachedProjectPage(slug);
+}
+
+const cachedCommittees = unstable_cache(
+	() => listPublishedCommittees(db),
+	['site-content-committees'],
+	{
+		tags: [SITE_CONTENT_TAG],
+		revalidate: SITE_CONTENT_REVALIDATE,
+	},
+);
+
+/** Published committees for /committees — empty (not an error) when the DB is unreachable. */
+export async function getCommitteeDirectory(): Promise<CommitteeCard[]> {
+	try {
+		return await cachedCommittees();
+	} catch (err) {
+		console.warn('[site-content] committee directory unavailable:', (err as Error).message);
+		return [];
+	}
 }
 
 /** For generateStaticParams at build time — empty when the DB is unreachable (CI). */

@@ -1132,6 +1132,35 @@ function toPublicPerson(m: {
 	};
 }
 
+/**
+ * The About page already has photos for some committees (media slots). A committee
+ * page with no photos of its own shows those, so it isn't bare on day one.
+ */
+const COMMITTEE_ABOUT_SLOTS: Record<string, string[]> = {
+	'professional-development': ['about.prodev.1', 'about.prodev.2'],
+	service: ['about.service.1', 'about.service.2'],
+	social: ['about.social.1', 'about.social.2'],
+	workshop: ['about.workshops.1', 'about.workshops.2'],
+};
+
+/** Photo URLs for a committee's About-page slots: the uploaded replacement, else the default file. */
+async function committeeAboutPhotos(db: WattsDb, slug: string | null): Promise<string[]> {
+	const keys = slug ? (COMMITTEE_ABOUT_SLOTS[slug] ?? []) : [];
+	if (keys.length === 0) return [];
+	const rows = await db.select().from(SiteMediaSlots).where(inArray(SiteMediaSlots.slotKey, keys));
+	const assets = await getAssetsByIds(
+		db,
+		rows.map((r) => r.assetId).filter((id): id is string => Boolean(id)),
+	);
+	return keys
+		.map((key) => {
+			const assetId = rows.find((r) => r.slotKey === key)?.assetId;
+			const asset = assetId ? assets.get(assetId) : undefined;
+			return asset?.kind === 'image' ? asset.url : (getSlotDefinition(key)?.defaultSrc ?? null);
+		})
+		.filter((u): u is string => Boolean(u));
+}
+
 /** Render model for a committee page from `snap` (live fields or a revision snapshot). */
 async function buildCommitteePage(
 	db: WattsDb,
@@ -1171,7 +1200,9 @@ async function buildCommitteePage(
 		applyUrl: snap.applyUrl,
 		hero: snap.heroAssetId ? (assets.get(snap.heroAssetId) ?? null) : null,
 		gallery: snap.galleryAssetIds.map((id) => assets.get(id)).filter((a): a is PublicAsset => Boolean(a)),
-		legacyPhotoUrls: [],
+		// No photos chosen yet: borrow the committee's photos from the About page.
+		legacyPhotoUrls:
+			snap.heroAssetId || snap.galleryAssetIds.length > 0 ? [] : await committeeAboutPhotos(db, k.slug),
 		project: null,
 		committee: {
 			chair: chair
@@ -1341,6 +1372,50 @@ async function pagePreviewPath(db: WattsDb, type: ContentEntityType, id: string,
 		return p?.slug ? `/pages/project/${p.slug}/preview?revision=${revisionId}` : null;
 	}
 	return null;
+}
+
+export interface CommitteeCard {
+	slug: string;
+	title: string;
+	tagline: string | null;
+	/** Hero photo, else the first gallery or About-page photo. */
+	photoUrl: string | null;
+	chairName: string | null;
+}
+
+/** Published committees for the /committees directory, alphabetical. */
+export async function listPublishedCommittees(db: WattsDb): Promise<CommitteeCard[]> {
+	const rows = await db
+		.select({
+			slug: Committees.slug,
+			title: Committees.title,
+			tagline: Committees.tagline,
+			heroAssetId: Committees.heroAssetId,
+			galleryAssetIds: Committees.galleryAssetIds,
+			chairFirst: Members.firstName,
+			chairLast: Members.lastName,
+		})
+		.from(Committees)
+		.leftJoin(Members, eq(Members.id, Committees.chairId))
+		.where(and(eq(Committees.published, true), eq(Committees.active, true), isNotNull(Committees.slug)))
+		.orderBy(asc(Committees.title));
+	const assets = await getAssetsByIds(
+		db,
+		rows.flatMap((r) => [r.heroAssetId ?? '', r.galleryAssetIds[0] ?? '']).filter(Boolean),
+	);
+	return Promise.all(
+		rows.map(async (r) => {
+			const own = assets.get(r.heroAssetId ?? '') ?? assets.get(r.galleryAssetIds[0] ?? '');
+			const photoUrl = own?.url ?? (await committeeAboutPhotos(db, r.slug))[0] ?? null;
+			return {
+				slug: r.slug as string,
+				title: r.title,
+				tagline: r.tagline,
+				photoUrl,
+				chairName: r.chairFirst ? `${r.chairFirst} ${r.chairLast}` : null,
+			};
+		}),
+	);
 }
 
 export async function listPublishedPageSlugs(db: WattsDb) {
