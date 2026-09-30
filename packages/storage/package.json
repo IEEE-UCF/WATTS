@@ -14,14 +14,14 @@
     "./client": "./src/client.ts"
   },
   "dependencies": {
-    "@aws-sdk/client-s3": "^3.1124.0",
-    "@aws-sdk/s3-request-presigner": "^3.1124.0",
+    "@aws-sdk/client-s3": "^3.1141.0",
+    "@aws-sdk/s3-request-presigner": "^3.1141.0",
     "@vercel/blob": "^2.8.0",
     "@watts/core": "workspace:*",
     "@watts/db": "workspace:*",
     "@watts/permissions": "workspace:*",
     "browser-image-compression": "^2.0.2",
-    "drizzle-orm": "0.45.2",
+    "drizzle-orm": "0.45.3",
     "exifr": "^7.1.3"
   },
   "scripts": {
@@ -31,6 +31,6 @@
   "devDependencies": {
     "@watts/eslint-config": "workspace:*",
     "@watts/tsconfig": "workspace:*",
-    "eslint": "^10.10.0"
+    "eslint": "^10.11.0"
   }
 }

@@ -14,9 +14,9 @@
 		"typecheck": "tsc --noEmit"
 	},
 	"dependencies": {
-		"@aws-sdk/client-s3": "^3.1124.0",
+		"@aws-sdk/client-s3": "^3.1141.0",
 		"@watts/config": "workspace:*",
-		"pg": "8.16.3"
+		"pg": "8.23.0"
 	},
 	"devDependencies": {
 		"@playwright/test": "^1.50.0",
@@ -24,7 +24,7 @@
 		"@types/pg": "^8.16.0",
 		"@watts/eslint-config": "workspace:*",
 		"@watts/tsconfig": "workspace:*",
-		"eslint": "^10.10.0",
+		"eslint": "^10.11.0",
 		"pdf-lib": "^1.17.1"
 	}
 }

@@ -23,12 +23,12 @@
     "@watts/calendar": "workspace:*",
     "@watts/db": "workspace:*",
     "@watts/permissions": "workspace:*",
-    "drizzle-orm": "0.45.2"
+    "drizzle-orm": "0.45.3"
   },
   "devDependencies": {
     "@watts/eslint-config": "workspace:*",
     "@watts/tsconfig": "workspace:*",
-    "eslint": "^10.10.0"
+    "eslint": "^10.11.0"
   },
   "scripts": {
     "lint": "eslint .",

@@ -14,11 +14,11 @@
   },
   "dependencies": {
     "dotenv": "^17.2.4",
-    "zod": "^4.3.6"
+    "zod": "^4.6.5"
   },
   "devDependencies": {
     "@watts/eslint-config": "workspace:*",
     "@watts/tsconfig": "workspace:*",
-    "eslint": "^10.10.0"
+    "eslint": "^10.11.0"
   }
 }
