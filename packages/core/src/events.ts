@@ -1,7 +1,8 @@
-import { and, asc, eq, gte, inArray, lt } from 'drizzle-orm';
+import { and, asc, eq, gte, inArray, like, lt, or } from 'drizzle-orm';
 import type { WattsDb } from '@watts/db';
 import { Events, EventAttendees, EventLabels, Members, RoomReservations } from '@watts/db/schema';
 import { DomainError } from './errors';
+import { firstFreeSlug, slugify } from './slugs';
 
 export interface CreateEventInput {
 	title: string;
@@ -187,6 +188,26 @@ export async function getEventBySlug(db: WattsDb, slug: string) {
 	return { ...row.event, roomReservation: row.roomReservation };
 }
 
+/** "GBM #3: Industry Night" on Oct 2 → "gbm-3-industry-night-2026-10-02" (date in the event's own zone). */
+export function eventSlugBase(title: string, startTime: string, timeZone = 'America/New_York'): string {
+	const date = new Intl.DateTimeFormat('en-CA', {
+		timeZone,
+		year: 'numeric',
+		month: '2-digit',
+		day: '2-digit',
+	}).format(new Date(startTime));
+	return `${slugify(title, 45, 'event')}-${date}`;
+}
+
+/** A slug no other event uses, so every event can have a page at /events/[slug]. */
+export async function uniqueEventSlug(db: WattsDb, base: string): Promise<string> {
+	const rows = await db
+		.select({ slug: Events.slug })
+		.from(Events)
+		.where(or(eq(Events.slug, base), like(Events.slug, `${base}-%`)));
+	return firstFreeSlug(base, new Set(rows.map((r) => r.slug)));
+}
+
 export async function createEvent(
 	db: WattsDb,
 	input: CreateEventInput,
@@ -203,7 +224,9 @@ export async function createEvent(
 			committeeId: input.committeeId ?? null,
 			flyerUrl: input.flyerUrl ?? null,
 			rsvpLink: input.rsvpLink ?? null,
-			slug: input.slug ?? null,
+			slug:
+				input.slug?.trim() ||
+				(await uniqueEventSlug(db, eventSlugBase(input.title, input.startTime, input.timeZone))),
 			requiresDues: input.requiresDues ?? false,
 			labelId: input.labelId ?? null,
 			isGlobal: input.isGlobal ?? false,
@@ -606,15 +629,17 @@ export async function importEventsFromGoogle(db: WattsDb, opts: ImportFromGoogle
 		const hidden = allDay && !labelId;
 
 		if (!opts.dryRun) {
+			const timeZone = g.start?.timeZone ?? 'America/New_York';
 			await db.insert(Events).values({
 				title,
+				slug: await uniqueEventSlug(db, eventSlugBase(title, start, timeZone)),
 				description: g.description?.trim() || title,
 				location: g.location?.trim() || 'TBA',
 				startTime: new Date(start).toISOString(),
 				endTime: googleEnd(g),
 				allDay,
 				hidden,
-				timeZone: g.start?.timeZone ?? 'America/New_York',
+				timeZone,
 				labelId,
 				googleCalendarEventId: g.id,
 				syncStatus: 'synced',

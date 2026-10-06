@@ -4,15 +4,31 @@ import { useState, useEffect, useRef } from 'react';
 import { MapPin, CalendarIcon as Calendar1, X } from 'lucide-react';
 import { Button } from '@watts/ui/button';
 import Image from 'next/image';
+import Link from 'next/link';
 import { trpc } from '@/lib/trpc/client';
 
 interface Event {
+	/** Set when the event has a public page at /events/[slug]. */
+	slug: string | null;
 	eventName: string;
 	eventDate: string;
 	eventDesc: string;
 	eventAddress: string;
 	eventFlyer: string | null;
 	_sortDate: number;
+}
+
+/** "Event details →" to the event's own page, when it has one. */
+function EventDetailsLink({ slug }: { slug: string | null }) {
+	if (!slug) return null;
+	return (
+		<Link
+			href={`/events/${slug}`}
+			className="mt-2 self-start rounded-xs bg-ieee-bright-yellow px-5 py-3 font-display text-sm tracking-[0.08em] text-black hover:bg-ieee-dark-yellow"
+		>
+			EVENT DETAILS →
+		</Link>
+	);
 }
 
 export default function EventSidebar() {
@@ -52,6 +68,7 @@ export default function EventSidebar() {
 			eventDesc: e.description,
 			eventAddress: e.location,
 			eventFlyer: e.flyerUrl ?? null,
+			slug: e.slug ?? null,
 			_sortDate: new Date(e.startTimeRaw).getTime(),
 		}))
 		.sort((a, b) => a._sortDate - b._sortDate);
@@ -135,6 +152,7 @@ export default function EventSidebar() {
 													{currentEvent.eventAddress}
 												</div>
 											</div>
+											<EventDetailsLink slug={currentEvent.slug} />
 										</div>
 									</div>
 								</div>
@@ -184,6 +202,7 @@ export default function EventSidebar() {
 													{currentEvent.eventAddress}
 												</div>
 											</div>
+											<EventDetailsLink slug={currentEvent.slug} />
 										</div>
 									</div>
 								</div>

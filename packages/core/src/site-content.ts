@@ -11,7 +11,7 @@
 // partial failure leaves the live row and the history consistent enough to retry
 // (apply live first, then record the revision).
 
-import { and, asc, desc, eq, gt, inArray, isNotNull, isNull, or } from 'drizzle-orm';
+import { and, asc, count, desc, eq, gt, inArray, isNotNull, isNull, or } from 'drizzle-orm';
 import type { WattsDb } from '@watts/db';
 import {
 	Committees,
@@ -29,6 +29,7 @@ import {
 } from '@watts/db/schema';
 import { hasCapability, type CapabilitySubject } from '@watts/permissions';
 import { DomainError } from './errors';
+import { listCommitteeEvents, type EventSummary } from './event-page';
 import { getSlotDefinition, SITE_MEDIA_SLOTS, type SlotKind } from './site-media-slots';
 
 // ---------------------------------------------------------------------------
@@ -1071,6 +1072,15 @@ export interface PublicContentPage {
 	legacyPhotoUrls: string[];
 	/** Facts filled in from the project record (null on committee pages). */
 	project: PublicProjectFacts | null;
+	/** Facts filled in from the committee record (null on project pages). */
+	committee: PublicCommitteeFacts | null;
+}
+
+export interface PublicCommitteeFacts {
+	chair: (PublicPerson & { bio: string | null; linkedinUrl: string | null }) | null;
+	memberCount: number;
+	upcoming: EventSummary[];
+	past: EventSummary[];
 }
 
 /** A person shown on a public page: name, portrait and a short "Major · '27" line. */
@@ -1122,6 +1132,35 @@ function toPublicPerson(m: {
 	};
 }
 
+/**
+ * The About page already has photos for some committees (media slots). A committee
+ * page with no photos of its own shows those, so it isn't bare on day one.
+ */
+const COMMITTEE_ABOUT_SLOTS: Record<string, string[]> = {
+	'professional-development': ['about.prodev.1', 'about.prodev.2'],
+	service: ['about.service.1', 'about.service.2'],
+	social: ['about.social.1', 'about.social.2'],
+	workshop: ['about.workshops.1', 'about.workshops.2'],
+};
+
+/** Photo URLs for a committee's About-page slots: the uploaded replacement, else the default file. */
+async function committeeAboutPhotos(db: WattsDb, slug: string | null): Promise<string[]> {
+	const keys = slug ? (COMMITTEE_ABOUT_SLOTS[slug] ?? []) : [];
+	if (keys.length === 0) return [];
+	const rows = await db.select().from(SiteMediaSlots).where(inArray(SiteMediaSlots.slotKey, keys));
+	const assets = await getAssetsByIds(
+		db,
+		rows.map((r) => r.assetId).filter((id): id is string => Boolean(id)),
+	);
+	return keys
+		.map((key) => {
+			const assetId = rows.find((r) => r.slotKey === key)?.assetId;
+			const asset = assetId ? assets.get(assetId) : undefined;
+			return asset?.kind === 'image' ? asset.url : (getSlotDefinition(key)?.defaultSrc ?? null);
+		})
+		.filter((u): u is string => Boolean(u));
+}
+
 /** Render model for a committee page from `snap` (live fields or a revision snapshot). */
 async function buildCommitteePage(
 	db: WattsDb,
@@ -1130,11 +1169,25 @@ async function buildCommitteePage(
 ): Promise<PublicContentPage> {
 	const [chair] = k.chairId
 		? await db
-			.select({ first: Members.firstName, last: Members.lastName })
+			.select({
+				id: Members.id,
+				first: Members.firstName,
+				last: Members.lastName,
+				portraitUrl: Members.portraitUrl,
+				major: Members.major,
+				graduationYear: Members.graduationYear,
+				bio: Members.biography,
+				linkedinUrl: Members.linkedinURL,
+			})
 			.from(Members)
 			.where(eq(Members.id, k.chairId))
 			.limit(1)
 		: [];
+	const [{ n: memberCount }] = await db
+		.select({ n: count() })
+		.from(CommitteeMembers)
+		.where(eq(CommitteeMembers.committeeId, k.id));
+	const events = await listCommitteeEvents(db, k.id);
 	const assets = await getAssetsByIds(db, [snap.heroAssetId ?? '', ...snap.galleryAssetIds]);
 	return {
 		type: 'committee',
@@ -1147,8 +1200,22 @@ async function buildCommitteePage(
 		applyUrl: snap.applyUrl,
 		hero: snap.heroAssetId ? (assets.get(snap.heroAssetId) ?? null) : null,
 		gallery: snap.galleryAssetIds.map((id) => assets.get(id)).filter((a): a is PublicAsset => Boolean(a)),
-		legacyPhotoUrls: [],
+		// No photos chosen yet: borrow the committee's photos from the About page.
+		legacyPhotoUrls:
+			snap.heroAssetId || snap.galleryAssetIds.length > 0 ? [] : await committeeAboutPhotos(db, k.slug),
 		project: null,
+		committee: {
+			chair: chair
+				? {
+						...toPublicPerson({ ...chair, isLead: true }),
+						bio: chair.bio?.trim() || null,
+						linkedinUrl: chair.linkedinUrl?.trim() || null,
+					}
+				: null,
+			memberCount: Number(memberCount),
+			upcoming: events.upcoming,
+			past: events.past,
+		},
 	};
 }
 
@@ -1201,6 +1268,7 @@ async function buildProjectPage(
 			software: splitTags(p.softwareInfo),
 			team: members.map(toPublicPerson),
 		},
+		committee: null,
 	};
 }
 
@@ -1304,6 +1372,50 @@ async function pagePreviewPath(db: WattsDb, type: ContentEntityType, id: string,
 		return p?.slug ? `/pages/project/${p.slug}/preview?revision=${revisionId}` : null;
 	}
 	return null;
+}
+
+export interface CommitteeCard {
+	slug: string;
+	title: string;
+	tagline: string | null;
+	/** Hero photo, else the first gallery or About-page photo. */
+	photoUrl: string | null;
+	chairName: string | null;
+}
+
+/** Published committees for the /committees directory, alphabetical. */
+export async function listPublishedCommittees(db: WattsDb): Promise<CommitteeCard[]> {
+	const rows = await db
+		.select({
+			slug: Committees.slug,
+			title: Committees.title,
+			tagline: Committees.tagline,
+			heroAssetId: Committees.heroAssetId,
+			galleryAssetIds: Committees.galleryAssetIds,
+			chairFirst: Members.firstName,
+			chairLast: Members.lastName,
+		})
+		.from(Committees)
+		.leftJoin(Members, eq(Members.id, Committees.chairId))
+		.where(and(eq(Committees.published, true), eq(Committees.active, true), isNotNull(Committees.slug)))
+		.orderBy(asc(Committees.title));
+	const assets = await getAssetsByIds(
+		db,
+		rows.flatMap((r) => [r.heroAssetId ?? '', r.galleryAssetIds[0] ?? '']).filter(Boolean),
+	);
+	return Promise.all(
+		rows.map(async (r) => {
+			const own = assets.get(r.heroAssetId ?? '') ?? assets.get(r.galleryAssetIds[0] ?? '');
+			const photoUrl = own?.url ?? (await committeeAboutPhotos(db, r.slug))[0] ?? null;
+			return {
+				slug: r.slug as string,
+				title: r.title,
+				tagline: r.tagline,
+				photoUrl,
+				chairName: r.chairFirst ? `${r.chairFirst} ${r.chairLast}` : null,
+			};
+		}),
+	);
 }
 
 export async function listPublishedPageSlugs(db: WattsDb) {
