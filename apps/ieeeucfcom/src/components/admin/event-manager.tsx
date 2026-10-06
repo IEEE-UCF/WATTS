@@ -8,6 +8,13 @@ import { eventPath } from '@watts/core/event-path';
 import { uploadEventFlyer } from '@watts/storage/client';
 import { EventAttendeesSheet } from './event-attendees-sheet';
 import {
+	EMPTY_FILTERS,
+	EventFilterBar,
+	hasActiveFilters,
+	matchesEventFilters,
+	type EventFilters,
+} from './event-filters';
+import {
 	Table,
 	TableHeader,
 	TableBody,
@@ -836,6 +843,8 @@ export function EventManager({ initialView = 'upcoming' }: { initialView?: Event
 	const [attendeesFor, setAttendeesFor] = useState<string | null>(null);
 	const [showArchived, setShowArchived] = useState(false);
 	const [view, setViewState] = useState<EventView>(initialView);
+	// Shared by both tabs, so switching Upcoming ↔ Past keeps the search.
+	const [filters, setFilters] = useState<EventFilters>(EMPTY_FILTERS);
 	const [flyerBusy, setFlyerBusy] = useState<string | null>(null);
 	const flyerRef = useRef<HTMLInputElement>(null);
 	const flyerTarget = useRef<string | null>(null);
@@ -935,18 +944,21 @@ export function EventManager({ initialView = 'upcoming' }: { initialView?: Event
 	const { upcoming, past } = useMemo(() => {
 		const now = Date.now();
 		const byStart = (events ?? [])
-			.slice()
-			.sort(
-				(a, b) => parseWire(a.startTimeRaw).getTime() - parseWire(b.startTimeRaw).getTime(),
-			);
-		return {
-			upcoming: byStart.filter((e) => !isPast(e, now)),
-			past: byStart.filter((e) => isPast(e, now)).reverse(),
-		};
+			.map((ev) => ({ ev, start: parseWire(ev.startTimeRaw) }))
+			.sort((a, b) => a.start.getTime() - b.start.getTime());
+		const split = (wantPast: boolean) =>
+			byStart.filter(({ ev }) => isPast(ev, now) === wantPast);
+		return { upcoming: split(false), past: split(true).reverse() };
 	}, [events]);
-	const inView = view === 'past' ? past : upcoming;
+	const filterTab = (tab: typeof upcoming) =>
+		tab.filter(({ ev, start }) => matchesEventFilters(ev, start, filters)).map(({ ev }) => ev);
+	const filtered = { upcoming: filterTab(upcoming), past: filterTab(past) };
+	const inView = filtered[view];
 	const archivedCount = inView.filter((e) => !e.active).length;
 	const visible = inView.filter((e) => showArchived || e.active);
+	const unfilteredInView = (view === 'past' ? past : upcoming).filter(
+		({ ev }) => showArchived || ev.active,
+	).length;
 
 	/** Keep the tab in the URL (?view=past) so the past list can be linked/bookmarked. */
 	function setView(next: EventView) {
@@ -1082,8 +1094,8 @@ export function EventManager({ initialView = 'upcoming' }: { initialView?: Event
 			>
 				{(
 					[
-						['upcoming', 'Upcoming', upcoming],
-						['past', 'Past', past],
+						['upcoming', 'Upcoming', filtered.upcoming],
+						['past', 'Past', filtered.past],
 					] as const
 				).map(([key, label, list]) => (
 					<button
@@ -1105,6 +1117,14 @@ export function EventManager({ initialView = 'upcoming' }: { initialView?: Event
 					</button>
 				))}
 			</div>
+
+			<EventFilterBar
+				filters={filters}
+				onChange={setFilters}
+				labels={labels ?? []}
+				shown={visible.length}
+				total={unfilteredInView}
+			/>
 
 			{importPreview && (
 				<div className="mb-6 rounded-lg border border-input bg-card/60 p-4 text-sm">
@@ -1342,9 +1362,11 @@ export function EventManager({ initialView = 'upcoming' }: { initialView?: Event
 							<TableEmpty colSpan={7}>
 								{(events ?? []).length === 0
 									? 'No events yet.'
-									: view === 'past'
-										? 'No past events.'
-										: 'No upcoming events.'}
+									: hasActiveFilters(filters)
+										? `No ${view} events match these filters.`
+										: view === 'past'
+											? 'No past events.'
+											: 'No upcoming events.'}
 							</TableEmpty>
 						)}
 					</TableBody>
