@@ -49,7 +49,7 @@ export function SiteContentManager() {
 					className={`${buttonClass} ml-auto`}
 					disabled={refresh.isPending}
 					onClick={() => refresh.mutate()}
-					title="Public pages refresh automatically when you save. Use this after a bulk import."
+					title="Public pages (including event pages) refresh automatically when you save. Use this after a bulk import or a database script."
 				>
 					{refresh.isSuccess ? 'Public pages refreshed' : 'Refresh public pages'}
 				</button>
