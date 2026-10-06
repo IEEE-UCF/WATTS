@@ -106,6 +106,14 @@ export const entriesMeta: EntryMeta[] = [
 		notes: 'Never imported by the app today.',
 	},
 	{
+		slug: 'ui/dialog',
+		name: 'Dialog',
+		group: 'ui',
+		status: 'ok',
+		source: '@watts/ui/dialog',
+		notes: 'Centered modal; used by the admin event create/edit form.',
+	},
+	{
 		slug: 'ui/sheet',
 		name: 'Sheet',
 		group: 'ui',

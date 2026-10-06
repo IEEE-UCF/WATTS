@@ -1,6 +1,7 @@
 'use client';
 
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { ImageUp, RefreshCw } from 'lucide-react';
 import { trpc } from '@/lib/trpc/client';
 import type { RouterOutputs } from '@watts/api';
 import { eventPath } from '@watts/core/event-path';
@@ -15,6 +16,13 @@ import {
 	TableCell,
 	TableEmpty,
 } from '@watts/ui/table';
+import {
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogHeader,
+	DialogTitle,
+} from '@watts/ui/dialog';
 
 type AdminEvent = RouterOutputs['event']['getAllForAdmin'][number];
 type Label = RouterOutputs['eventLabel']['list'][number];
@@ -83,6 +91,135 @@ function toLocalInput(raw: string | null | undefined): string {
 	const d = parseWire(raw);
 	if (Number.isNaN(d.getTime())) return '';
 	return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+}
+
+// ─────────────────────────── flyer drop zone ───────────────────────────
+
+/**
+ * Big poster-shaped click-or-drop target. Shows the picked file (or the event's current
+ * flyer) so officers can read dates/rooms off it while filling in the rest of the form.
+ */
+function FlyerDrop({
+	file,
+	currentUrl,
+	onPick,
+}: {
+	file: File | null;
+	currentUrl: string | null;
+	onPick: (file: File | null) => void;
+}) {
+	const inputRef = useRef<HTMLInputElement>(null);
+	const [dragging, setDragging] = useState(false);
+	const [rejected, setRejected] = useState(false);
+	const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
+	useEffect(() => {
+		if (!file) {
+			setPreviewUrl(null);
+			return;
+		}
+		const url = URL.createObjectURL(file);
+		setPreviewUrl(url);
+		return () => URL.revokeObjectURL(url);
+	}, [file]);
+
+	function take(f: File | undefined) {
+		if (!f) return;
+		const ok = FLYER_ACCEPT.split(',').includes(f.type);
+		setRejected(!ok);
+		if (ok) onPick(f);
+	}
+
+	const shown = previewUrl ?? currentUrl;
+
+	return (
+		<div className="flex flex-col gap-2">
+			<span className="text-xs text-muted-foreground">
+				Flyer{' '}
+				{currentUrl && !file ? '(click or drop to replace)' : '(click or drop to upload)'}
+			</span>
+			<button
+				type="button"
+				onClick={() => inputRef.current?.click()}
+				onDragOver={(e) => {
+					e.preventDefault();
+					setDragging(true);
+				}}
+				onDragLeave={() => setDragging(false)}
+				onDrop={(e) => {
+					e.preventDefault();
+					setDragging(false);
+					take(e.dataTransfer.files?.[0]);
+				}}
+				className={`group relative flex aspect-video w-full items-center justify-center overflow-hidden rounded-lg border-2 border-dashed transition-colors md:aspect-[4/5] ${
+					dragging
+						? 'border-ieee-dark-yellow bg-ieee-dark-yellow/10'
+						: shown
+							? 'border-border bg-black/40 hover:border-ieee-dark-yellow'
+							: 'border-ieee-dark-yellow/60 bg-ieee-dark-yellow/5 hover:border-ieee-dark-yellow hover:bg-ieee-dark-yellow/10'
+				}`}
+			>
+				{shown ? (
+					<>
+						{/* eslint-disable-next-line @next/next/no-img-element */}
+						<img
+							src={shown}
+							alt="Flyer preview"
+							className="h-full w-full object-contain"
+						/>
+						<span className="absolute inset-x-0 bottom-0 flex items-center justify-center gap-2 bg-black/70 py-2 text-xs font-semibold text-white opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100">
+							<RefreshCw className="size-3.5" /> Replace flyer
+						</span>
+					</>
+				) : (
+					<span className="flex flex-col items-center gap-3 px-4 text-center">
+						<span className="flex size-14 items-center justify-center rounded-full bg-ieee-dark-yellow text-black">
+							<ImageUp className="size-7" />
+						</span>
+						<span className="text-sm font-semibold text-foreground">Upload flyer</span>
+						<span className="text-xs text-muted-foreground">
+							Click to browse or drag an image here
+							<br />
+							JPG, PNG or WebP
+						</span>
+					</span>
+				)}
+			</button>
+			<input
+				ref={inputRef}
+				id="flyer"
+				type="file"
+				accept={FLYER_ACCEPT}
+				className="hidden"
+				onChange={(e) => {
+					take(e.target.files?.[0]);
+					e.target.value = '';
+				}}
+			/>
+			{file && (
+				<div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
+					<span className="truncate" title={file.name}>
+						{file.name}
+					</span>
+					<button
+						type="button"
+						onClick={() => onPick(null)}
+						className="shrink-0 text-red-400 hover:underline"
+					>
+						remove
+					</button>
+				</div>
+			)}
+			{rejected && (
+				<p className="text-xs text-red-400">That file type isn&apos;t supported.</p>
+			)}
+			{!currentUrl && !file && (
+				<p className="text-xs text-amber-400">
+					No flyer yet — you can add one later, but don&apos;t forget.
+				</p>
+			)}
+		</div>
+	);
 }
 
 // ─────────────────────────── event create / edit form ───────────────────────────
@@ -235,284 +372,300 @@ function EventForm({
 	const field = 'w-full rounded-md border border-input bg-card px-3 py-2 text-sm text-foreground';
 
 	return (
-		<form
-			onSubmit={submit}
-			className="mb-8 space-y-4 rounded-lg border border-border bg-card/50 p-5"
+		<DialogContent
+			className="gap-0 overflow-hidden p-0 sm:max-w-4xl"
+			// A stray click outside shouldn't throw away a half-filled form.
+			onInteractOutside={(e) => e.preventDefault()}
+			onEscapeKeyDown={(e) => pending && e.preventDefault()}
 		>
-			<h3 className="text-sm font-semibold text-foreground">
-				{editing ? `Edit “${editing.title}”` : 'New event'}
-			</h3>
+			<DialogHeader className="border-b border-border px-6 py-4">
+				<DialogTitle>{editing ? `Edit “${editing.title}”` : 'New event'}</DialogTitle>
+				<DialogDescription>
+					{editing
+						? 'Changes sync to Google Calendar (and Discord, if global) on save.'
+						: 'Mirrors to the chapter Google Calendar once created.'}
+				</DialogDescription>
+			</DialogHeader>
 
-			<div className="grid gap-4 sm:grid-cols-2">
-				<label className="block">
-					<span className="mb-1 block text-xs text-muted-foreground">Title</span>
-					<input
-						id="title"
-						required
-						value={form.title}
-						onChange={(e) => set('title', e.target.value)}
-						className={field}
-					/>
-				</label>
-				<label className="block">
-					<span className="mb-1 block text-xs text-muted-foreground">Location</span>
-					<input
-						id="location"
-						required
-						value={form.location}
-						onChange={(e) => set('location', e.target.value)}
-						className={field}
-					/>
-				</label>
-				<label className="block">
-					<span className="mb-1 block text-xs text-muted-foreground">Start</span>
-					<input
-						id="startTime"
-						type="datetime-local"
-						required
-						value={form.startTime}
-						onChange={(e) => set('startTime', e.target.value)}
-						className={field}
-					/>
-				</label>
-				<label className="block">
-					<span className="mb-1 block text-xs text-muted-foreground">End</span>
-					<input
-						id="endTime"
-						type="datetime-local"
-						value={form.endTime}
-						onChange={(e) => set('endTime', e.target.value)}
-						className={field}
-					/>
-				</label>
-				<label className="block">
-					<span className="mb-1 block text-xs text-muted-foreground">Category</span>
-					<select
-						id="labelId"
-						value={form.labelId}
-						onChange={(e) => set('labelId', e.target.value)}
-						className={field}
-					>
-						<option value="">— none —</option>
-						{labels
-							.filter((l) => l.active || l.id === form.labelId)
-							.map((l) => (
-								<option key={l.id} value={l.id}>
-									{l.name}
-								</option>
-							))}
-					</select>
-				</label>
-				<label className="block">
-					<span className="mb-1 block text-xs text-muted-foreground">Time zone</span>
-					<select
-						id="timeZone"
-						value={form.timeZone}
-						onChange={(e) => set('timeZone', e.target.value)}
-						className={field}
-					>
-						{COMMON_TZ.map((tz) => (
-							<option key={tz} value={tz}>
-								{tz}
-							</option>
-						))}
-					</select>
-				</label>
-			</div>
+			<form onSubmit={submit} className="flex min-h-0 flex-1 flex-col">
+				<div className="grid min-h-0 flex-1 gap-6 overflow-y-auto px-6 py-5 md:grid-cols-[240px_1fr]">
+					<div className="md:sticky md:top-0 md:self-start">
+						<FlyerDrop
+							file={flyerFile}
+							currentUrl={editing?.flyerUrl ?? null}
+							onPick={setFlyerFile}
+						/>
+					</div>
 
-			<label className="block">
-				<span className="mb-1 block text-xs text-muted-foreground">Description</span>
-				<textarea
-					id="description"
-					required
-					rows={3}
-					value={form.description}
-					onChange={(e) => set('description', e.target.value)}
-					className={field}
-				/>
-			</label>
+					<div className="min-w-0 space-y-4">
+						<div className="grid gap-4 sm:grid-cols-2">
+							<label className="block">
+								<span className="mb-1 block text-xs text-muted-foreground">
+									Title
+								</span>
+								<input
+									id="title"
+									required
+									value={form.title}
+									onChange={(e) => set('title', e.target.value)}
+									className={field}
+								/>
+							</label>
+							<label className="block">
+								<span className="mb-1 block text-xs text-muted-foreground">
+									Location
+								</span>
+								<input
+									id="location"
+									required
+									value={form.location}
+									onChange={(e) => set('location', e.target.value)}
+									className={field}
+								/>
+							</label>
+							<label className="block">
+								<span className="mb-1 block text-xs text-muted-foreground">
+									Start
+								</span>
+								<input
+									id="startTime"
+									type="datetime-local"
+									required
+									value={form.startTime}
+									onChange={(e) => set('startTime', e.target.value)}
+									className={field}
+								/>
+							</label>
+							<label className="block">
+								<span className="mb-1 block text-xs text-muted-foreground">
+									End
+								</span>
+								<input
+									id="endTime"
+									type="datetime-local"
+									value={form.endTime}
+									onChange={(e) => set('endTime', e.target.value)}
+									className={field}
+								/>
+							</label>
+							<label className="block">
+								<span className="mb-1 block text-xs text-muted-foreground">
+									Category
+								</span>
+								<select
+									id="labelId"
+									value={form.labelId}
+									onChange={(e) => set('labelId', e.target.value)}
+									className={field}
+								>
+									<option value="">— none —</option>
+									{labels
+										.filter((l) => l.active || l.id === form.labelId)
+										.map((l) => (
+											<option key={l.id} value={l.id}>
+												{l.name}
+											</option>
+										))}
+								</select>
+							</label>
+							<label className="block">
+								<span className="mb-1 block text-xs text-muted-foreground">
+									Time zone
+								</span>
+								<select
+									id="timeZone"
+									value={form.timeZone}
+									onChange={(e) => set('timeZone', e.target.value)}
+									className={field}
+								>
+									{COMMON_TZ.map((tz) => (
+										<option key={tz} value={tz}>
+											{tz}
+										</option>
+									))}
+								</select>
+							</label>
+						</div>
 
-			<div className="grid gap-4 sm:grid-cols-2">
-				<label className="block">
-					<span className="mb-1 block text-xs text-muted-foreground">
-						RSVP link (optional)
-					</span>
-					<input
-						id="rsvpLink"
-						value={form.rsvpLink}
-						onChange={(e) => set('rsvpLink', e.target.value)}
-						className={field}
-					/>
-				</label>
-				<div className="block">
-					<span className="mb-1 block text-xs text-muted-foreground">Public page</span>
-					<p className="py-2 text-sm text-muted-foreground">
-						{editing ? (
-							<a
-								href={eventPath(editing)}
-								target="_blank"
-								rel="noreferrer"
-								className="text-blue-400 hover:underline"
-							>
-								ieeeucf.com{eventPath(editing)}
-							</a>
-						) : (
-							'Made from the title once saved.'
-						)}{' '}
-						The name part follows the title; old links keep working.
-					</p>
+						<label className="block">
+							<span className="mb-1 block text-xs text-muted-foreground">
+								Description
+							</span>
+							<textarea
+								id="description"
+								required
+								rows={3}
+								value={form.description}
+								onChange={(e) => set('description', e.target.value)}
+								className={field}
+							/>
+						</label>
+
+						<div className="grid gap-4 sm:grid-cols-2">
+							<label className="block">
+								<span className="mb-1 block text-xs text-muted-foreground">
+									RSVP link (optional)
+								</span>
+								<input
+									id="rsvpLink"
+									value={form.rsvpLink}
+									onChange={(e) => set('rsvpLink', e.target.value)}
+									className={field}
+								/>
+							</label>
+							<div className="block">
+								<span className="mb-1 block text-xs text-muted-foreground">
+									Public page
+								</span>
+								<p className="py-2 text-sm text-muted-foreground">
+									{editing ? (
+										<a
+											href={eventPath(editing)}
+											target="_blank"
+											rel="noreferrer"
+											className="text-blue-400 hover:underline"
+										>
+											ieeeucf.com{eventPath(editing)}
+										</a>
+									) : (
+										'Made from the title once saved.'
+									)}{' '}
+									The name part follows the title; old links keep working.
+								</p>
+							</div>
+						</div>
+
+						<div className="flex flex-wrap gap-6 text-sm text-muted-foreground">
+							<label className="flex items-center gap-2">
+								<input
+									id="isGlobal"
+									type="checkbox"
+									checked={form.isGlobal}
+									onChange={(e) => set('isGlobal', e.target.checked)}
+								/>
+								Global (also post to Discord)
+							</label>
+							<label className="flex items-center gap-2">
+								<input
+									id="hidden"
+									type="checkbox"
+									checked={form.hidden}
+									onChange={(e) => set('hidden', e.target.checked)}
+								/>
+								Hidden (keep in the calendar, hide from the events feed)
+							</label>
+							<label className="flex items-center gap-2">
+								<input
+									id="allDay"
+									type="checkbox"
+									checked={form.allDay}
+									onChange={(e) => set('allDay', e.target.checked)}
+								/>
+								All-day
+							</label>
+							<label className="flex items-center gap-2">
+								<input
+									id="pingCreatorOnUpdate"
+									type="checkbox"
+									checked={form.pingCreatorOnUpdate}
+									onChange={(e) => set('pingCreatorOnUpdate', e.target.checked)}
+								/>
+								Ping Creator on Discord for updates
+							</label>
+							<label className="flex items-center gap-2">
+								<input
+									id="requiresDues"
+									type="checkbox"
+									checked={form.requiresDues}
+									onChange={(e) => set('requiresDues', e.target.checked)}
+								/>
+								Requires dues
+							</label>
+						</div>
+
+						<div className="grid gap-4 sm:grid-cols-3">
+							<label className="block">
+								<span className="mb-1 block text-xs text-muted-foreground">
+									SU Room Reservation
+								</span>
+								<select
+									id="roomReservationStatus"
+									value={form.roomReservationStatus}
+									onChange={(e) =>
+										set(
+											'roomReservationStatus',
+											e.target.value as RoomReservationStatus,
+										)
+									}
+									className={field}
+								>
+									{ROOM_RESERVATION_STATUSES.map((s) => (
+										<option key={s} value={s}>
+											{ROOM_RESERVATION_LABELS[s]}
+										</option>
+									))}
+								</select>
+							</label>
+							{form.roomReservationStatus !== 'none' && (
+								<>
+									<label className="block">
+										<span className="mb-1 block text-xs text-muted-foreground">
+											Room (optional)
+										</span>
+										<input
+											id="roomReservationRoom"
+											value={form.roomReservationRoom}
+											onChange={(e) =>
+												set('roomReservationRoom', e.target.value)
+											}
+											className={field}
+										/>
+									</label>
+									<label className="block">
+										<span className="mb-1 block text-xs text-muted-foreground">
+											Reservation # (optional)
+										</span>
+										<input
+											id="roomReservationNumber"
+											value={form.roomReservationNumber}
+											onChange={(e) =>
+												set('roomReservationNumber', e.target.value)
+											}
+											className={field}
+										/>
+									</label>
+								</>
+							)}
+						</div>
+					</div>
 				</div>
-			</div>
 
-			<div className="flex flex-wrap gap-6 text-sm text-muted-foreground">
-				<label className="flex items-center gap-2">
-					<input
-						id="isGlobal"
-						type="checkbox"
-						checked={form.isGlobal}
-						onChange={(e) => set('isGlobal', e.target.checked)}
-					/>
-					Global (also post to Discord)
-				</label>
-				<label className="flex items-center gap-2">
-					<input
-						id="hidden"
-						type="checkbox"
-						checked={form.hidden}
-						onChange={(e) => set('hidden', e.target.checked)}
-					/>
-					Hidden (keep in the calendar, hide from the events feed)
-				</label>
-				<label className="flex items-center gap-2">
-					<input
-						id="allDay"
-						type="checkbox"
-						checked={form.allDay}
-						onChange={(e) => set('allDay', e.target.checked)}
-					/>
-					All-day
-				</label>
-				<label className="flex items-center gap-2">
-					<input
-						id="pingCreatorOnUpdate"
-						type="checkbox"
-						checked={form.pingCreatorOnUpdate}
-						onChange={(e) => set('pingCreatorOnUpdate', e.target.checked)}
-					/>
-					Ping Creator on Discord for updates
-				</label>
-				<label className="flex items-center gap-2">
-					<input
-						id="requiresDues"
-						type="checkbox"
-						checked={form.requiresDues}
-						onChange={(e) => set('requiresDues', e.target.checked)}
-					/>
-					Requires dues
-				</label>
-			</div>
-
-			<div className="grid gap-4 sm:grid-cols-3">
-				<label className="block">
-					<span className="mb-1 block text-xs text-muted-foreground">
-						SU Room Reservation
-					</span>
-					<select
-						id="roomReservationStatus"
-						value={form.roomReservationStatus}
-						onChange={(e) =>
-							set('roomReservationStatus', e.target.value as RoomReservationStatus)
-						}
-						className={field}
+				<div className="flex flex-wrap items-center justify-end gap-3 border-t border-border px-6 py-4">
+					{error && <p className="mr-auto text-sm text-red-400">{error}</p>}
+					<button
+						type="button"
+						disabled={pending}
+						onClick={() => onDone()}
+						className="rounded-md border border-input px-4 py-2 text-sm text-muted-foreground disabled:opacity-50"
 					>
-						{ROOM_RESERVATION_STATUSES.map((s) => (
-							<option key={s} value={s}>
-								{ROOM_RESERVATION_LABELS[s]}
-							</option>
-						))}
-					</select>
-				</label>
-				{form.roomReservationStatus !== 'none' && (
-					<>
-						<label className="block">
-							<span className="mb-1 block text-xs text-muted-foreground">
-								Room (optional)
-							</span>
-							<input
-								id="roomReservationRoom"
-								value={form.roomReservationRoom}
-								onChange={(e) => set('roomReservationRoom', e.target.value)}
-								className={field}
-							/>
-						</label>
-						<label className="block">
-							<span className="mb-1 block text-xs text-muted-foreground">
-								Reservation # (optional)
-							</span>
-							<input
-								id="roomReservationNumber"
-								value={form.roomReservationNumber}
-								onChange={(e) => set('roomReservationNumber', e.target.value)}
-								className={field}
-							/>
-						</label>
-					</>
-				)}
-			</div>
-
-			<div className="flex flex-wrap items-center gap-4">
-				{editing?.flyerUrl && !flyerFile && (
-					// eslint-disable-next-line @next/next/no-img-element
-					<img
-						src={editing.flyerUrl}
-						alt="current flyer"
-						className="h-16 w-16 rounded object-cover"
-					/>
-				)}
-				<label className="block">
-					<span className="mb-1 block text-xs text-muted-foreground">
-						{editing?.flyerUrl ? 'Replace flyer (optional)' : 'Flyer'}
-					</span>
-					<input
-						id="flyer"
-						type="file"
-						accept={FLYER_ACCEPT}
-						onChange={(e) => setFlyerFile(e.target.files?.[0] ?? null)}
-						className="text-sm text-muted-foreground"
-					/>
-				</label>
-				{!editing?.flyerUrl && !flyerFile && (
-					<span className="text-xs text-amber-400">
-						No flyer yet — you can add one later, but don&apos;t forget.
-					</span>
-				)}
-			</div>
-
-			{error && <p className="text-sm text-red-400">{error}</p>}
-
-			<div className="flex gap-3">
-				<button
-					type="submit"
-					disabled={pending}
-					className="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
-				>
-					{uploadingFlyer
-						? 'Uploading flyer…'
-						: pending
-							? 'Saving…'
-							: editing
-								? 'Save changes'
-								: 'Create event'}
-				</button>
-				<button
-					type="button"
-					onClick={() => onDone()}
-					className="rounded-md border border-input px-4 py-2 text-sm text-muted-foreground"
-				>
-					Cancel
-				</button>
-			</div>
-		</form>
+						Cancel
+					</button>
+					<button
+						type="submit"
+						disabled={pending}
+						className="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+					>
+						{uploadingFlyer
+							? 'Uploading flyer…'
+							: pending
+								? 'Saving…'
+								: editing
+									? 'Save changes'
+									: 'Create event'}
+					</button>
+				</div>
+			</form>
+		</DialogContent>
 	);
 }
 
@@ -670,6 +823,9 @@ export function EventManager() {
 
 	const [showForm, setShowForm] = useState(false);
 	const [editing, setEditing] = useState<AdminEvent | null>(null);
+	// Bumped on every open so the form remounts with fresh values, while the dialog
+	// itself stays mounted long enough to play its close animation.
+	const [formKey, setFormKey] = useState(0);
 	const [attendeesFor, setAttendeesFor] = useState<string | null>(null);
 	const [showArchived, setShowArchived] = useState(false);
 	const [showPast, setShowPast] = useState(false);
@@ -783,10 +939,12 @@ export function EventManager() {
 
 	function openCreate() {
 		setEditing(null);
+		setFormKey((k) => k + 1);
 		setShowForm(true);
 	}
 	function openEdit(ev: AdminEvent) {
 		setEditing(ev);
+		setFormKey((k) => k + 1);
 		setShowForm(true);
 	}
 
@@ -942,15 +1100,14 @@ export function EventManager() {
 				</div>
 			)}
 
-			{showForm && (
+			<Dialog open={showForm} onOpenChange={(open) => !open && setShowForm(false)}>
 				<EventForm
-					// Remount on create↔edit switch so the form never keeps stale values.
-					key={editing?.id ?? 'new'}
+					key={formKey}
 					labels={labels ?? []}
 					editing={editing}
 					onDone={onFormDone}
 				/>
-			)}
+			</Dialog>
 
 			<input
 				ref={flyerRef}

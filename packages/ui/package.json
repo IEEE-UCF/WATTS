@@ -12,6 +12,7 @@
     "./card": "./src/card.tsx",
     "./carousel": "./src/carousel.tsx",
     "./chart": "./src/chart.tsx",
+    "./dialog": "./src/dialog.tsx",
     "./field": "./src/field.tsx",
     "./hover-card": "./src/hover-card.tsx",
     "./input": "./src/input.tsx",
