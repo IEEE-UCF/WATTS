@@ -42,7 +42,7 @@ export function EventPageView({ event, pageUrl }: { event: PublicEventPage; page
 		location: where,
 		details: `${event.description}\n\n${pageUrl}`,
 	});
-	const icsHref = `/events/${event.slug}/calendar.ics`;
+	const icsHref = `/events/${event.number}/calendar.ics`;
 
 	const tags: HeroTag[] = [];
 	if (event.label) tags.push({ label: event.label.name, tone: 'solid' });

@@ -93,7 +93,8 @@ function sampleEvent(id: string, days: number, title: string, attended?: number)
 	const end = new Date(start.getTime() + 90 * 60_000);
 	return {
 		id,
-		slug: null,
+		number: 900 + days,
+		slug: title.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
 		title,
 		startTime: start.toISOString(),
 		endTime: end.toISOString(),

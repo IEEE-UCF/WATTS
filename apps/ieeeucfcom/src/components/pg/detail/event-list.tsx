@@ -1,10 +1,10 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
-import type { EventSummary } from '@watts/core/event-page';
+import { eventPath, type EventSummary } from '@watts/core/event-page';
 import { dateBlock, shortDate, timeRange } from '@/lib/event-dates';
 
-/** Wraps an event in a link to its page when it has one. */
+/** Wraps an event in a link to its page. */
 function EventLink({
 	event,
 	className,
@@ -14,12 +14,10 @@ function EventLink({
 	className: string;
 	children: ReactNode;
 }) {
-	return event.slug ? (
-		<Link href={`/events/${event.slug}`} className={`group ${className}`}>
+	return (
+		<Link href={eventPath(event)} className={`group ${className}`}>
 			{children}
 		</Link>
-	) : (
-		<div className={className}>{children}</div>
 	);
 }
 
@@ -51,11 +49,9 @@ export function EventRows({ events }: { events: EventSummary[] }) {
 									{timeRange(e)} · {e.location}
 								</span>
 							</div>
-							{e.slug && (
-								<span className="hidden shrink-0 font-heading text-sm text-ieee-bright-yellow sm:block">
-									Details →
-								</span>
-							)}
+							<span className="hidden shrink-0 font-heading text-sm text-ieee-bright-yellow sm:block">
+								Details →
+							</span>
 						</EventLink>
 					</li>
 				);

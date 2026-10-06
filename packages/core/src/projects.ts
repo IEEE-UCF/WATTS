@@ -1,7 +1,8 @@
-import { and, asc, eq, inArray, like, or, sql } from 'drizzle-orm';
+import { and, asc, eq, inArray, like, ne, or, sql } from 'drizzle-orm';
 import type { WattsDb } from '@watts/db';
 import { Projects, ProjectMembers, ProjectMembershipRequests, Members } from '@watts/db/schema';
 import { DomainError } from './errors';
+import { recordRedirect } from './redirects';
 import { firstFreeSlug, slugify } from './slugs';
 
 export interface CreateProjectInput {
@@ -136,6 +137,32 @@ export async function createProject(db: WattsDb, input: CreateProjectInput) {
 
 export async function updateProject(db: WattsDb, id: string, data: UpdateProjectInput) {
 	const patch: Partial<typeof Projects.$inferInsert> = { ...data, updatedAt: new Date() };
+	if (data.slug !== undefined) {
+		const [current] = await db
+			.select({ slug: Projects.slug, title: Projects.title })
+			.from(Projects)
+			.where(eq(Projects.id, id))
+			.limit(1);
+		if (!current) throw new DomainError('NOT_FOUND', 'Project not found');
+		// A blank address is remade from the title rather than removed, so the page never
+		// loses its URL. What's typed is cleaned up the same way automatic ones are.
+		const wanted = data.slug?.trim()
+			? slugify(data.slug, 56, 'project')
+			: slugifyTitle(data.title ?? current.title);
+		if (wanted === current.slug) {
+			delete patch.slug;
+		} else {
+			const [taken] = await db
+				.select({ id: Projects.id })
+				.from(Projects)
+				.where(and(eq(Projects.slug, wanted), ne(Projects.id, id)))
+				.limit(1);
+			if (taken) throw new DomainError('CONFLICT', `Another project already uses /projects/${wanted}`);
+			patch.slug = wanted;
+			// Links to the old address keep working (see app/projects/[slug]/page.tsx).
+			await recordRedirect(db, 'project', current.slug, id);
+		}
+	}
 	if (data.status) {
 		const [current] = await db
 			.select({ status: Projects.status })

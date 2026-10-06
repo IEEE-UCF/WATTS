@@ -1,4 +1,4 @@
-import { pgTable, uuid, foreignKey, varchar, boolean, date, integer, text, timestamp, pgEnum, index, unique, uniqueIndex, jsonb } from 'drizzle-orm/pg-core';
+import { pgTable, uuid, foreignKey, varchar, boolean, date, integer, serial, text, timestamp, pgEnum, index, unique, uniqueIndex, jsonb } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm/sql/sql';
 import { relations } from "drizzle-orm";
 
@@ -376,6 +376,9 @@ export const EventLabels = pgTable("event_labels", {
 // Events
 export const Events = pgTable("events", {
 	id: uuid().defaultRandom().primaryKey().notNull(),
+	// Short permanent number for public URLs: /events/[number]/[slug]. The slug is just
+	// the readable part and follows the title; the number is what's looked up.
+	number: serial("number").notNull(),
 	title: varchar({ length: 255 }).notNull(),
 	location: varchar({ length: 255 }).notNull(),
 	committeeId: uuid("committee_id"),
@@ -434,7 +437,9 @@ export const Events = pgTable("events", {
 		foreignColumns: [Users.id],
 		name: "events_created_by_user_id_users_id_fk",
 	}).onDelete("set null"),
-	unique("events_slug_unique").on(table.slug),
+	unique("events_number_unique").on(table.number),
+	// Not unique: two "IEEE Office Hours" can share a slug, the number tells them apart.
+	index("events_idx_slug").on(table.slug),
 ]);
 // EventAttendees: Join table for many-to-many relation between Events and Members
 export const EventAttendees = pgTable('event_attendees', {
@@ -865,6 +870,24 @@ export const OfficerProfiles = pgTable('officer_profiles', {
 	updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow().$onUpdate(() => sql`now()`),
 }, (table) => [
 	index('officer_profiles_idx_active_sort').on(table.active, table.group, table.sortOrder),
+]);
+
+export const pageRedirectTypeEnum = pgEnum('page_redirect_type_enum', ['event', 'project']);
+
+// PageRedirects: addresses a public page used to have. When an event or project slug
+// changes, the old one lands here so links already shared (Discord, flyers, QR codes)
+// still reach the page. Rows are never deleted by the app.
+export const PageRedirects = pgTable('page_redirects', {
+	id: uuid('id').primaryKey().defaultRandom(),
+	type: pageRedirectTypeEnum('type').notNull(),
+	oldSlug: varchar('old_slug', { length: 64 }).notNull(),
+	// events.id / projects.id. No FK: one column serves two tables, and a deleted
+	// target just means the redirect resolves to "not found".
+	targetId: uuid('target_id').notNull(),
+	createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+}, (table) => [
+	unique('page_redirects_type_old_slug_unique').on(table.type, table.oldSlug),
+	index('page_redirects_idx_target_id').on(table.targetId),
 ]);
 
 // PageEditors: explicit per-page edit assignments (on top of chairs/leads, who can
