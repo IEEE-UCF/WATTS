@@ -228,7 +228,7 @@ function ProjectForm({
 				</label>
 				<label className="block">
 					<span className="mb-1 block text-xs text-muted-foreground">
-						Slug (optional)
+						Slug (web address; made from the title if left blank)
 					</span>
 					<input
 						value={form.slug}
@@ -661,6 +661,43 @@ export function ProjectManager() {
 												</div>
 												<div className="text-xs text-muted-foreground-dim">
 													{p.overview.slice(0, 80)}
+												</div>
+												<div className="mt-1 flex flex-wrap items-center gap-x-3 text-xs">
+													{p.slug ? (
+														<>
+															<span
+																className={
+																	p.published
+																		? 'text-emerald-400'
+																		: 'text-muted-foreground'
+																}
+															>
+																{p.published
+																	? 'Page live'
+																	: 'Page not published'}
+															</span>
+															<a
+																href={`/pages/project/${p.slug}/edit`}
+																className="text-blue-400 hover:underline"
+															>
+																Edit page
+															</a>
+															{p.published && (
+																<a
+																	href={`/projects/${p.slug}`}
+																	target="_blank"
+																	rel="noreferrer"
+																	className="text-blue-400 hover:underline"
+																>
+																	View ↗
+																</a>
+															)}
+														</>
+													) : (
+														<span className="text-muted-foreground">
+															No page yet: add a slug to create one
+														</span>
+													)}
 												</div>
 												<label className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
 													Status

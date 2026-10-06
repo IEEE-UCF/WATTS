@@ -403,7 +403,25 @@ export const entriesMeta: EntryMeta[] = [
 		status: 'ok',
 		source: '@/components/pg/content-page',
 		surface: 'marketing',
-		notes: 'Public committee/project page layout with sample data (no DB). Intentionally plain; styling pass later.',
+		notes: 'Public committee page (poster layout) with sample data (no DB).',
+	},
+	{
+		slug: 'marketing/project-detail-page',
+		name: 'ContentPageView (project)',
+		group: 'marketing',
+		status: 'ok',
+		source: '@/components/pg/content-page',
+		surface: 'marketing',
+		notes: 'Public /projects/[slug] page with sample data: poster hero, facts bar filled from the project record, overview + tags, team, gallery, join CTA. "Empty" shows a brand-new project with almost no data.',
+		controls: [
+			{ name: 'status', type: 'select', options: ['current', 'past'], default: 'current' },
+			{ name: 'empty', label: 'Empty record', type: 'boolean', default: false },
+		],
+		variants: [
+			{ name: 'Current, full', props: { status: 'current', empty: false } },
+			{ name: 'Past project', props: { status: 'past', empty: false } },
+			{ name: 'Brand-new, empty', props: { status: 'current', empty: true } },
+		],
 	},
 	{
 		slug: 'admin/members-manager',
