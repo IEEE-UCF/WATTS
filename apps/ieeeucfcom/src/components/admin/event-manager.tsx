@@ -85,6 +85,13 @@ function parseWire(raw: string): Date {
 	return new Date(raw.replace(' ', 'T').replace(/([+-]\d{2})$/, '$1:00'));
 }
 
+/** Ended (or, with no end time, started) before now. */
+function isPast(ev: AdminEvent, now = Date.now()): boolean {
+	return parseWire(ev.endTimeRaw ?? ev.startTimeRaw).getTime() < now;
+}
+
+export type EventView = 'upcoming' | 'past';
+
 /** Postgres wire string → value for a <input type="datetime-local"> in the browser's local tz. */
 function toLocalInput(raw: string | null | undefined): string {
 	if (!raw) return '';
@@ -816,7 +823,7 @@ interface PendingDelete {
 	mode: 'archive' | 'purge';
 }
 
-export function EventManager() {
+export function EventManager({ initialView = 'upcoming' }: { initialView?: EventView }) {
 	const utils = trpc.useUtils();
 	const { data: events, isLoading } = trpc.event.getAllForAdmin.useQuery();
 	const { data: labels } = trpc.eventLabel.list.useQuery();
@@ -828,7 +835,7 @@ export function EventManager() {
 	const [formKey, setFormKey] = useState(0);
 	const [attendeesFor, setAttendeesFor] = useState<string | null>(null);
 	const [showArchived, setShowArchived] = useState(false);
-	const [showPast, setShowPast] = useState(false);
+	const [view, setViewState] = useState<EventView>(initialView);
 	const [flyerBusy, setFlyerBusy] = useState<string | null>(null);
 	const flyerRef = useRef<HTMLInputElement>(null);
 	const flyerTarget = useRef<string | null>(null);
@@ -924,18 +931,31 @@ export function EventManager() {
 		}
 	}
 
-	const sorted = useMemo(
-		() => (events ?? []).slice().sort((a, b) => (a.startTimeRaw < b.startTimeRaw ? 1 : -1)),
-		[events],
-	);
-	const archivedCount = useMemo(() => sorted.filter((e) => !e.active).length, [sorted]);
-	const pastCount = useMemo(
-		() => sorted.filter((e) => new Date(e.endTimeRaw ?? e.startTimeRaw) < new Date()).length,
-		[sorted],
-	);
-	const visible = sorted
-		.filter((e) => showArchived || e.active)
-		.filter((e) => showPast || new Date(e.endTimeRaw ?? e.startTimeRaw) >= new Date());
+	// Upcoming: soonest first. Past: most recent first, so last week isn't buried under last year.
+	const { upcoming, past } = useMemo(() => {
+		const now = Date.now();
+		const byStart = (events ?? [])
+			.slice()
+			.sort(
+				(a, b) => parseWire(a.startTimeRaw).getTime() - parseWire(b.startTimeRaw).getTime(),
+			);
+		return {
+			upcoming: byStart.filter((e) => !isPast(e, now)),
+			past: byStart.filter((e) => isPast(e, now)).reverse(),
+		};
+	}, [events]);
+	const inView = view === 'past' ? past : upcoming;
+	const archivedCount = inView.filter((e) => !e.active).length;
+	const visible = inView.filter((e) => showArchived || e.active);
+
+	/** Keep the tab in the URL (?view=past) so the past list can be linked/bookmarked. */
+	function setView(next: EventView) {
+		setViewState(next);
+		const url = new URL(window.location.href);
+		if (next === 'past') url.searchParams.set('view', 'past');
+		else url.searchParams.delete('view');
+		window.history.replaceState(null, '', url);
+	}
 
 	function openCreate() {
 		setEditing(null);
@@ -995,7 +1015,7 @@ export function EventManager() {
 	function flyerUrgency(ev: AdminEvent): 'urgent' | 'missing' | null {
 		if (ev.flyerUrl || !ev.active) return null;
 		const now = Date.now();
-		if (parseWire(ev.endTimeRaw ?? ev.startTimeRaw).getTime() < now) return null;
+		if (isPast(ev, now)) return null;
 		const daysOut = (parseWire(ev.startTimeRaw).getTime() - now) / 86_400_000;
 		return daysOut <= FLYER_URGENT_DAYS ? 'urgent' : 'missing';
 	}
@@ -1042,16 +1062,6 @@ export function EventManager() {
 					{importGoogle.isPending ? 'Working…' : 'Import from Google Calendar'}
 				</button>
 				<div className="ml-auto flex items-center gap-4">
-					{pastCount > 0 && (
-						<label className="flex items-center gap-2 text-xs text-muted-foreground">
-							<input
-								type="checkbox"
-								checked={showPast}
-								onChange={(e) => setShowPast(e.target.checked)}
-							/>
-							Show past ({pastCount})
-						</label>
-					)}
 					{archivedCount > 0 && (
 						<label className="flex items-center gap-2 text-xs text-muted-foreground">
 							<input
@@ -1063,6 +1073,37 @@ export function EventManager() {
 						</label>
 					)}
 				</div>
+			</div>
+
+			<div
+				role="tablist"
+				aria-label="Event timeframe"
+				className="mb-4 flex gap-1 border-b border-border"
+			>
+				{(
+					[
+						['upcoming', 'Upcoming', upcoming],
+						['past', 'Past', past],
+					] as const
+				).map(([key, label, list]) => (
+					<button
+						key={key}
+						type="button"
+						role="tab"
+						aria-selected={view === key}
+						onClick={() => setView(key)}
+						className={`-mb-px border-b-2 px-4 py-2 text-sm font-semibold transition-colors ${
+							view === key
+								? 'border-ieee-dark-yellow text-foreground'
+								: 'border-transparent text-muted-foreground hover:text-foreground'
+						}`}
+					>
+						{label}{' '}
+						<span className="text-xs font-normal text-muted-foreground">
+							({list.filter((e) => e.active).length})
+						</span>
+					</button>
+				))}
 			</div>
 
 			{importPreview && (
@@ -1299,7 +1340,11 @@ export function EventManager() {
 						))}
 						{visible.length === 0 && (
 							<TableEmpty colSpan={7}>
-								{sorted.length === 0 ? 'No events yet.' : 'No active events.'}
+								{(events ?? []).length === 0
+									? 'No events yet.'
+									: view === 'past'
+										? 'No past events.'
+										: 'No upcoming events.'}
 							</TableEmpty>
 						)}
 					</TableBody>
