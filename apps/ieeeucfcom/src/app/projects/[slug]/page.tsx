@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
-import { notFound } from 'next/navigation';
+import { notFound, permanentRedirect } from 'next/navigation';
 import { ContentPageView } from '@/components/pg/content-page';
-import { getProjectPage, getPublishedSlugs } from '@/lib/site-content';
+import { findProjectRedirect, getProjectPage, getPublishedSlugs } from '@/lib/site-content';
 
 // Static + ISR: rendered once per project and refreshed when a change is published.
 export const revalidate = 3600;
@@ -36,6 +36,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function ProjectPage({ params }: Props) {
 	const { slug } = await params;
 	const page = await getProjectPage(slug);
-	if (!page) notFound();
+	if (!page) {
+		// Renamed project: send old links to the current address.
+		const current = await findProjectRedirect(slug);
+		if (current) permanentRedirect(`/projects/${current}`);
+		notFound();
+	}
 	return <ContentPageView page={page} />;
 }

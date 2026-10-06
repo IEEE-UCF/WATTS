@@ -123,7 +123,11 @@ export const projectRouter = createTRPCRouter({
 		.input(z.object({ id: z.string().uuid(), data: projectUpdateSchema }))
 		.mutation(async ({ ctx, input }) => {
 			try {
-				return { success: true, ...(await updateProject(ctx.db, input.id, input.data)) };
+				const result = await updateProject(ctx.db, input.id, input.data);
+				// Public project pages are cached under the site-content tag; a new address
+				// (or any other change) should show up right away, not after the hourly refresh.
+				ctx.onContentChanged?.('site-content');
+				return { success: true, ...result };
 			} catch (error) {
 				mapDomainError(error);
 			}

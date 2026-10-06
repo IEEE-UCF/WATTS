@@ -1,5 +1,5 @@
-// Read models for the public event page (/events/[slug]) and the event lists on
-// committee pages. Everything here is public: hidden or deleted events are never
+// Read models for the public event page (/events/[number]/[slug]) and the event lists
+// on committee pages. Everything here is public: hidden or deleted events are never
 // returned, photos must be approved + public, and attendance is a count only.
 import { and, asc, count, desc, eq, gte, inArray, isNotNull, lt, ne, sql } from 'drizzle-orm';
 import type { WattsDb } from '@watts/db';
@@ -11,11 +11,15 @@ import {
 	Events,
 	RoomReservations,
 } from '@watts/db/schema';
+import { findRedirect } from './redirects';
 
-/** A row in an event list: enough for a card or a dated row, with a link when it has a page. */
+/** A row in an event list: enough for a card or a dated row, plus its page address. */
 export interface EventSummary {
 	id: string;
-	slug: string | null;
+	/** Permanent; the part of the URL that's actually looked up. */
+	number: number;
+	/** Readable part of the URL, from the title. */
+	slug: string;
 	title: string;
 	startTime: string;
 	endTime: string | null;
@@ -27,6 +31,8 @@ export interface EventSummary {
 	/** Past events only; null for upcoming ones. */
 	attendanceCount: number | null;
 }
+
+export { eventPath } from './event-path';
 
 export interface PublicEventPhoto {
 	id: string;
@@ -56,6 +62,7 @@ function endOf(e: { startTime: string; endTime: string | null }): number {
 
 const summaryColumns = {
 	id: Events.id,
+	number: Events.number,
 	slug: Events.slug,
 	title: Events.title,
 	startTime: Events.startTime,
@@ -70,6 +77,7 @@ const summaryColumns = {
 
 interface SummaryRow {
 	id: string;
+	number: number;
 	slug: string | null;
 	title: string;
 	startTime: string;
@@ -95,7 +103,8 @@ async function attendanceCounts(db: WattsDb, eventIds: string[]): Promise<Map<st
 function toSummary(r: SummaryRow, counts: Map<string, number>, now: number): EventSummary {
 	return {
 		id: r.id,
-		slug: r.slug,
+		number: r.number,
+		slug: r.slug || 'event',
 		title: r.title,
 		startTime: r.startTime,
 		endTime: r.endTime,
@@ -142,8 +151,12 @@ export async function listCommitteeEvents(
 	};
 }
 
-/** Everything /events/[slug] shows, or null when there's no visible event by that slug. */
-export async function getPublicEventPage(db: WattsDb, slug: string): Promise<PublicEventPage | null> {
+/** Everything the event page shows, or null when there's no visible event with that number. */
+export async function getPublicEventPage(
+	db: WattsDb,
+	number: number,
+): Promise<PublicEventPage | null> {
+	if (!Number.isSafeInteger(number) || number < 1) return null;
 	const [row] = await db
 		.select({
 			...summaryColumns,
@@ -158,7 +171,7 @@ export async function getPublicEventPage(db: WattsDb, slug: string): Promise<Pub
 		.from(Events)
 		.leftJoin(EventLabels, eq(EventLabels.id, Events.labelId))
 		.leftJoin(Committees, eq(Committees.id, Events.committeeId))
-		.where(and(visible, eq(Events.slug, slug)))
+		.where(and(visible, eq(Events.number, number)))
 		.limit(1);
 	if (!row) return null;
 
@@ -198,7 +211,7 @@ export async function getPublicEventPage(db: WattsDb, slug: string): Promise<Pub
 		.select({ ...summaryColumns, committeeId: Events.committeeId })
 		.from(Events)
 		.leftJoin(EventLabels, eq(EventLabels.id, Events.labelId))
-		.where(and(visible, ne(Events.id, row.id), gte(Events.startTime, nowIso), isNotNull(Events.slug)))
+		.where(and(visible, ne(Events.id, row.id), gte(Events.startTime, nowIso)))
 		.orderBy(
 			row.committeeId
 				? sql`case when ${Events.committeeId} = ${row.committeeId} then 0 else 1 end`
@@ -225,14 +238,35 @@ export async function getPublicEventPage(db: WattsDb, slug: string): Promise<Pub
 	};
 }
 
-/** Slugs of visible events that start within ±`days` of now — for prebuilding pages. */
-export async function listRecentEventSlugs(db: WattsDb, days = 60): Promise<string[]> {
+/**
+ * Where an old-style /events/[slug] link (shared before numbered URLs) should go now:
+ * a saved old address first, else the one visible event that still has that slug.
+ * Null when it's unknown, hidden, or ambiguous (two events share the name).
+ */
+export async function resolveLegacyEventSlug(
+	db: WattsDb,
+	slug: string,
+): Promise<{ number: number; slug: string } | null> {
+	const targetId = await findRedirect(db, 'event', slug);
+	const rows = await db
+		.select({ number: Events.number, slug: Events.slug })
+		.from(Events)
+		.where(and(visible, targetId ? eq(Events.id, targetId) : eq(Events.slug, slug)))
+		.limit(2);
+	if (rows.length !== 1) return null;
+	return { number: rows[0].number, slug: rows[0].slug || 'event' };
+}
+
+/** Visible events that start within ±`days` of now, for prebuilding their pages. */
+export async function listRecentEventRefs(
+	db: WattsDb,
+	days = 60,
+): Promise<{ number: number; slug: string }[]> {
 	const from = new Date(Date.now() - days * 86_400_000).toISOString();
 	const to = new Date(Date.now() + days * 86_400_000).toISOString();
 	const rows = await db
-		.select({ slug: Events.slug })
+		.select({ number: Events.number, slug: Events.slug })
 		.from(Events)
-		.where(and(visible, isNotNull(Events.slug), gte(Events.startTime, from), lt(Events.startTime, to)));
-	return rows.map((r) => r.slug).filter((s): s is string => Boolean(s));
+		.where(and(visible, gte(Events.startTime, from), lt(Events.startTime, to)));
+	return rows.map((r) => ({ number: r.number, slug: r.slug || 'event' }));
 }
-

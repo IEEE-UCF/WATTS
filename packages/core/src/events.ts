@@ -1,8 +1,9 @@
-import { and, asc, eq, gte, inArray, like, lt, or } from 'drizzle-orm';
+import { and, asc, eq, gte, inArray, lt } from 'drizzle-orm';
 import type { WattsDb } from '@watts/db';
 import { Events, EventAttendees, EventLabels, Members, RoomReservations } from '@watts/db/schema';
 import { DomainError } from './errors';
-import { firstFreeSlug, slugify } from './slugs';
+import { recordRedirect } from './redirects';
+import { slugify } from './slugs';
 
 export interface CreateEventInput {
 	title: string;
@@ -14,7 +15,6 @@ export interface CreateEventInput {
 	committeeId?: string;
 	flyerUrl?: string;
 	rsvpLink?: string;
-	slug?: string;
 	requiresDues?: boolean;
 	/** FK → event_labels.id. Drives the Google Calendar colour. */
 	labelId?: string | null;
@@ -188,24 +188,13 @@ export async function getEventBySlug(db: WattsDb, slug: string) {
 	return { ...row.event, roomReservation: row.roomReservation };
 }
 
-/** "GBM #3: Industry Night" on Oct 2 → "gbm-3-industry-night-2026-10-02" (date in the event's own zone). */
-export function eventSlugBase(title: string, startTime: string, timeZone = 'America/New_York'): string {
-	const date = new Intl.DateTimeFormat('en-CA', {
-		timeZone,
-		year: 'numeric',
-		month: '2-digit',
-		day: '2-digit',
-	}).format(new Date(startTime));
-	return `${slugify(title, 45, 'event')}-${date}`;
-}
-
-/** A slug no other event uses, so every event can have a page at /events/[slug]. */
-export async function uniqueEventSlug(db: WattsDb, base: string): Promise<string> {
-	const rows = await db
-		.select({ slug: Events.slug })
-		.from(Events)
-		.where(or(eq(Events.slug, base), like(Events.slug, `${base}-%`)));
-	return firstFreeSlug(base, new Set(rows.map((r) => r.slug)));
+/**
+ * The readable part of an event's URL, /events/[number]/[slug]: "GBM #3: Industry
+ * Night" → "gbm-3-industry-night". It needn't be unique (the number is), and it follows
+ * the title, so it's never edited by hand.
+ */
+export function eventSlug(title: string): string {
+	return slugify(title, 56, 'event');
 }
 
 export async function createEvent(
@@ -224,9 +213,7 @@ export async function createEvent(
 			committeeId: input.committeeId ?? null,
 			flyerUrl: input.flyerUrl ?? null,
 			rsvpLink: input.rsvpLink ?? null,
-			slug:
-				input.slug?.trim() ||
-				(await uniqueEventSlug(db, eventSlugBase(input.title, input.startTime, input.timeZone))),
+			slug: eventSlug(input.title),
 			requiresDues: input.requiresDues ?? false,
 			labelId: input.labelId ?? null,
 			isGlobal: input.isGlobal ?? false,
@@ -258,7 +245,22 @@ export async function createEvent(
 
 export async function updateEvent(db: WattsDb, id: string, data: UpdateEventInput) {
 	const patch: Record<string, unknown> = { updatedAt: new Date().toISOString() };
-	if (data.title !== undefined) patch.title = data.title;
+	if (data.title !== undefined) {
+		patch.title = data.title;
+		// The URL's readable part follows the title. /events/[number]/old-name still
+		// works (the number decides), and the old name is kept for the older
+		// /events/[slug] links shared before numbered URLs.
+		const [current] = await db
+			.select({ slug: Events.slug })
+			.from(Events)
+			.where(eq(Events.id, id))
+			.limit(1);
+		const next = eventSlug(data.title);
+		if (current && current.slug !== next) {
+			patch.slug = next;
+			await recordRedirect(db, 'event', current.slug, id);
+		}
+	}
 	if (data.description !== undefined) patch.description = data.description;
 	if (data.location !== undefined) patch.location = data.location;
 	if (data.startTime !== undefined) patch.startTime = new Date(data.startTime).toISOString();
@@ -266,7 +268,6 @@ export async function updateEvent(db: WattsDb, id: string, data: UpdateEventInpu
 	if (data.committeeId !== undefined) patch.committeeId = data.committeeId ?? null;
 	if (data.flyerUrl !== undefined) patch.flyerUrl = data.flyerUrl ?? null;
 	if (data.rsvpLink !== undefined) patch.rsvpLink = data.rsvpLink ?? null;
-	if (data.slug !== undefined) patch.slug = data.slug ?? null;
 	if (data.requiresDues !== undefined) patch.requiresDues = data.requiresDues;
 	if (data.labelId !== undefined) patch.labelId = data.labelId ?? null;
 	if (data.isGlobal !== undefined) patch.isGlobal = data.isGlobal;
@@ -632,7 +633,7 @@ export async function importEventsFromGoogle(db: WattsDb, opts: ImportFromGoogle
 			const timeZone = g.start?.timeZone ?? 'America/New_York';
 			await db.insert(Events).values({
 				title,
-				slug: await uniqueEventSlug(db, eventSlugBase(title, start, timeZone)),
+				slug: eventSlug(title),
 				description: g.description?.trim() || title,
 				location: g.location?.trim() || 'TBA',
 				startTime: new Date(start).toISOString(),

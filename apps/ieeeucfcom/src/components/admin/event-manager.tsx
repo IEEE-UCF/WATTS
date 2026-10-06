@@ -3,6 +3,7 @@
 import { useMemo, useRef, useState } from 'react';
 import { trpc } from '@/lib/trpc/client';
 import type { RouterOutputs } from '@watts/api';
+import { eventPath } from '@watts/core/event-path';
 import { uploadEventFlyer } from '@watts/storage/client';
 import { EventAttendeesSheet } from './event-attendees-sheet';
 import {
@@ -99,7 +100,6 @@ interface FormState {
 	allDay: boolean;
 	requiresDues: boolean;
 	rsvpLink: string;
-	slug: string;
 	roomReservationStatus: RoomReservationStatus;
 	roomReservationRoom: string;
 	roomReservationNumber: string;
@@ -120,7 +120,6 @@ function emptyForm(): FormState {
 		allDay: false,
 		requiresDues: false,
 		rsvpLink: '',
-		slug: '',
 		roomReservationStatus: 'none',
 		roomReservationRoom: '',
 		roomReservationNumber: '',
@@ -142,7 +141,6 @@ function fromEvent(ev: AdminEvent): FormState {
 		allDay: ev.allDay,
 		requiresDues: ev.requiresDues,
 		rsvpLink: ev.rsvpLink ?? '',
-		slug: ev.slug ?? '',
 		roomReservationStatus: (ev.roomReservation?.status ?? 'none') as RoomReservationStatus,
 		roomReservationRoom: ev.roomReservation?.room ?? '',
 		roomReservationNumber: ev.roomReservation?.reservationNumber ?? '',
@@ -194,7 +192,6 @@ function EventForm({
 			allDay: form.allDay,
 			requiresDues: form.requiresDues,
 			rsvpLink: form.rsvpLink || undefined,
-			slug: form.slug || undefined,
 			roomReservationStatus: form.roomReservationStatus,
 			roomReservationRoom:
 				form.roomReservationStatus === 'none'
@@ -347,17 +344,24 @@ function EventForm({
 						className={field}
 					/>
 				</label>
-				<label className="block">
-					<span className="mb-1 block text-xs text-muted-foreground">
-						Page address (made from the title and date if left blank)
-					</span>
-					<input
-						id="slug"
-						value={form.slug}
-						onChange={(e) => set('slug', e.target.value)}
-						className={field}
-					/>
-				</label>
+				<div className="block">
+					<span className="mb-1 block text-xs text-muted-foreground">Public page</span>
+					<p className="py-2 text-sm text-muted-foreground">
+						{editing ? (
+							<a
+								href={eventPath(editing)}
+								target="_blank"
+								rel="noreferrer"
+								className="text-blue-400 hover:underline"
+							>
+								ieeeucf.com{eventPath(editing)}
+							</a>
+						) : (
+							'Made from the title once saved.'
+						)}{' '}
+						The name part follows the title; old links keep working.
+					</p>
+				</div>
 			</div>
 
 			<div className="flex flex-wrap gap-6 text-sm text-muted-foreground">
@@ -990,9 +994,9 @@ export function EventManager() {
 									</div>
 									<div className="text-xs text-muted-foreground-dim">
 										{ev.location}
-										{ev.slug && ev.active && !ev.hidden && (
+										{ev.active && !ev.hidden && (
 											<a
-												href={`/events/${ev.slug}`}
+												href={eventPath(ev)}
 												target="_blank"
 												rel="noreferrer"
 												className="ml-2 text-blue-400 hover:underline"

@@ -92,7 +92,7 @@ const eventCreateSchema = z.object({
 	committeeId: z.string().uuid().optional(),
 	flyerUrl: z.string().max(500).optional(),
 	rsvpLink: z.string().max(500).optional(),
-	slug: z.string().max(64).optional(),
+	// No `slug`: an event's URL is /events/[number]/[slug from title], made by core.
 	requiresDues: z.boolean().optional(),
 	labelId: z.string().uuid().nullish(),
 	isGlobal: z.boolean().optional(),

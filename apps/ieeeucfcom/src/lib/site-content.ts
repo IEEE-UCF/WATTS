@@ -7,6 +7,7 @@ import {
 	getPublishedProjectPage,
 	listPublishedCommittees,
 	listPublishedPageSlugs,
+	resolveProjectRedirect,
 	type CommitteeCard,
 	type PublicContentPage,
 	type PublicSiteContent,
@@ -60,6 +61,14 @@ export function getCommitteePage(slug: string): Promise<PublicContentPage | null
 
 export function getProjectPage(slug: string): Promise<PublicContentPage | null> {
 	return cachedProjectPage(slug);
+}
+
+/**
+ * Current address of a renamed project, or null. Uncached: it only runs when a slug
+ * didn't match a live page, and a just-renamed project should redirect right away.
+ */
+export function findProjectRedirect(oldSlug: string): Promise<string | null> {
+	return resolveProjectRedirect(db, oldSlug);
 }
 
 const cachedCommittees = unstable_cache(

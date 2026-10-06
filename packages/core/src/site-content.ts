@@ -30,6 +30,7 @@ import {
 import { hasCapability, type CapabilitySubject } from '@watts/permissions';
 import { DomainError } from './errors';
 import { listCommitteeEvents, type EventSummary } from './event-page';
+import { findRedirect } from './redirects';
 import { getSlotDefinition, SITE_MEDIA_SLOTS, type SlotKind } from './site-media-slots';
 
 // ---------------------------------------------------------------------------
@@ -1279,6 +1280,21 @@ export async function getPublishedCommitteePage(db: WattsDb, slug: string): Prom
 		.where(and(eq(Committees.slug, slug), eq(Committees.published, true), eq(Committees.active, true)))
 		.limit(1);
 	return k ? buildCommitteePage(db, k, committeeSnapshotOf(k)) : null;
+}
+
+/**
+ * The current address of a published project that used to live at `oldSlug`, or null.
+ * Lets /projects/[old-slug] links keep working after a rename.
+ */
+export async function resolveProjectRedirect(db: WattsDb, oldSlug: string): Promise<string | null> {
+	const targetId = await findRedirect(db, 'project', oldSlug);
+	if (!targetId) return null;
+	const [p] = await db
+		.select({ slug: Projects.slug })
+		.from(Projects)
+		.where(and(eq(Projects.id, targetId), eq(Projects.published, true), eq(Projects.active, true)))
+		.limit(1);
+	return p?.slug && p.slug !== oldSlug ? p.slug : null;
 }
 
 export async function getPublishedProjectPage(db: WattsDb, slug: string): Promise<PublicContentPage | null> {
