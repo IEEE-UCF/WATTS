@@ -15,6 +15,10 @@ const appRequire = createRequire(new URL('../../apps/ieeeucfcom/package.json', i
 const pg = appRequire('pg');
 
 const apply = process.argv.includes('--apply');
+// This writes to the database directly, so the site's cached pages don't know yet.
+const REFRESH_HINT =
+	'Next: click "Refresh public pages" in Admin → Site content so the site shows this now\n' +
+	'(otherwise cached event pages catch up within 5 minutes).';
 const { DATABASE_URL } = process.env;
 if (!DATABASE_URL) {
 	console.error('Set DATABASE_URL for the database to backfill.');
@@ -78,6 +82,7 @@ try {
 			}
 			await db.query('commit');
 			console.log(`Updated ${plan.length} event(s); old addresses saved as redirects.`);
+			console.log(REFRESH_HINT);
 		}
 	}
 	console.log(`${rows.length} events in total.`);

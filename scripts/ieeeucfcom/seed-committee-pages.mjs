@@ -120,6 +120,11 @@ try {
 		}
 		await db.query('commit');
 		console.log(`\nCreated ${plan.length} committee(s).`);
+		// Written to the database directly, so the cached /committees page doesn't know yet.
+		console.log(
+			'Next: click "Refresh public pages" in Admin → Site content so /committees lists them now\n' +
+				'(otherwise it catches up within the hour).',
+		);
 	} else if (plan.length === 0) {
 		console.log('\nNothing to add.');
 	}

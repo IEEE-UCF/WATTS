@@ -67,6 +67,10 @@ try {
 			}
 			await db.query('commit');
 			console.log(`Set ${plan.length} slug(s).`);
+			// Written to the database directly, so the site's cached pages don't know yet.
+			console.log(
+				'Next: click "Refresh public pages" in Admin → Site content so the site shows this now.',
+			);
 		}
 	}
 } catch (err) {

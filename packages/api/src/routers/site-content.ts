@@ -169,9 +169,14 @@ export const siteContentRouter = createTRPCRouter({
 			}
 		}),
 
-	/** Re-render the public pages now — e.g. after the one-off import, which writes directly. */
+	/**
+	 * Re-render the public pages now, after anything that wrote to the database
+	 * directly instead of through the site (the one-off import, the slug and committee
+	 * scripts in scripts/ieeeucfcom/). Covers event pages too (`events` tag).
+	 */
 	refreshCache: manageSite.mutation(({ ctx }) => {
 		changed(ctx);
+		ctx.onContentChanged?.('events');
 		return { success: true };
 	}),
 
