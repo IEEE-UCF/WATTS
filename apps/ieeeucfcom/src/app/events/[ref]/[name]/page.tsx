@@ -1,20 +1,21 @@
-import { cache } from 'react';
 import type { Metadata } from 'next';
 import { notFound, permanentRedirect } from 'next/navigation';
-import { eventPath, getPublicEventPage, listRecentEventRefs } from '@watts/core/event-page';
+import { eventPath, listRecentEventRefs } from '@watts/core/event-page';
 import { EventPageView } from '@/components/pg/event-page';
 import { db } from '@/lib/database/client';
 import { longDate, timeRange } from '@/lib/event-dates';
+import { getEventPage } from '@/lib/events';
 
 // /events/[number]/[name] — the event page. The number decides which event; the name
-// is the readable part. Rendered on first visit, refreshed every 5 minutes so edits to
-// the event (time, room, flyer) and new photos show up without a deploy.
+// is the readable part. Rendered on first visit and refreshed the moment an officer
+// saves the event, its flyer or its photos (the `events` cache tag), plus every 5
+// minutes so it flips from "upcoming" to "past" on time.
 export const revalidate = 300;
 
 const SITE = 'https://www.ieeeucf.com';
 
-// One DB read per request, shared by generateMetadata and the page.
-const loadEvent = cache((number: number) => getPublicEventPage(db, number));
+// Cached + tagged (lib/events.ts); generateMetadata and the page share the one read.
+const loadEvent = getEventPage;
 
 /** "42" → 42; anything else (old-style slugs) isn't handled here. */
 function parseNumber(ref: string): number | null {

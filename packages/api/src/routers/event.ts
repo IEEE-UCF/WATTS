@@ -31,6 +31,17 @@ const manageEvents = capabilityProcedure('manage_events');
 const scanAttendance = capabilityProcedure('scan_attendance');
 const managePhotos = capabilityProcedure('manage_event_photos');
 
+/**
+ * Public event pages are cached under the `events` tag (apps/ieeeucfcom/src/lib/events.ts)
+ * and committee pages, which list events, under `site-content`. Refresh both after any
+ * change, so a renamed event's old address starts forwarding right away and edits show
+ * up immediately instead of on the next scheduled refresh.
+ */
+function eventPagesChanged(ctx: { onContentChanged?: (tag: string) => void }) {
+	ctx.onContentChanged?.('events');
+	ctx.onContentChanged?.('site-content');
+}
+
 // Helper to convert a Postgres timestamptz string to an Eastern time display string.
 //
 // schema.ts uses mode: 'string' on all timestamp columns, so Drizzle returns the raw
@@ -209,10 +220,9 @@ export const eventRouter = createTRPCRouter({
 		.input(eventCreateSchema)
 		.mutation(async ({ ctx, input }) => {
 			try {
-				return {
-					success: true,
-					...(await createEvent(ctx.db, input, { createdByUserId: ctx.session.user.id })),
-				};
+				const result = await createEvent(ctx.db, input, { createdByUserId: ctx.session.user.id });
+				eventPagesChanged(ctx);
+				return { success: true, ...result };
 			} catch (error) {
 				mapDomainError(error);
 			}
@@ -222,7 +232,9 @@ export const eventRouter = createTRPCRouter({
 		.input(z.object({ id: z.string().uuid(), data: eventUpdateSchema }))
 		.mutation(async ({ ctx, input }) => {
 			try {
-				return { success: true, ...(await updateEvent(ctx.db, input.id, input.data)) };
+				const result = await updateEvent(ctx.db, input.id, input.data);
+				eventPagesChanged(ctx);
+				return { success: true, ...result };
 			} catch (error) {
 				mapDomainError(error);
 			}
@@ -233,6 +245,7 @@ export const eventRouter = createTRPCRouter({
 		.mutation(async ({ ctx, input }) => {
 			try {
 				await deleteEvent(ctx.db, input.id);
+				eventPagesChanged(ctx);
 				return { success: true };
 			} catch (error) {
 				mapDomainError(error);
@@ -244,7 +257,9 @@ export const eventRouter = createTRPCRouter({
 		.input(z.object({ id: z.string().uuid() }))
 		.mutation(async ({ ctx, input }) => {
 			try {
-				return { success: true, ...(await restoreEvent(ctx.db, input.id)) };
+				const result = await restoreEvent(ctx.db, input.id);
+				eventPagesChanged(ctx);
+				return { success: true, ...result };
 			} catch (error) {
 				mapDomainError(error);
 			}
@@ -256,6 +271,7 @@ export const eventRouter = createTRPCRouter({
 		.mutation(async ({ ctx, input }) => {
 			try {
 				await hardDeleteEvent(ctx.db, input.id);
+				eventPagesChanged(ctx);
 				return { success: true };
 			} catch (error) {
 				mapDomainError(error);
@@ -267,13 +283,15 @@ export const eventRouter = createTRPCRouter({
 		.input(z.object({ eventId: z.string().uuid(), filename: z.string().max(255).optional() }))
 		.mutation(async ({ ctx, input }) => {
 			try {
-				return await finalizeUpload(ctx.db, {
+				const result = await finalizeUpload(ctx.db, {
 					kind: 'event-flyer',
 					key: eventFlyerKey(input.eventId),
 					userId: ctx.session.user.id,
 					eventId: input.eventId,
 					filename: sanitizeFilename(input.filename),
 				});
+				eventPagesChanged(ctx);
+				return result;
 			} catch (err) {
 				mapUploadError(err);
 			}
@@ -305,6 +323,7 @@ export const eventRouter = createTRPCRouter({
 					sinceIso,
 					importedByUserId: ctx.session.user.id,
 				});
+				if (!input?.dryRun) eventPagesChanged(ctx);
 				const count = (a: string) => results.filter((r) => r.action === a).length;
 				return {
 					success: true,
@@ -438,7 +457,7 @@ export const eventRouter = createTRPCRouter({
 		.mutation(async ({ ctx, input }) => {
 			const keys = newPhotoKeys(input.eventId, input.photoId);
 			try {
-				return await finalizeUpload(ctx.db, {
+				const result = await finalizeUpload(ctx.db, {
 					kind: 'event-photo',
 					key: keys.webKey,
 					userId: ctx.session.user.id,
@@ -451,6 +470,8 @@ export const eventRouter = createTRPCRouter({
 					caption: input.caption ?? null,
 					tags: input.tags ?? [],
 				});
+				eventPagesChanged(ctx);
+				return result;
 			} catch (err) {
 				mapUploadError(err);
 			}
@@ -494,6 +515,8 @@ export const eventRouter = createTRPCRouter({
 				.where(eq(EventPhotos.id, input.id))
 				.returning();
 
+			// Making a photo public (or hiding it again) shows on the event page right away.
+			eventPagesChanged(ctx);
 			return { success: true, photo: updated };
 		}),
 
@@ -513,6 +536,7 @@ export const eventRouter = createTRPCRouter({
 				await storage.delete({ key, bucket: 'private' }).catch(() => undefined);
 			}
 			await ctx.db.delete(EventPhotos).where(eq(EventPhotos.id, input.id));
+			eventPagesChanged(ctx);
 			return { success: true };
 		}),
 });
