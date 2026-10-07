@@ -31,6 +31,14 @@ export function buildAuthOptions(db: WattsDb): NextAuthOptions {
 				clientId: process.env.DISCORD_CLIENT_ID!,
 				clientSecret: process.env.DISCORD_CLIENT_SECRET!,
 				authorization: 'https://discord.com/api/oauth2/authorize?scope=identify+email',
+				// Discord now returns `iss` on the OAuth redirect (RFC 9207). openid-client
+				// rejects any callback carrying `iss` unless the issuer is configured
+				// ("issuer must be configured on the issuer"), which broke every sign-in.
+				// Must match `issuer` in https://discord.com/.well-known/openid-configuration.
+				issuer: 'https://discord.com',
+				// openid-client's default is 3.5 s; a cold serverless start talking to
+				// Discord can exceed that and fail the callback the same way.
+				httpOptions: { timeout: 10_000 },
 				profile: (profile: DiscordProfile) => {
 					return {
 						id: profile.id,

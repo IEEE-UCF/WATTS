@@ -1,13 +1,35 @@
 'use client';
 import { signIn } from 'next-auth/react';
 
-export default function Signinblock() {
+// NextAuth sends a failed sign-in back here as ?error=<code>. Without a message the
+// page just looks like the button did nothing.
+const SIGNIN_ERRORS: Record<string, string> = {
+	OAuthAccountNotLinked:
+		'That email is already linked to a different sign-in. Use the Discord account you registered with.',
+	AccessDenied: 'Sign-in was cancelled or not allowed.',
+};
+const DEFAULT_SIGNIN_ERROR =
+	"We couldn't sign you in with Discord. Please try again — if it keeps happening, let an officer know.";
+
+export default function Signinblock({ error }: { error?: string | null }) {
+	const errorMessage = error ? (SIGNIN_ERRORS[error] ?? DEFAULT_SIGNIN_ERROR) : null;
+
 	return (
 		<div className="group relative self-center">
 			<div className="absolute -inset-1 bg-gradient-to-r from-ieee-bright-yellow to-ieee-bright-yellow opacity-100 blur transition duration-1000"></div>
 
 			<div className="relative flex flex-col items-center space-y-6 rounded-sm bg-ieee-near-black px-10 py-12 text-center leading-none ring-1 ring-border/5">
 				<h1 className="font-heading text-3xl text-white">IEEE UCF</h1>
+
+				{errorMessage && (
+					<p
+						role="alert"
+						data-testid="signin-error"
+						className="max-w-xs rounded-md border border-red-500/40 bg-red-950/40 px-4 py-3 text-sm leading-snug text-red-200"
+					>
+						{errorMessage}
+					</p>
+				)}
 
 				<button
 					onClick={() => signIn('discord', { callbackUrl: '/' })}

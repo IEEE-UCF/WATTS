@@ -8,7 +8,11 @@ import Signinblock from '@/components/signin';
 import { Navbar } from '@/components/navbar';
 import { Footer } from '@/components/footer';
 
-export default async function SignInPage() {
+export default async function SignInPage({
+	searchParams,
+}: {
+	searchParams: Promise<{ error?: string }>;
+}) {
 	const session = await getServerSession(authOptions);
 
 	if (session?.user) {
@@ -33,7 +37,7 @@ export default async function SignInPage() {
 						<Navbar />
 					</div>
 					<div className="flex w-full flex-1 items-center justify-center">
-						<Signinblock />
+						<Signinblock error={(await searchParams).error} />
 					</div>
 				</div>
 				<Footer />
