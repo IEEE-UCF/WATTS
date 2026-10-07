@@ -418,6 +418,9 @@ importers:
       '@watts/db':
         specifier: workspace:*
         version: link:../../packages/db
+      '@watts/permissions':
+        specifier: workspace:*
+        version: link:../../packages/permissions
       '@watts/storage':
         specifier: workspace:*
         version: link:../../packages/storage
