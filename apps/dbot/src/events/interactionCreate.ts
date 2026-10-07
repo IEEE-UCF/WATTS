@@ -19,48 +19,11 @@ export class InteractionCreateEvent extends Event {
 		const command = this.client.commands?.get(interaction.commandName);
 		if (!command) return;
 
-		// Check if command is enabled
-		if (!command.enabled) {
-			const embed = this.client.createEmbed()
-				.setTitle('❌ Command Disabled')
-				.setDescription('This command is currently disabled.');
-			await interaction.reply({ embeds: [embed], ephemeral: true });
-			return;
-		}
-
-		// Check if command is guild only and we're in DMs
-		if (command.guildOnly && !interaction.guild) {
-			const embed = this.client.createEmbed()
-				.setTitle('🏠 Guild Only Command')
-				.setDescription('This command can only be used in a server.');
-			await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
-			return;
-		}
-
-
-		// Check user permissions
-		try {
-			const hasPermission = await command.hasPermission(interaction.user.id);
-			if (!hasPermission) {
-				const embed = command.getPermissionEmbed(command.permissionLevel);
-				await interaction.reply({ embeds: [embed], ephemeral: true });
-				return;
-			}
-		} catch (error) {
-			console.error('Error checking permissions:', error);
-			const embed = this.client.createEmbed()
-				.setTitle('❌ Permission Check Failed')
-				.setDescription('An error occurred while checking your permissions.');
-
-			await interaction.reply({ embeds: [embed], flags: 'Ephemeral' });
-			return;
-		}
-
-		// Check cooldown
-		if (command.isOnCooldown(interaction.user.id)) {
-			const timeLeft = command.getCooldownTime(interaction.user.id);
-			const embed = command.getCooldownEmbed(timeLeft);
-			await interaction.reply({ embeds: [embed], flags: 'Ephemeral' });
+		// Enabled / guild-only / permission tier / cooldown — the same gate command
+		// buttons go through (events/button.ts).
+		const blocked = await command.gate(interaction.user.id, Boolean(interaction.guild));
+		if (blocked) {
+			await interaction.reply({ embeds: [blocked], flags: MessageFlags.Ephemeral });
 			return;
 		}
 

@@ -73,6 +73,7 @@ export function StaffHub() {
 	const subject = {
 		administrator: auth?.isAdmin,
 		officerStatus: auth?.isOfficer,
+		officerRole: auth?.officerRole ?? null,
 		permissions: auth?.permissions ?? [],
 	};
 	const can = (c: Capability) => hasCapability(subject, c);

@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
 import type { WattsDb } from '@watts/db';
 import type { MemberRoles } from '@watts/core/members';
-import { publicProcedure, officerProcedure, memberProcedure, capabilityProcedure, createTRPCRouter } from '../trpc';
+import { publicProcedure, memberProcedure, capabilityProcedure, createTRPCRouter } from '../trpc';
 import {
 	listActiveProjects,
 	getProjectById,
@@ -68,6 +68,16 @@ async function assertIsOfficerOrProjectLead(
 	if (hasCapability(roles, 'manage_projects')) return;
 	if (await isProjectLead(ctx.db, projectId, ctx.member.id)) return;
 	throw new TRPCError({ code: 'FORBIDDEN', message: "Must be an officer or this project's lead" });
+}
+
+/** A lead (who isn't an officer) removing themselves would lose access to the project. */
+async function assertNotLeadSelfLockout(
+	ctx: { getRoles: () => Promise<MemberRoles | null>; member: { id: string } },
+	memberId: string,
+) {
+	if (memberId !== ctx.member.id) return;
+	if (hasCapability(await ctx.getRoles(), 'manage_projects')) return;
+	throw new TRPCError({ code: 'BAD_REQUEST', message: 'You can’t remove yourself as lead — ask an officer' });
 }
 
 // The subset of a project's fields a non-officer lead may edit for their own project —
@@ -145,13 +155,18 @@ export const projectRouter = createTRPCRouter({
 		}),
 
 	// Rough Staff Committees & Projects panel — membership assignment, not the full CMS.
-	listMembers: officerProcedure
+	// Any officer (manage_projects), or this project's own lead.
+	listMembers: memberProcedure
 		.input(z.object({ projectId: z.string().uuid() }))
-		.query(async ({ ctx, input }) => listProjectMembers(ctx.db, input.projectId)),
+		.query(async ({ ctx, input }) => {
+			await assertIsOfficerOrProjectLead(ctx, input.projectId);
+			return listProjectMembers(ctx.db, input.projectId);
+		}),
 
-	addMember: officerProcedure
+	addMember: memberProcedure
 		.input(z.object({ projectId: z.string().uuid(), memberId: z.string().uuid() }))
 		.mutation(async ({ ctx, input }) => {
+			await assertIsOfficerOrProjectLead(ctx, input.projectId);
 			try {
 				return await addProjectMember(ctx.db, input.projectId, input.memberId);
 			} catch (error) {
@@ -159,9 +174,11 @@ export const projectRouter = createTRPCRouter({
 			}
 		}),
 
-	removeMember: officerProcedure
+	removeMember: memberProcedure
 		.input(z.object({ projectId: z.string().uuid(), memberId: z.string().uuid() }))
 		.mutation(async ({ ctx, input }) => {
+			await assertIsOfficerOrProjectLead(ctx, input.projectId);
+			await assertNotLeadSelfLockout(ctx, input.memberId);
 			try {
 				await removeProjectMember(ctx.db, input.projectId, input.memberId);
 				return { success: true };
@@ -170,9 +187,11 @@ export const projectRouter = createTRPCRouter({
 			}
 		}),
 
-	setLead: officerProcedure
+	setLead: memberProcedure
 		.input(z.object({ projectId: z.string().uuid(), memberId: z.string().uuid(), isLead: z.boolean() }))
 		.mutation(async ({ ctx, input }) => {
+			await assertIsOfficerOrProjectLead(ctx, input.projectId);
+			if (!input.isLead) await assertNotLeadSelfLockout(ctx, input.memberId);
 			try {
 				return await setProjectLead(ctx.db, input.projectId, input.memberId, input.isLead);
 			} catch (error) {
@@ -283,7 +302,7 @@ export const projectRouter = createTRPCRouter({
 		.mutation(async ({ ctx, input }) => {
 			await assertIsOfficerOrProjectLead(ctx, input.projectId);
 			try {
-				return await approveProjectMembershipRequest(ctx.db, input.requestId, ctx.member.id, input.reviewNote);
+				return await approveProjectMembershipRequest(ctx.db, input.projectId, input.requestId, ctx.member.id, input.reviewNote);
 			} catch (error) {
 				mapDomainError(error);
 			}
@@ -294,7 +313,7 @@ export const projectRouter = createTRPCRouter({
 		.mutation(async ({ ctx, input }) => {
 			await assertIsOfficerOrProjectLead(ctx, input.projectId);
 			try {
-				return await denyProjectMembershipRequest(ctx.db, input.requestId, ctx.member.id, input.reviewNote);
+				return await denyProjectMembershipRequest(ctx.db, input.projectId, input.requestId, ctx.member.id, input.reviewNote);
 			} catch (error) {
 				mapDomainError(error);
 			}

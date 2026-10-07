@@ -1,15 +1,16 @@
 # Continuous integration.
 #
-#   verify — typecheck + lint + build every workspace through Turborepo.
+#   verify — typecheck + lint + build every workspace through Turborepo, plus the
+#            permission-matrix coverage / docs/PERMISSIONS.md freshness check.
 #   smoke  — migrate + seed a throwaway Postgres, then run the @watts/core
-#            /whois checks against the real schema (catches schema/seed drift).
+#            /whois checks and the bot permission-tier checks against the real
+#            schema (catches schema/seed drift).
 #   e2e    — build + serve @watts/web against a throwaway Postgres (schema only,
-#            no fixtures — the suite tests auth / route-gating / service
-#            reachability / the per-role redirect matrix, none of which reads
-#            seeded rows) plus a throwaway MinIO for the résumé-export spec
-#            (which seeds + removes its own rows). Playwright, both projects:
-#            the anonymous specs, plus
-#            the `authenticated` project running against a guarded SYNTHETIC
+#            no seed — specs create + remove their own rows) plus a throwaway
+#            MinIO for the résumé-export spec. Playwright, three projects:
+#            the anonymous specs; `permissions` — every page / tRPC procedure /
+#            route × synthetic personas against infra/e2e/lib/access-matrix.ts;
+#            and the `authenticated` project running against a guarded SYNTHETIC
 #            session that global-setup.ts mints in the CI database and deletes in
 #            teardown (infra/e2e/lib/session.ts) — there is no captured Discord
 #            login in CI, and the synthetic session does NOT exercise Discord
@@ -64,6 +65,11 @@ jobs:
 
       - name: Format check
         run: pnpm format:check
+
+      # Every tRPC procedure / page / route must be classified in
+      # infra/e2e/lib/access-matrix.ts, and docs/PERMISSIONS.md must be current.
+      - name: Permission matrix check
+        run: pnpm --filter @watts/e2e matrix:check
 
       - name: Restore turbo cache
         uses: actions/cache@v6
@@ -122,6 +128,9 @@ jobs:
 
       - name: /whois checks
         run: pnpm --filter @watts/bot check:whois
+
+      - name: Bot permission-tier checks
+        run: pnpm --filter @watts/bot check:tier
 
   e2e:
     runs-on: ubuntu-latest

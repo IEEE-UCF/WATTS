@@ -332,11 +332,13 @@ export function listProjectMembershipRequests(
 		);
 }
 
-async function loadPendingRequest(db: WattsDb, requestId: string) {
+// Scoped to `projectId` so a caller authorized for one project (its lead) can't act on
+// another project's request by pairing their own projectId with someone else's requestId.
+async function loadPendingRequest(db: WattsDb, projectId: string, requestId: string) {
 	const [request] = await db
 		.select()
 		.from(ProjectMembershipRequests)
-		.where(eq(ProjectMembershipRequests.id, requestId))
+		.where(and(eq(ProjectMembershipRequests.id, requestId), eq(ProjectMembershipRequests.projectId, projectId)))
 		.limit(1);
 	if (!request) throw new DomainError('NOT_FOUND', 'Request not found');
 	if (request.status !== 'pending') throw new DomainError('CONFLICT', 'This request has already been reviewed');
@@ -351,11 +353,12 @@ async function loadPendingRequest(db: WattsDb, requestId: string) {
  */
 export async function approveProjectMembershipRequest(
 	db: WattsDb,
+	projectId: string,
 	requestId: string,
 	reviewerMemberId: string,
 	reviewNote?: string,
 ) {
-	const request = await loadPendingRequest(db, requestId);
+	const request = await loadPendingRequest(db, projectId, requestId);
 	await addProjectMember(db, request.projectId, request.memberId);
 	const [updated] = await db
 		.update(ProjectMembershipRequests)
@@ -372,11 +375,12 @@ export async function approveProjectMembershipRequest(
 
 export async function denyProjectMembershipRequest(
 	db: WattsDb,
+	projectId: string,
 	requestId: string,
 	reviewerMemberId: string,
 	reviewNote?: string,
 ) {
-	await loadPendingRequest(db, requestId);
+	await loadPendingRequest(db, projectId, requestId);
 	const [updated] = await db
 		.update(ProjectMembershipRequests)
 		.set({

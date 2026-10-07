@@ -31,15 +31,15 @@ export class HelpCommand extends Command {
 
 		const categories: string[] = [];
 		const commands = Array.from(this.client.commands.values()) as Command[];
+		// Awaited once up front — getPermissionLevel is async, and comparing the Promise
+		// itself to a number is always false, which used to show the admin list to everyone.
+		const userPermLevel: PermissionLevel = await this.client.getPermissionLevel(interaction.user.id);
 
 		// Collect unique categories
 		commands.forEach((command: Command) => {
 			if (command.category && !categories.includes(command.category)) {
 				// Only show admin category to administrators
-				if (command.category === 'admin') {
-					const userPermLevel = this.client.getPermissionLevel(interaction.user.id);
-					if (userPermLevel < PermissionLevel.ADMINISTRATOR) return;
-				}
+				if (command.category === 'admin' && userPermLevel < PermissionLevel.ADMINISTRATOR) return;
 				categories.push(command.category);
 			}
 		});
