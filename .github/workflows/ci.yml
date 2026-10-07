@@ -2,7 +2,8 @@
 #
 #   verify — typecheck + lint + build every workspace through Turborepo.
 #   smoke  — migrate + seed a throwaway Postgres, then run the @watts/core
-#            /whois checks against the real schema (catches schema/seed drift).
+#            /whois checks and the bot permission-tier checks against the real
+#            schema (catches schema/seed drift).
 #   e2e    — build + serve @watts/web against a throwaway Postgres (schema only,
 #            no fixtures — the suite tests auth / route-gating / service
 #            reachability / the per-role redirect matrix, none of which reads
@@ -122,6 +123,9 @@ jobs:
 
       - name: /whois checks
         run: pnpm --filter @watts/bot check:whois
+
+      - name: Bot permission-tier checks
+        run: pnpm --filter @watts/bot check:tier
 
   e2e:
     runs-on: ubuntu-latest

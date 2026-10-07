@@ -283,7 +283,7 @@ export const projectRouter = createTRPCRouter({
 		.mutation(async ({ ctx, input }) => {
 			await assertIsOfficerOrProjectLead(ctx, input.projectId);
 			try {
-				return await approveProjectMembershipRequest(ctx.db, input.requestId, ctx.member.id, input.reviewNote);
+				return await approveProjectMembershipRequest(ctx.db, input.projectId, input.requestId, ctx.member.id, input.reviewNote);
 			} catch (error) {
 				mapDomainError(error);
 			}
@@ -294,7 +294,7 @@ export const projectRouter = createTRPCRouter({
 		.mutation(async ({ ctx, input }) => {
 			await assertIsOfficerOrProjectLead(ctx, input.projectId);
 			try {
-				return await denyProjectMembershipRequest(ctx.db, input.requestId, ctx.member.id, input.reviewNote);
+				return await denyProjectMembershipRequest(ctx.db, input.projectId, input.requestId, ctx.member.id, input.reviewNote);
 			} catch (error) {
 				mapDomainError(error);
 			}
