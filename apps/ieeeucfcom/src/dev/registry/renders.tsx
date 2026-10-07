@@ -33,6 +33,16 @@ import {
 	SheetTitle,
 	SheetTrigger,
 } from '@watts/ui/sheet';
+import {
+	Dialog,
+	DialogClose,
+	DialogContent,
+	DialogDescription,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
+	DialogTrigger,
+} from '@watts/ui/dialog';
 import { ScrollArea } from '@watts/ui/scroll-area';
 import {
 	Table,
@@ -224,6 +234,24 @@ export const renders: Record<string, Render> = {
 			<Separator className="my-3" />
 			<p>Committees</p>
 		</div>
+	),
+	'ui/dialog': () => (
+		<Dialog>
+			<DialogTrigger asChild>
+				<Button variant="outline">Open dialog</Button>
+			</DialogTrigger>
+			<DialogContent>
+				<DialogHeader>
+					<DialogTitle>New event</DialogTitle>
+					<DialogDescription>Create and edit forms open in this.</DialogDescription>
+				</DialogHeader>
+				<DialogFooter>
+					<DialogClose asChild>
+						<Button>Close</Button>
+					</DialogClose>
+				</DialogFooter>
+			</DialogContent>
+		</Dialog>
 	),
 	'ui/sheet': () => (
 		<Sheet>

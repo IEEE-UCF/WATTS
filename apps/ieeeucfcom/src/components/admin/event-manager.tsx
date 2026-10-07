@@ -1,11 +1,23 @@
 'use client';
 
-import { useMemo, useRef, useState } from 'react';
+import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
+import { CircleCheck, ImageUp, RefreshCw } from 'lucide-react';
 import { trpc } from '@/lib/trpc/client';
 import type { RouterOutputs } from '@watts/api';
 import { eventPath } from '@watts/core/event-path';
 import { uploadEventFlyer } from '@watts/storage/client';
 import { EventAttendeesSheet } from './event-attendees-sheet';
+import { EventCalendar, monthKeyOf } from './event-calendar';
+import {
+	EMPTY_FILTERS,
+	EventFilterBar,
+	hasActiveFilters,
+	isWrappedUp,
+	needsRoomAction,
+	roomStatus,
+	matchesEventFilters,
+	type EventFilters,
+} from './event-filters';
 import {
 	Table,
 	TableHeader,
@@ -15,6 +27,13 @@ import {
 	TableCell,
 	TableEmpty,
 } from '@watts/ui/table';
+import {
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogHeader,
+	DialogTitle,
+} from '@watts/ui/dialog';
 
 type AdminEvent = RouterOutputs['event']['getAllForAdmin'][number];
 type Label = RouterOutputs['eventLabel']['list'][number];
@@ -52,6 +71,53 @@ const ROOM_RESERVATION_LABELS: Record<RoomReservationStatus, string> = {
 	rejected: 'Rejected',
 };
 
+const ROOM_BADGE: Record<string, string> = {
+	confirmed: 'bg-green-900/70 text-green-300',
+	pending: 'bg-blue-900/60 text-blue-300',
+	unsubmitted: 'bg-amber-900/50 text-amber-300',
+	rejected: 'bg-red-900/70 text-red-300',
+};
+
+/** Past events younger than this with no check-ins or photos are flagged for wrap-up. */
+const WRAP_UP_WINDOW_DAYS = 30;
+
+type GroupBy = 'semester' | 'month' | 'none';
+
+/** UCF terms by start month: Spring Jan–Apr, Summer May–Jul, Fall Aug–Dec. */
+function groupLabel(start: Date, by: Exclude<GroupBy, 'none'>): string {
+	if (by === 'month') return start.toLocaleString('en-US', { month: 'long', year: 'numeric' });
+	const m = start.getMonth();
+	const term = m <= 3 ? 'Spring' : m <= 6 ? 'Summer' : 'Fall';
+	return `${term} ${start.getFullYear()}`;
+}
+
+/**
+ * All-day events are stored Google-style as UTC midnights (exclusive end), so reading them
+ * in Eastern time lands on the evening before. Read the date in UTC instead.
+ */
+function allDayLabel(ev: AdminEvent): string {
+	const fmt = (raw: string) =>
+		parseWire(raw).toLocaleDateString('en-US', {
+			timeZone: 'UTC',
+			month: 'long',
+			day: 'numeric',
+			year: 'numeric',
+		});
+	const lastDay = ev.endTimeRaw
+		? new Date(parseWire(ev.endTimeRaw).getTime() - 86_400_000)
+		: null;
+	const multi = lastDay && lastDay > parseWire(ev.startTimeRaw);
+	const end = multi
+		? ` – ${lastDay.toLocaleDateString('en-US', { timeZone: 'UTC', month: 'long', day: 'numeric' })}`
+		: '';
+	return `${fmt(ev.startTimeRaw)}${end} · All day`;
+}
+
+/** yyyy-mm-dd in the browser's time zone, for <input type="date"> / the date filters. */
+function toDateInput(d: Date): string {
+	return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+}
+
 const FLYER_ACCEPT = 'image/jpeg,image/png,image/webp';
 /** An upcoming event with no flyer this close to its start gets the loud "missing" badge. */
 const FLYER_URGENT_DAYS = 7;
@@ -77,12 +143,148 @@ function parseWire(raw: string): Date {
 	return new Date(raw.replace(' ', 'T').replace(/([+-]\d{2})$/, '$1:00'));
 }
 
+/** Ended (or, with no end time, started) before now. */
+function isPast(ev: AdminEvent, now = Date.now()): boolean {
+	return parseWire(ev.endTimeRaw ?? ev.startTimeRaw).getTime() < now;
+}
+
+export type EventView = 'upcoming' | 'past' | 'calendar';
+
 /** Postgres wire string → value for a <input type="datetime-local"> in the browser's local tz. */
 function toLocalInput(raw: string | null | undefined): string {
 	if (!raw) return '';
 	const d = parseWire(raw);
 	if (Number.isNaN(d.getTime())) return '';
 	return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+}
+
+// ─────────────────────────── flyer drop zone ───────────────────────────
+
+/**
+ * Big poster-shaped click-or-drop target. Shows the picked file (or the event's current
+ * flyer) so officers can read dates/rooms off it while filling in the rest of the form.
+ */
+function FlyerDrop({
+	file,
+	currentUrl,
+	onPick,
+}: {
+	file: File | null;
+	currentUrl: string | null;
+	onPick: (file: File | null) => void;
+}) {
+	const inputRef = useRef<HTMLInputElement>(null);
+	const [dragging, setDragging] = useState(false);
+	const [rejected, setRejected] = useState(false);
+	const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
+	useEffect(() => {
+		if (!file) {
+			setPreviewUrl(null);
+			return;
+		}
+		const url = URL.createObjectURL(file);
+		setPreviewUrl(url);
+		return () => URL.revokeObjectURL(url);
+	}, [file]);
+
+	function take(f: File | undefined) {
+		if (!f) return;
+		const ok = FLYER_ACCEPT.split(',').includes(f.type);
+		setRejected(!ok);
+		if (ok) onPick(f);
+	}
+
+	const shown = previewUrl ?? currentUrl;
+
+	return (
+		<div className="flex flex-col gap-2">
+			<span className="text-xs text-muted-foreground">
+				Flyer{' '}
+				{currentUrl && !file ? '(click or drop to replace)' : '(click or drop to upload)'}
+			</span>
+			<button
+				type="button"
+				onClick={() => inputRef.current?.click()}
+				onDragOver={(e) => {
+					e.preventDefault();
+					setDragging(true);
+				}}
+				onDragLeave={() => setDragging(false)}
+				onDrop={(e) => {
+					e.preventDefault();
+					setDragging(false);
+					take(e.dataTransfer.files?.[0]);
+				}}
+				className={`group relative flex aspect-video w-full items-center justify-center overflow-hidden rounded-lg border-2 border-dashed transition-colors md:aspect-[4/5] ${
+					dragging
+						? 'border-ieee-dark-yellow bg-ieee-dark-yellow/10'
+						: shown
+							? 'border-border bg-black/40 hover:border-ieee-dark-yellow'
+							: 'border-ieee-dark-yellow/60 bg-ieee-dark-yellow/5 hover:border-ieee-dark-yellow hover:bg-ieee-dark-yellow/10'
+				}`}
+			>
+				{shown ? (
+					<>
+						{/* eslint-disable-next-line @next/next/no-img-element */}
+						<img
+							src={shown}
+							alt="Flyer preview"
+							className="h-full w-full object-contain"
+						/>
+						<span className="absolute inset-x-0 bottom-0 flex items-center justify-center gap-2 bg-black/70 py-2 text-xs font-semibold text-white opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100">
+							<RefreshCw className="size-3.5" /> Replace flyer
+						</span>
+					</>
+				) : (
+					<span className="flex flex-col items-center gap-3 px-4 text-center">
+						<span className="flex size-14 items-center justify-center rounded-full bg-ieee-dark-yellow text-black">
+							<ImageUp className="size-7" />
+						</span>
+						<span className="text-sm font-semibold text-foreground">Upload flyer</span>
+						<span className="text-xs text-muted-foreground">
+							Click to browse or drag an image here
+							<br />
+							JPG, PNG or WebP
+						</span>
+					</span>
+				)}
+			</button>
+			<input
+				ref={inputRef}
+				id="flyer"
+				type="file"
+				accept={FLYER_ACCEPT}
+				className="hidden"
+				onChange={(e) => {
+					take(e.target.files?.[0]);
+					e.target.value = '';
+				}}
+			/>
+			{file && (
+				<div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
+					<span className="truncate" title={file.name}>
+						{file.name}
+					</span>
+					<button
+						type="button"
+						onClick={() => onPick(null)}
+						className="shrink-0 text-red-400 hover:underline"
+					>
+						remove
+					</button>
+				</div>
+			)}
+			{rejected && (
+				<p className="text-xs text-red-400">That file type isn&apos;t supported.</p>
+			)}
+			{!currentUrl && !file && (
+				<p className="text-xs text-amber-400">
+					No flyer yet — you can add one later, but don&apos;t forget.
+				</p>
+			)}
+		</div>
+	);
 }
 
 // ─────────────────────────── event create / edit form ───────────────────────────
@@ -106,13 +308,14 @@ interface FormState {
 	pingCreatorOnUpdate: boolean;
 }
 
-function emptyForm(): FormState {
+/** `day` (yyyy-mm-dd) pre-fills a 6–7 PM slot, e.g. from clicking a calendar square. */
+function emptyForm(day?: string): FormState {
 	return {
 		title: '',
 		location: '',
 		description: '',
-		startTime: '',
-		endTime: '',
+		startTime: day ? `${day}T18:00` : '',
+		endTime: day ? `${day}T19:00` : '',
 		labelId: '',
 		timeZone: 'America/New_York',
 		isGlobal: false,
@@ -151,13 +354,18 @@ function fromEvent(ev: AdminEvent): FormState {
 function EventForm({
 	labels,
 	editing,
+	defaultDay,
 	onDone,
 }: {
 	labels: Label[];
 	editing: AdminEvent | null;
+	/** New events only: start on this day (yyyy-mm-dd). */
+	defaultDay?: string;
 	onDone: (saved?: SavedEvent) => void;
 }) {
-	const [form, setForm] = useState<FormState>(editing ? fromEvent(editing) : emptyForm());
+	const [form, setForm] = useState<FormState>(
+		editing ? fromEvent(editing) : emptyForm(defaultDay),
+	);
 	const [flyerFile, setFlyerFile] = useState<File | null>(null);
 	const [uploadingFlyer, setUploadingFlyer] = useState(false);
 	const utils = trpc.useUtils();
@@ -235,284 +443,300 @@ function EventForm({
 	const field = 'w-full rounded-md border border-input bg-card px-3 py-2 text-sm text-foreground';
 
 	return (
-		<form
-			onSubmit={submit}
-			className="mb-8 space-y-4 rounded-lg border border-border bg-card/50 p-5"
+		<DialogContent
+			className="gap-0 overflow-hidden p-0 sm:max-w-4xl"
+			// A stray click outside shouldn't throw away a half-filled form.
+			onInteractOutside={(e) => e.preventDefault()}
+			onEscapeKeyDown={(e) => pending && e.preventDefault()}
 		>
-			<h3 className="text-sm font-semibold text-foreground">
-				{editing ? `Edit “${editing.title}”` : 'New event'}
-			</h3>
+			<DialogHeader className="border-b border-border px-6 py-4">
+				<DialogTitle>{editing ? `Edit “${editing.title}”` : 'New event'}</DialogTitle>
+				<DialogDescription>
+					{editing
+						? 'Changes sync to Google Calendar (and Discord, if global) on save.'
+						: 'Mirrors to the chapter Google Calendar once created.'}
+				</DialogDescription>
+			</DialogHeader>
 
-			<div className="grid gap-4 sm:grid-cols-2">
-				<label className="block">
-					<span className="mb-1 block text-xs text-muted-foreground">Title</span>
-					<input
-						id="title"
-						required
-						value={form.title}
-						onChange={(e) => set('title', e.target.value)}
-						className={field}
-					/>
-				</label>
-				<label className="block">
-					<span className="mb-1 block text-xs text-muted-foreground">Location</span>
-					<input
-						id="location"
-						required
-						value={form.location}
-						onChange={(e) => set('location', e.target.value)}
-						className={field}
-					/>
-				</label>
-				<label className="block">
-					<span className="mb-1 block text-xs text-muted-foreground">Start</span>
-					<input
-						id="startTime"
-						type="datetime-local"
-						required
-						value={form.startTime}
-						onChange={(e) => set('startTime', e.target.value)}
-						className={field}
-					/>
-				</label>
-				<label className="block">
-					<span className="mb-1 block text-xs text-muted-foreground">End</span>
-					<input
-						id="endTime"
-						type="datetime-local"
-						value={form.endTime}
-						onChange={(e) => set('endTime', e.target.value)}
-						className={field}
-					/>
-				</label>
-				<label className="block">
-					<span className="mb-1 block text-xs text-muted-foreground">Category</span>
-					<select
-						id="labelId"
-						value={form.labelId}
-						onChange={(e) => set('labelId', e.target.value)}
-						className={field}
-					>
-						<option value="">— none —</option>
-						{labels
-							.filter((l) => l.active || l.id === form.labelId)
-							.map((l) => (
-								<option key={l.id} value={l.id}>
-									{l.name}
-								</option>
-							))}
-					</select>
-				</label>
-				<label className="block">
-					<span className="mb-1 block text-xs text-muted-foreground">Time zone</span>
-					<select
-						id="timeZone"
-						value={form.timeZone}
-						onChange={(e) => set('timeZone', e.target.value)}
-						className={field}
-					>
-						{COMMON_TZ.map((tz) => (
-							<option key={tz} value={tz}>
-								{tz}
-							</option>
-						))}
-					</select>
-				</label>
-			</div>
+			<form onSubmit={submit} className="flex min-h-0 flex-1 flex-col">
+				<div className="grid min-h-0 flex-1 gap-6 overflow-y-auto px-6 py-5 md:grid-cols-[240px_1fr]">
+					<div className="md:sticky md:top-0 md:self-start">
+						<FlyerDrop
+							file={flyerFile}
+							currentUrl={editing?.flyerUrl ?? null}
+							onPick={setFlyerFile}
+						/>
+					</div>
 
-			<label className="block">
-				<span className="mb-1 block text-xs text-muted-foreground">Description</span>
-				<textarea
-					id="description"
-					required
-					rows={3}
-					value={form.description}
-					onChange={(e) => set('description', e.target.value)}
-					className={field}
-				/>
-			</label>
+					<div className="min-w-0 space-y-4">
+						<div className="grid gap-4 sm:grid-cols-2">
+							<label className="block">
+								<span className="mb-1 block text-xs text-muted-foreground">
+									Title
+								</span>
+								<input
+									id="title"
+									required
+									value={form.title}
+									onChange={(e) => set('title', e.target.value)}
+									className={field}
+								/>
+							</label>
+							<label className="block">
+								<span className="mb-1 block text-xs text-muted-foreground">
+									Location
+								</span>
+								<input
+									id="location"
+									required
+									value={form.location}
+									onChange={(e) => set('location', e.target.value)}
+									className={field}
+								/>
+							</label>
+							<label className="block">
+								<span className="mb-1 block text-xs text-muted-foreground">
+									Start
+								</span>
+								<input
+									id="startTime"
+									type="datetime-local"
+									required
+									value={form.startTime}
+									onChange={(e) => set('startTime', e.target.value)}
+									className={field}
+								/>
+							</label>
+							<label className="block">
+								<span className="mb-1 block text-xs text-muted-foreground">
+									End
+								</span>
+								<input
+									id="endTime"
+									type="datetime-local"
+									value={form.endTime}
+									onChange={(e) => set('endTime', e.target.value)}
+									className={field}
+								/>
+							</label>
+							<label className="block">
+								<span className="mb-1 block text-xs text-muted-foreground">
+									Category
+								</span>
+								<select
+									id="labelId"
+									value={form.labelId}
+									onChange={(e) => set('labelId', e.target.value)}
+									className={field}
+								>
+									<option value="">— none —</option>
+									{labels
+										.filter((l) => l.active || l.id === form.labelId)
+										.map((l) => (
+											<option key={l.id} value={l.id}>
+												{l.name}
+											</option>
+										))}
+								</select>
+							</label>
+							<label className="block">
+								<span className="mb-1 block text-xs text-muted-foreground">
+									Time zone
+								</span>
+								<select
+									id="timeZone"
+									value={form.timeZone}
+									onChange={(e) => set('timeZone', e.target.value)}
+									className={field}
+								>
+									{COMMON_TZ.map((tz) => (
+										<option key={tz} value={tz}>
+											{tz}
+										</option>
+									))}
+								</select>
+							</label>
+						</div>
 
-			<div className="grid gap-4 sm:grid-cols-2">
-				<label className="block">
-					<span className="mb-1 block text-xs text-muted-foreground">
-						RSVP link (optional)
-					</span>
-					<input
-						id="rsvpLink"
-						value={form.rsvpLink}
-						onChange={(e) => set('rsvpLink', e.target.value)}
-						className={field}
-					/>
-				</label>
-				<div className="block">
-					<span className="mb-1 block text-xs text-muted-foreground">Public page</span>
-					<p className="py-2 text-sm text-muted-foreground">
-						{editing ? (
-							<a
-								href={eventPath(editing)}
-								target="_blank"
-								rel="noreferrer"
-								className="text-blue-400 hover:underline"
-							>
-								ieeeucf.com{eventPath(editing)}
-							</a>
-						) : (
-							'Made from the title once saved.'
-						)}{' '}
-						The name part follows the title; old links keep working.
-					</p>
+						<label className="block">
+							<span className="mb-1 block text-xs text-muted-foreground">
+								Description
+							</span>
+							<textarea
+								id="description"
+								required
+								rows={3}
+								value={form.description}
+								onChange={(e) => set('description', e.target.value)}
+								className={field}
+							/>
+						</label>
+
+						<div className="grid gap-4 sm:grid-cols-2">
+							<label className="block">
+								<span className="mb-1 block text-xs text-muted-foreground">
+									RSVP link (optional)
+								</span>
+								<input
+									id="rsvpLink"
+									value={form.rsvpLink}
+									onChange={(e) => set('rsvpLink', e.target.value)}
+									className={field}
+								/>
+							</label>
+							<div className="block">
+								<span className="mb-1 block text-xs text-muted-foreground">
+									Public page
+								</span>
+								<p className="py-2 text-sm text-muted-foreground">
+									{editing ? (
+										<a
+											href={eventPath(editing)}
+											target="_blank"
+											rel="noreferrer"
+											className="text-blue-400 hover:underline"
+										>
+											ieeeucf.com{eventPath(editing)}
+										</a>
+									) : (
+										'Made from the title once saved.'
+									)}{' '}
+									The name part follows the title; old links keep working.
+								</p>
+							</div>
+						</div>
+
+						<div className="flex flex-wrap gap-6 text-sm text-muted-foreground">
+							<label className="flex items-center gap-2">
+								<input
+									id="isGlobal"
+									type="checkbox"
+									checked={form.isGlobal}
+									onChange={(e) => set('isGlobal', e.target.checked)}
+								/>
+								Global (also post to Discord)
+							</label>
+							<label className="flex items-center gap-2">
+								<input
+									id="hidden"
+									type="checkbox"
+									checked={form.hidden}
+									onChange={(e) => set('hidden', e.target.checked)}
+								/>
+								Hidden (keep in the calendar, hide from the events feed)
+							</label>
+							<label className="flex items-center gap-2">
+								<input
+									id="allDay"
+									type="checkbox"
+									checked={form.allDay}
+									onChange={(e) => set('allDay', e.target.checked)}
+								/>
+								All-day
+							</label>
+							<label className="flex items-center gap-2">
+								<input
+									id="pingCreatorOnUpdate"
+									type="checkbox"
+									checked={form.pingCreatorOnUpdate}
+									onChange={(e) => set('pingCreatorOnUpdate', e.target.checked)}
+								/>
+								Ping Creator on Discord for updates
+							</label>
+							<label className="flex items-center gap-2">
+								<input
+									id="requiresDues"
+									type="checkbox"
+									checked={form.requiresDues}
+									onChange={(e) => set('requiresDues', e.target.checked)}
+								/>
+								Requires dues
+							</label>
+						</div>
+
+						<div className="grid gap-4 sm:grid-cols-3">
+							<label className="block">
+								<span className="mb-1 block text-xs text-muted-foreground">
+									SU Room Reservation
+								</span>
+								<select
+									id="roomReservationStatus"
+									value={form.roomReservationStatus}
+									onChange={(e) =>
+										set(
+											'roomReservationStatus',
+											e.target.value as RoomReservationStatus,
+										)
+									}
+									className={field}
+								>
+									{ROOM_RESERVATION_STATUSES.map((s) => (
+										<option key={s} value={s}>
+											{ROOM_RESERVATION_LABELS[s]}
+										</option>
+									))}
+								</select>
+							</label>
+							{form.roomReservationStatus !== 'none' && (
+								<>
+									<label className="block">
+										<span className="mb-1 block text-xs text-muted-foreground">
+											Room (optional)
+										</span>
+										<input
+											id="roomReservationRoom"
+											value={form.roomReservationRoom}
+											onChange={(e) =>
+												set('roomReservationRoom', e.target.value)
+											}
+											className={field}
+										/>
+									</label>
+									<label className="block">
+										<span className="mb-1 block text-xs text-muted-foreground">
+											Reservation # (optional)
+										</span>
+										<input
+											id="roomReservationNumber"
+											value={form.roomReservationNumber}
+											onChange={(e) =>
+												set('roomReservationNumber', e.target.value)
+											}
+											className={field}
+										/>
+									</label>
+								</>
+							)}
+						</div>
+					</div>
 				</div>
-			</div>
 
-			<div className="flex flex-wrap gap-6 text-sm text-muted-foreground">
-				<label className="flex items-center gap-2">
-					<input
-						id="isGlobal"
-						type="checkbox"
-						checked={form.isGlobal}
-						onChange={(e) => set('isGlobal', e.target.checked)}
-					/>
-					Global (also post to Discord)
-				</label>
-				<label className="flex items-center gap-2">
-					<input
-						id="hidden"
-						type="checkbox"
-						checked={form.hidden}
-						onChange={(e) => set('hidden', e.target.checked)}
-					/>
-					Hidden (keep in the calendar, hide from the events feed)
-				</label>
-				<label className="flex items-center gap-2">
-					<input
-						id="allDay"
-						type="checkbox"
-						checked={form.allDay}
-						onChange={(e) => set('allDay', e.target.checked)}
-					/>
-					All-day
-				</label>
-				<label className="flex items-center gap-2">
-					<input
-						id="pingCreatorOnUpdate"
-						type="checkbox"
-						checked={form.pingCreatorOnUpdate}
-						onChange={(e) => set('pingCreatorOnUpdate', e.target.checked)}
-					/>
-					Ping Creator on Discord for updates
-				</label>
-				<label className="flex items-center gap-2">
-					<input
-						id="requiresDues"
-						type="checkbox"
-						checked={form.requiresDues}
-						onChange={(e) => set('requiresDues', e.target.checked)}
-					/>
-					Requires dues
-				</label>
-			</div>
-
-			<div className="grid gap-4 sm:grid-cols-3">
-				<label className="block">
-					<span className="mb-1 block text-xs text-muted-foreground">
-						SU Room Reservation
-					</span>
-					<select
-						id="roomReservationStatus"
-						value={form.roomReservationStatus}
-						onChange={(e) =>
-							set('roomReservationStatus', e.target.value as RoomReservationStatus)
-						}
-						className={field}
+				<div className="flex flex-wrap items-center justify-end gap-3 border-t border-border px-6 py-4">
+					{error && <p className="mr-auto text-sm text-red-400">{error}</p>}
+					<button
+						type="button"
+						disabled={pending}
+						onClick={() => onDone()}
+						className="rounded-md border border-input px-4 py-2 text-sm text-muted-foreground disabled:opacity-50"
 					>
-						{ROOM_RESERVATION_STATUSES.map((s) => (
-							<option key={s} value={s}>
-								{ROOM_RESERVATION_LABELS[s]}
-							</option>
-						))}
-					</select>
-				</label>
-				{form.roomReservationStatus !== 'none' && (
-					<>
-						<label className="block">
-							<span className="mb-1 block text-xs text-muted-foreground">
-								Room (optional)
-							</span>
-							<input
-								id="roomReservationRoom"
-								value={form.roomReservationRoom}
-								onChange={(e) => set('roomReservationRoom', e.target.value)}
-								className={field}
-							/>
-						</label>
-						<label className="block">
-							<span className="mb-1 block text-xs text-muted-foreground">
-								Reservation # (optional)
-							</span>
-							<input
-								id="roomReservationNumber"
-								value={form.roomReservationNumber}
-								onChange={(e) => set('roomReservationNumber', e.target.value)}
-								className={field}
-							/>
-						</label>
-					</>
-				)}
-			</div>
-
-			<div className="flex flex-wrap items-center gap-4">
-				{editing?.flyerUrl && !flyerFile && (
-					// eslint-disable-next-line @next/next/no-img-element
-					<img
-						src={editing.flyerUrl}
-						alt="current flyer"
-						className="h-16 w-16 rounded object-cover"
-					/>
-				)}
-				<label className="block">
-					<span className="mb-1 block text-xs text-muted-foreground">
-						{editing?.flyerUrl ? 'Replace flyer (optional)' : 'Flyer'}
-					</span>
-					<input
-						id="flyer"
-						type="file"
-						accept={FLYER_ACCEPT}
-						onChange={(e) => setFlyerFile(e.target.files?.[0] ?? null)}
-						className="text-sm text-muted-foreground"
-					/>
-				</label>
-				{!editing?.flyerUrl && !flyerFile && (
-					<span className="text-xs text-amber-400">
-						No flyer yet — you can add one later, but don&apos;t forget.
-					</span>
-				)}
-			</div>
-
-			{error && <p className="text-sm text-red-400">{error}</p>}
-
-			<div className="flex gap-3">
-				<button
-					type="submit"
-					disabled={pending}
-					className="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
-				>
-					{uploadingFlyer
-						? 'Uploading flyer…'
-						: pending
-							? 'Saving…'
-							: editing
-								? 'Save changes'
-								: 'Create event'}
-				</button>
-				<button
-					type="button"
-					onClick={() => onDone()}
-					className="rounded-md border border-input px-4 py-2 text-sm text-muted-foreground"
-				>
-					Cancel
-				</button>
-			</div>
-		</form>
+						Cancel
+					</button>
+					<button
+						type="submit"
+						disabled={pending}
+						className="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+					>
+						{uploadingFlyer
+							? 'Uploading flyer…'
+							: pending
+								? 'Saving…'
+								: editing
+									? 'Save changes'
+									: 'Create event'}
+					</button>
+				</div>
+			</form>
+		</DialogContent>
 	);
 }
 
@@ -663,16 +887,31 @@ interface PendingDelete {
 	mode: 'archive' | 'purge';
 }
 
-export function EventManager() {
+export function EventManager({
+	initialView = 'upcoming',
+	initialMonth,
+}: {
+	initialView?: EventView;
+	/** "yyyy-mm" for the Calendar tab; defaults to this month. */
+	initialMonth?: string;
+}) {
 	const utils = trpc.useUtils();
 	const { data: events, isLoading } = trpc.event.getAllForAdmin.useQuery();
 	const { data: labels } = trpc.eventLabel.list.useQuery();
 
 	const [showForm, setShowForm] = useState(false);
 	const [editing, setEditing] = useState<AdminEvent | null>(null);
+	// Bumped on every open so the form remounts with fresh values, while the dialog
+	// itself stays mounted long enough to play its close animation.
+	const [formKey, setFormKey] = useState(0);
 	const [attendeesFor, setAttendeesFor] = useState<string | null>(null);
 	const [showArchived, setShowArchived] = useState(false);
-	const [showPast, setShowPast] = useState(false);
+	const [view, setViewState] = useState<EventView>(initialView);
+	const [calMonth, setCalMonthState] = useState(() => initialMonth ?? monthKeyOf(new Date()));
+	const [createDay, setCreateDay] = useState<string | undefined>(undefined);
+	// Shared by both tabs, so switching Upcoming ↔ Past keeps the search.
+	const [filters, setFilters] = useState<EventFilters>(EMPTY_FILTERS);
+	const [groupBy, setGroupBy] = useState<GroupBy>('semester');
 	const [flyerBusy, setFlyerBusy] = useState<string | null>(null);
 	const flyerRef = useRef<HTMLInputElement>(null);
 	const flyerTarget = useRef<string | null>(null);
@@ -768,25 +1007,112 @@ export function EventManager() {
 		}
 	}
 
-	const sorted = useMemo(
-		() => (events ?? []).slice().sort((a, b) => (a.startTimeRaw < b.startTimeRaw ? 1 : -1)),
-		[events],
-	);
-	const archivedCount = useMemo(() => sorted.filter((e) => !e.active).length, [sorted]);
-	const pastCount = useMemo(
-		() => sorted.filter((e) => new Date(e.endTimeRaw ?? e.startTimeRaw) < new Date()).length,
-		[sorted],
-	);
-	const visible = sorted
-		.filter((e) => showArchived || e.active)
-		.filter((e) => showPast || new Date(e.endTimeRaw ?? e.startTimeRaw) >= new Date());
+	// Upcoming: soonest first. Past: most recent first, so last week isn't buried under last year.
+	const { upcoming, past } = useMemo(() => {
+		const now = Date.now();
+		const byStart = (events ?? [])
+			.map((ev) => ({ ev, start: parseWire(ev.startTimeRaw) }))
+			.sort((a, b) => a.start.getTime() - b.start.getTime());
+		const split = (wantPast: boolean) =>
+			byStart.filter(({ ev }) => isPast(ev, now) === wantPast);
+		return { upcoming: split(false), past: split(true).reverse() };
+	}, [events]);
+	const filterTab = (tab: typeof upcoming, isPastTab: boolean) =>
+		tab
+			.filter(({ ev, start }) => matchesEventFilters(ev, start, filters, isPastTab))
+			.map(({ ev }) => ev);
+	const filtered = { upcoming: filterTab(upcoming, false), past: filterTab(past, true) };
+	// The calendar shows both sides of "now" at once.
+	const inView = view === 'calendar' ? [...filtered.upcoming, ...filtered.past] : filtered[view];
+	const archivedCount = inView.filter((e) => !e.active).length;
+	const visible = inView.filter((e) => showArchived || e.active);
+	const unfilteredInView = (
+		view === 'past' ? past : view === 'upcoming' ? upcoming : [...upcoming, ...past]
+	).filter(({ ev }) => showArchived || ev.active).length;
+	const isPastView = view === 'past';
+	// Event / Start / Category / (Global, Room | —) / Sync / Flyer / (— | Wrap-up) / actions
+	const colCount = isPastView ? 7 : 8;
 
-	function openCreate() {
+	/** Live, public events only: archived and hidden ones don't need chasing. */
+	const attention = useMemo(() => {
+		const now = Date.now();
+		const live = (tab: typeof upcoming) =>
+			tab.filter(({ ev }) => ev.active && !ev.hidden).map(({ ev }) => ev);
+		const liveUpcoming = live(upcoming);
+		const wrapUpSince = new Date(now - WRAP_UP_WINDOW_DAYS * 86_400_000);
+		const noFlyer = liveUpcoming.filter((e) => !e.flyerUrl);
+		const syncErrors = (events ?? []).filter((e) => e.active && e.syncStatus === 'error');
+		return {
+			noFlyer: noFlyer.length,
+			noFlyerSoon: noFlyer.filter(
+				(e) => parseWire(e.startTimeRaw).getTime() - now <= FLYER_URGENT_DAYS * 86_400_000,
+			).length,
+			rooms: liveUpcoming.filter(needsRoomAction).length,
+			syncErrors: syncErrors.length,
+			syncErrorsUpcoming: syncErrors.some((e) => !isPast(e, now)),
+			wrapUp: past.filter(
+				({ ev, start }) =>
+					ev.active && !ev.hidden && start >= wrapUpSince && !isWrappedUp(ev),
+			).length,
+			wrapUpSince: toDateInput(wrapUpSince),
+		};
+	}, [events, upcoming, past]);
+
+	/** Jump from an attention chip to the tab + filters that list exactly those events. */
+	function focus(tab: EventView, f: Partial<EventFilters>) {
+		setView(tab);
+		setFilters({ ...EMPTY_FILTERS, ...f });
+	}
+
+	/** A heading row before the first event of each semester / month on the Past tab. */
+	function groupHeaderAt(i: number) {
+		if (!isPastView || groupBy === 'none') return null;
+		const label = (ev: AdminEvent) => groupLabel(parseWire(ev.startTimeRaw), groupBy);
+		const current = label(visible[i]);
+		if (i > 0 && label(visible[i - 1]) === current) return null;
+		const n = visible.filter((ev) => label(ev) === current).length;
+		return (
+			<TableRow className="hover:bg-transparent">
+				<TableCell
+					colSpan={colCount}
+					className="bg-secondary/50 py-1.5 text-xs font-semibold tracking-wide text-ieee-dark-yellow uppercase"
+				>
+					{current}
+					<span className="ml-2 font-normal tracking-normal text-muted-foreground normal-case">
+						{n} event{n === 1 ? '' : 's'}
+					</span>
+				</TableCell>
+			</TableRow>
+		);
+	}
+
+	/** Keep the tab (and calendar month) in the URL so each view can be linked/bookmarked. */
+	function syncUrl(nextView: EventView, month: string) {
+		const url = new URL(window.location.href);
+		if (nextView === 'upcoming') url.searchParams.delete('view');
+		else url.searchParams.set('view', nextView);
+		if (nextView === 'calendar') url.searchParams.set('month', month);
+		else url.searchParams.delete('month');
+		window.history.replaceState(null, '', url);
+	}
+	function setView(next: EventView) {
+		setViewState(next);
+		syncUrl(next, calMonth);
+	}
+	function setCalMonth(month: string) {
+		setCalMonthState(month);
+		syncUrl(view, month);
+	}
+
+	function openCreate(day?: string) {
+		setCreateDay(day);
 		setEditing(null);
+		setFormKey((k) => k + 1);
 		setShowForm(true);
 	}
 	function openEdit(ev: AdminEvent) {
 		setEditing(ev);
+		setFormKey((k) => k + 1);
 		setShowForm(true);
 	}
 
@@ -835,9 +1161,10 @@ export function EventManager() {
 
 	/** Upcoming, live events without a flyer get flagged; past ones just say "none". */
 	function flyerUrgency(ev: AdminEvent): 'urgent' | 'missing' | null {
-		if (ev.flyerUrl || !ev.active) return null;
+		// Hidden events (holidays, breaks) never reach the public feed, so they don't need one.
+		if (ev.flyerUrl || !ev.active || ev.hidden) return null;
 		const now = Date.now();
-		if (parseWire(ev.endTimeRaw ?? ev.startTimeRaw).getTime() < now) return null;
+		if (isPast(ev, now)) return null;
 		const daysOut = (parseWire(ev.startTimeRaw).getTime() - now) / 86_400_000;
 		return daysOut <= FLYER_URGENT_DAYS ? 'urgent' : 'missing';
 	}
@@ -870,7 +1197,7 @@ export function EventManager() {
 			<div className="mb-4 flex flex-wrap gap-3">
 				<button
 					type="button"
-					onClick={openCreate}
+					onClick={() => openCreate()}
 					className="rounded-md bg-ieee-dark-yellow px-4 py-2 text-sm font-semibold text-black"
 				>
 					+ New event
@@ -884,16 +1211,6 @@ export function EventManager() {
 					{importGoogle.isPending ? 'Working…' : 'Import from Google Calendar'}
 				</button>
 				<div className="ml-auto flex items-center gap-4">
-					{pastCount > 0 && (
-						<label className="flex items-center gap-2 text-xs text-muted-foreground">
-							<input
-								type="checkbox"
-								checked={showPast}
-								onChange={(e) => setShowPast(e.target.checked)}
-							/>
-							Show past ({pastCount})
-						</label>
-					)}
 					{archivedCount > 0 && (
 						<label className="flex items-center gap-2 text-xs text-muted-foreground">
 							<input
@@ -906,6 +1223,127 @@ export function EventManager() {
 					)}
 				</div>
 			</div>
+
+			<div className="mb-4 flex flex-wrap items-center gap-2 text-sm">
+				<span className="mr-1 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+					Needs attention
+				</span>
+				{attention.noFlyer > 0 && (
+					<button
+						type="button"
+						onClick={() => focus('upcoming', { flyer: 'missing', visibility: 'shown' })}
+						className={`rounded-full border px-3 py-1 text-xs font-semibold transition-colors ${
+							attention.noFlyerSoon > 0
+								? 'border-red-800 bg-red-900/40 text-red-200 hover:bg-red-900/60'
+								: 'border-amber-800 bg-amber-900/30 text-amber-200 hover:bg-amber-900/50'
+						}`}
+					>
+						{attention.noFlyer} upcoming without a flyer
+						{attention.noFlyerSoon > 0 && ` · ${attention.noFlyerSoon} this week`}
+					</button>
+				)}
+				{attention.rooms > 0 && (
+					<button
+						type="button"
+						onClick={() => focus('upcoming', { room: 'action', visibility: 'shown' })}
+						className="rounded-full border border-blue-800 bg-blue-900/30 px-3 py-1 text-xs font-semibold text-blue-200 hover:bg-blue-900/50"
+					>
+						{attention.rooms} room reservation{attention.rooms === 1 ? '' : 's'} not
+						confirmed
+					</button>
+				)}
+				{attention.syncErrors > 0 && (
+					<button
+						type="button"
+						onClick={() =>
+							focus(attention.syncErrorsUpcoming ? 'upcoming' : 'past', {
+								sync: 'error',
+							})
+						}
+						className="rounded-full border border-red-800 bg-red-900/40 px-3 py-1 text-xs font-semibold text-red-200 hover:bg-red-900/60"
+					>
+						{attention.syncErrors} sync error{attention.syncErrors === 1 ? '' : 's'}
+					</button>
+				)}
+				{attention.wrapUp > 0 && (
+					<button
+						type="button"
+						onClick={() =>
+							focus('past', {
+								wrapUp: 'incomplete',
+								visibility: 'shown',
+								from: attention.wrapUpSince,
+							})
+						}
+						className="rounded-full border border-input bg-secondary/60 px-3 py-1 text-xs font-semibold text-foreground hover:bg-secondary"
+					>
+						{attention.wrapUp} recent event{attention.wrapUp === 1 ? '' : 's'} missing
+						check-ins or photos
+					</button>
+				)}
+				{attention.noFlyer + attention.rooms + attention.syncErrors + attention.wrapUp ===
+					0 && (
+					<span className="inline-flex items-center gap-1 text-xs text-green-400">
+						<CircleCheck className="size-3.5" /> All caught up
+					</span>
+				)}
+			</div>
+
+			<div
+				role="tablist"
+				aria-label="Event timeframe"
+				className="mb-4 flex gap-1 border-b border-border"
+			>
+				{(
+					[
+						['upcoming', 'Upcoming', filtered.upcoming],
+						['past', 'Past', filtered.past],
+						['calendar', 'Calendar', null],
+					] as const
+				).map(([key, label, list]) => (
+					<button
+						key={key}
+						type="button"
+						role="tab"
+						aria-selected={view === key}
+						onClick={() => setView(key)}
+						className={`-mb-px border-b-2 px-4 py-2 text-sm font-semibold transition-colors ${
+							view === key
+								? 'border-ieee-dark-yellow text-foreground'
+								: 'border-transparent text-muted-foreground hover:text-foreground'
+						}`}
+					>
+						{label}
+						{list && (
+							<span className="ml-1 text-xs font-normal text-muted-foreground">
+								({list.filter((e) => e.active).length})
+							</span>
+						)}
+					</button>
+				))}
+				{isPastView && (
+					<label className="ml-auto flex items-center gap-2 self-center text-xs text-muted-foreground">
+						Group by
+						<select
+							value={groupBy}
+							onChange={(e) => setGroupBy(e.target.value as GroupBy)}
+							className="h-8 rounded-md border border-input bg-card px-2 text-xs text-foreground"
+						>
+							<option value="semester">Semester</option>
+							<option value="month">Month</option>
+							<option value="none">Nothing</option>
+						</select>
+					</label>
+				)}
+			</div>
+
+			<EventFilterBar
+				filters={filters}
+				onChange={setFilters}
+				labels={labels ?? []}
+				shown={visible.length}
+				total={unfilteredInView}
+			/>
 
 			{importPreview && (
 				<div className="mb-6 rounded-lg border border-input bg-card/60 p-4 text-sm">
@@ -942,15 +1380,15 @@ export function EventManager() {
 				</div>
 			)}
 
-			{showForm && (
+			<Dialog open={showForm} onOpenChange={(open) => !open && setShowForm(false)}>
 				<EventForm
-					// Remount on create↔edit switch so the form never keeps stale values.
-					key={editing?.id ?? 'new'}
+					key={formKey}
 					labels={labels ?? []}
 					editing={editing}
+					defaultDay={createDay}
 					onDone={onFormDone}
 				/>
-			)}
+			</Dialog>
 
 			<input
 				ref={flyerRef}
@@ -962,6 +1400,15 @@ export function EventManager() {
 
 			{isLoading ? (
 				<p className="text-sm text-muted-foreground">Loading…</p>
+			) : view === 'calendar' ? (
+				<EventCalendar
+					events={visible}
+					parse={parseWire}
+					month={calMonth}
+					onMonthChange={setCalMonth}
+					onOpen={openEdit}
+					onCreate={openCreate}
+				/>
 			) : (
 				<Table>
 					<TableHeader className="bg-card/60 text-xs uppercase">
@@ -969,180 +1416,277 @@ export function EventManager() {
 							<TableHead>Event</TableHead>
 							<TableHead>Start</TableHead>
 							<TableHead>Category</TableHead>
-							<TableHead>Global</TableHead>
+							{!isPastView && <TableHead>Global</TableHead>}
+							{!isPastView && <TableHead>Room</TableHead>}
 							<TableHead>Sync</TableHead>
 							<TableHead>Flyer</TableHead>
+							{isPastView && <TableHead>Wrap-up</TableHead>}
 							<TableHead />
 						</TableRow>
 					</TableHeader>
 					<TableBody>
-						{visible.map((ev) => (
-							<TableRow key={ev.id} inactive={!ev.active}>
-								<TableCell>
-									<div className="font-medium">
-										{ev.title}
-										{!ev.active && (
-											<span className="ml-2 rounded bg-secondary px-1.5 py-0.5 text-[10px] text-muted-foreground uppercase">
-												archived
-											</span>
-										)}
-										{ev.hidden && (
-											<span className="ml-2 rounded bg-secondary px-1.5 py-0.5 text-[10px] text-amber-400 uppercase">
-												hidden
-											</span>
-										)}
-									</div>
-									<div className="text-xs text-muted-foreground-dim">
-										{ev.location}
-										{ev.active && !ev.hidden && (
-											<a
-												href={eventPath(ev)}
-												target="_blank"
-												rel="noreferrer"
-												className="ml-2 text-blue-400 hover:underline"
-											>
-												View page ↗
-											</a>
-										)}
-									</div>
-								</TableCell>
-								<TableCell className="text-xs text-muted-foreground">
-									{ev.startTime}
-								</TableCell>
-								<TableCell>
-									{ev.label ? (
-										<span className="inline-flex items-center gap-1 text-xs">
-											<span
-												className="h-2.5 w-2.5 rounded-full"
-												style={{
-													backgroundColor: ev.label.hex ?? '#888',
-												}}
-											/>
-											{ev.label.name}
-										</span>
-									) : (
-										<span className="text-xs text-muted-foreground-dim">—</span>
-									)}
-								</TableCell>
-								<TableCell className="text-xs">{ev.isGlobal ? '✓' : ''}</TableCell>
-								<TableCell>
-									<span
-										className={`rounded px-2 py-0.5 text-xs ${SYNC_BADGE[ev.syncStatus] ?? SYNC_BADGE.pending}`}
-									>
-										{ev.syncStatus}
-									</span>
-								</TableCell>
-								<TableCell>
-									{ev.flyerUrl ? (
-										// eslint-disable-next-line @next/next/no-img-element
-										<img
-											src={ev.flyerUrl}
-											alt="flyer"
-											className="h-10 w-10 rounded object-cover"
-										/>
-									) : flyerUrgency(ev) === 'urgent' ? (
-										<span
-											title={`Starts within ${FLYER_URGENT_DAYS} days and has no flyer`}
-											className="rounded bg-red-900/70 px-2 py-0.5 text-xs font-semibold text-red-300"
-										>
-											missing
-										</span>
-									) : flyerUrgency(ev) === 'missing' ? (
-										<span className="rounded bg-amber-900/50 px-2 py-0.5 text-xs text-amber-300">
-											missing
-										</span>
-									) : (
-										<span className="text-xs text-muted-foreground-dim">
-											none
-										</span>
-									)}
-								</TableCell>
-								<TableCell>
-									<div className="flex justify-end gap-3 text-xs">
-										<button
-											type="button"
-											onClick={() => openEdit(ev)}
-											className="text-blue-400 hover:underline"
-										>
-											edit
-										</button>
-										<button
-											type="button"
-											onClick={() => setAttendeesFor(ev.id)}
-											className="text-blue-400 hover:underline"
-										>
-											attendees
-										</button>
-										<button
-											type="button"
-											disabled={setHidden.isPending}
-											onClick={() =>
-												setHidden.mutate({
-													id: ev.id,
-													data: { hidden: !ev.hidden },
-												})
-											}
-											className="text-blue-400 hover:underline disabled:opacity-50"
-										>
-											{ev.hidden ? 'unhide' : 'hide'}
-										</button>
-										<button
-											type="button"
-											disabled={flyerBusy === ev.id}
-											onClick={() => pickFlyer(ev.id)}
-											className="text-blue-400 hover:underline disabled:opacity-50"
-										>
-											{flyerBusy === ev.id ? 'uploading…' : 'flyer'}
-										</button>
-										{ev.syncStatus === 'error' && (
-											<button
-												type="button"
-												disabled={resync.isPending}
-												onClick={() => resync.mutate({ id: ev.id })}
-												className="text-yellow-400 hover:underline disabled:opacity-50"
-											>
-												re-sync
-											</button>
-										)}
-										{ev.active ? (
-											<button
-												type="button"
-												onClick={() =>
-													setPendingDelete({ ev, mode: 'archive' })
-												}
-												className="text-red-400 hover:underline"
-											>
-												delete
-											</button>
-										) : (
-											<>
-												<button
-													type="button"
-													disabled={restore.isPending}
-													onClick={() => restore.mutate({ id: ev.id })}
-													className="text-green-400 hover:underline disabled:opacity-50"
+						{visible.map((ev, i) => (
+							<Fragment key={ev.id}>
+								{groupHeaderAt(i)}
+								<TableRow inactive={!ev.active}>
+									<TableCell>
+										<div className="font-medium">
+											{ev.title}
+											{!ev.active && (
+												<span className="ml-2 rounded bg-secondary px-1.5 py-0.5 text-[10px] text-muted-foreground uppercase">
+													archived
+												</span>
+											)}
+											{ev.hidden && (
+												<span className="ml-2 rounded bg-secondary px-1.5 py-0.5 text-[10px] text-amber-400 uppercase">
+													hidden
+												</span>
+											)}
+										</div>
+										<div className="text-xs text-muted-foreground-dim">
+											{ev.location}
+											{ev.active && !ev.hidden && (
+												<a
+													href={eventPath(ev)}
+													target="_blank"
+													rel="noreferrer"
+													className="ml-2 text-blue-400 hover:underline"
 												>
-													restore
-												</button>
-												<button
-													type="button"
-													onClick={() => {
-														setPurgeText('');
-														setPendingDelete({ ev, mode: 'purge' });
+													View page ↗
+												</a>
+											)}
+										</div>
+									</TableCell>
+									<TableCell className="text-xs text-muted-foreground">
+										{ev.allDay ? allDayLabel(ev) : ev.startTime}
+									</TableCell>
+									<TableCell>
+										{ev.label ? (
+											<span className="inline-flex items-center gap-1 text-xs">
+												<span
+													className="h-2.5 w-2.5 rounded-full"
+													style={{
+														backgroundColor: ev.label.hex ?? '#888',
 													}}
-													className="text-red-500 hover:underline"
-												>
-													delete permanently
-												</button>
-											</>
+												/>
+												{ev.label.name}
+											</span>
+										) : (
+											<span className="text-xs text-muted-foreground-dim">
+												—
+											</span>
 										)}
-									</div>
-								</TableCell>
-							</TableRow>
+									</TableCell>
+									{!isPastView && (
+										<TableCell className="text-xs">
+											{ev.isGlobal ? '✓' : ''}
+										</TableCell>
+									)}
+									{!isPastView && (
+										<TableCell>
+											{roomStatus(ev) === 'none' ? (
+												<span className="text-xs text-muted-foreground-dim">
+													—
+												</span>
+											) : (
+												<div
+													title={
+														ev.roomReservation?.reservationNumber
+															? `Reservation #${ev.roomReservation.reservationNumber}`
+															: undefined
+													}
+												>
+													<span
+														className={`rounded px-2 py-0.5 text-xs whitespace-nowrap ${ROOM_BADGE[roomStatus(ev)] ?? ''}`}
+													>
+														{
+															ROOM_RESERVATION_LABELS[
+																roomStatus(
+																	ev,
+																) as RoomReservationStatus
+															]
+														}
+													</span>
+													{ev.roomReservation?.room && (
+														<div className="mt-1 text-[11px] text-muted-foreground-dim">
+															{ev.roomReservation.room}
+														</div>
+													)}
+												</div>
+											)}
+										</TableCell>
+									)}
+									<TableCell>
+										<span
+											className={`rounded px-2 py-0.5 text-xs ${SYNC_BADGE[ev.syncStatus] ?? SYNC_BADGE.pending}`}
+										>
+											{ev.syncStatus}
+										</span>
+									</TableCell>
+									<TableCell>
+										{ev.flyerUrl ? (
+											// eslint-disable-next-line @next/next/no-img-element
+											<img
+												src={ev.flyerUrl}
+												alt="flyer"
+												className="h-10 w-10 rounded object-cover"
+											/>
+										) : flyerUrgency(ev) === 'urgent' ? (
+											<span
+												title={`Starts within ${FLYER_URGENT_DAYS} days and has no flyer`}
+												className="rounded bg-red-900/70 px-2 py-0.5 text-xs font-semibold text-red-300"
+											>
+												missing
+											</span>
+										) : flyerUrgency(ev) === 'missing' ? (
+											<span className="rounded bg-amber-900/50 px-2 py-0.5 text-xs text-amber-300">
+												missing
+											</span>
+										) : (
+											<span className="text-xs text-muted-foreground-dim">
+												none
+											</span>
+										)}
+									</TableCell>
+									{isPastView && (
+										<TableCell>
+											<div className="space-y-1 text-xs whitespace-nowrap">
+												{ev.attendeeCount > 0 ? (
+													<button
+														type="button"
+														onClick={() => setAttendeesFor(ev.id)}
+														className="block text-green-400 hover:underline"
+													>
+														✓ {ev.attendeeCount} checked in
+													</button>
+												) : (
+													<span className="block text-amber-400">
+														○ no check-ins
+													</span>
+												)}
+												{ev.photoCount > 0 ? (
+													<a
+														href={`/admin/photos?event=${ev.id}`}
+														className="block text-green-400 hover:underline"
+													>
+														✓ {ev.photoCount} photo
+														{ev.photoCount === 1 ? '' : 's'}
+														{ev.publicPhotoCount > 0 &&
+															` (${ev.publicPhotoCount} public)`}
+													</a>
+												) : ev.photoUrls ? (
+													<span className="block text-green-400">
+														✓ legacy photos
+													</span>
+												) : (
+													<span className="block text-amber-400">
+														○ no photos ·{' '}
+														<a
+															href={`/admin/photos?event=${ev.id}`}
+															className="text-blue-400 hover:underline"
+														>
+															add
+														</a>
+													</span>
+												)}
+											</div>
+										</TableCell>
+									)}
+									<TableCell>
+										<div className="flex justify-end gap-3 text-xs">
+											<button
+												type="button"
+												onClick={() => openEdit(ev)}
+												className="text-blue-400 hover:underline"
+											>
+												edit
+											</button>
+											<button
+												type="button"
+												onClick={() => setAttendeesFor(ev.id)}
+												className="text-blue-400 hover:underline"
+											>
+												attendees
+											</button>
+											<button
+												type="button"
+												disabled={setHidden.isPending}
+												onClick={() =>
+													setHidden.mutate({
+														id: ev.id,
+														data: { hidden: !ev.hidden },
+													})
+												}
+												className="text-blue-400 hover:underline disabled:opacity-50"
+											>
+												{ev.hidden ? 'unhide' : 'hide'}
+											</button>
+											<button
+												type="button"
+												disabled={flyerBusy === ev.id}
+												onClick={() => pickFlyer(ev.id)}
+												className="text-blue-400 hover:underline disabled:opacity-50"
+											>
+												{flyerBusy === ev.id ? 'uploading…' : 'flyer'}
+											</button>
+											{ev.syncStatus === 'error' && (
+												<button
+													type="button"
+													disabled={resync.isPending}
+													onClick={() => resync.mutate({ id: ev.id })}
+													className="text-yellow-400 hover:underline disabled:opacity-50"
+												>
+													re-sync
+												</button>
+											)}
+											{ev.active ? (
+												<button
+													type="button"
+													onClick={() =>
+														setPendingDelete({ ev, mode: 'archive' })
+													}
+													className="text-red-400 hover:underline"
+												>
+													delete
+												</button>
+											) : (
+												<>
+													<button
+														type="button"
+														disabled={restore.isPending}
+														onClick={() =>
+															restore.mutate({ id: ev.id })
+														}
+														className="text-green-400 hover:underline disabled:opacity-50"
+													>
+														restore
+													</button>
+													<button
+														type="button"
+														onClick={() => {
+															setPurgeText('');
+															setPendingDelete({ ev, mode: 'purge' });
+														}}
+														className="text-red-500 hover:underline"
+													>
+														delete permanently
+													</button>
+												</>
+											)}
+										</div>
+									</TableCell>
+								</TableRow>
+							</Fragment>
 						))}
 						{visible.length === 0 && (
-							<TableEmpty colSpan={7}>
-								{sorted.length === 0 ? 'No events yet.' : 'No active events.'}
+							<TableEmpty colSpan={colCount}>
+								{(events ?? []).length === 0
+									? 'No events yet.'
+									: hasActiveFilters(filters)
+										? `No ${view} events match these filters.`
+										: view === 'past'
+											? 'No past events.'
+											: 'No upcoming events.'}
 							</TableEmpty>
 						)}
 					</TableBody>

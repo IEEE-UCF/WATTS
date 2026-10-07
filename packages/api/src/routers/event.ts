@@ -23,6 +23,7 @@ import {
 	getTodaysCheckIns,
 	getEventAttendees,
 	getRoomReservationAlerts,
+	getEventActivity,
 } from '@watts/core/events';
 import { listLabels } from '@watts/core/event-labels';
 import { mapDomainError, mapUploadError } from '../map-domain-error';
@@ -67,6 +68,33 @@ function toEasternTime(time: string): string {
 	return dt.setZone('America/New_York').toFormat('MMMM d, yyyy h:mm a');
 }
 
+// All-day events are stored Google-style: UTC midnights with an exclusive end, and the
+// Google sync reads their date as the UTC date (packages/calendar dateOnly). Reading them
+// in Eastern would land on the evening before ("Nov 11" → "November 10, 7:00 PM"), so
+// show the UTC date with no time. The end becomes the last day the event covers.
+function utcDay(time: string): DateTime {
+	return DateTime.fromISO(time.replace(' ', 'T').replace(/([+-]\d{2})$/, '$1:00'), {
+		zone: 'utc',
+	}).startOf('day');
+}
+
+function displayTimes(event: EventRow): { startTime: string; endTime: string | null } {
+	if (!event.allDay) {
+		return {
+			startTime: toEasternTime(event.startTime),
+			endTime: event.endTime ? toEasternTime(event.endTime) : null,
+		};
+	}
+	const first = utcDay(event.startTime);
+	if (!first.isValid) return { startTime: event.startTime, endTime: null };
+	const last = event.endTime ? utcDay(event.endTime).minus({ days: 1 }) : null;
+	return {
+		startTime: first.toFormat('MMMM d, yyyy'),
+		// One-day events (exclusive end = the next midnight) get no separate end date.
+		endTime: last?.isValid && last > first ? last.toFormat('MMMM d, yyyy') : null,
+	};
+}
+
 // Presentation shape for an events row: human-readable Eastern strings for display
 // plus the raw UTC strings for reliable client-side Date parsing/sorting.
 type EventRow = Awaited<ReturnType<typeof listAllEvents>>[number];
@@ -75,8 +103,7 @@ type LabelRow = Awaited<ReturnType<typeof listLabels>>[number];
 function toDisplay(event: EventRow, label: LabelRow | null = null) {
 	return {
 		...event,
-		startTime: toEasternTime(event.startTime),
-		endTime: event.endTime ? toEasternTime(event.endTime) : null,
+		...displayTimes(event),
 		startTimeRaw: event.startTime,
 		endTimeRaw: event.endTime ?? null,
 		label: label
@@ -131,8 +158,17 @@ export const eventRouter = createTRPCRouter({
 	/** Staff grid: every event including inactive/soft-deleted ones. */
 	getAllForAdmin: manageEvents.query(async ({ ctx }) => {
 		try {
-			const [events, labels] = await Promise.all([listAllEvents(ctx.db), listLabels(ctx.db)]);
-			return withLabels(events, labels);
+			const [events, labels, activity] = await Promise.all([
+				listAllEvents(ctx.db),
+				listLabels(ctx.db),
+				getEventActivity(ctx.db),
+			]);
+			// Check-in + photo counts for the Past tab's wrap-up column.
+			const none = { attendeeCount: 0, photoCount: 0, publicPhotoCount: 0 };
+			return (await withLabels(events, labels)).map((e) => ({
+				...e,
+				...(activity.get(e.id) ?? none),
+			}));
 		} catch (error) {
 			mapDomainError(error);
 		}

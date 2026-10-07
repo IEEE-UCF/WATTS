@@ -1,6 +1,13 @@
-import { and, asc, eq, gte, inArray, lt } from 'drizzle-orm';
+import { and, asc, count, eq, gte, inArray, lt } from 'drizzle-orm';
 import type { WattsDb } from '@watts/db';
-import { Events, EventAttendees, EventLabels, Members, RoomReservations } from '@watts/db/schema';
+import {
+	Events,
+	EventAttendees,
+	EventLabels,
+	EventPhotos,
+	Members,
+	RoomReservations,
+} from '@watts/db/schema';
 import { DomainError } from './errors';
 import { recordRedirect } from './redirects';
 import { slugify } from './slugs';
@@ -61,6 +68,46 @@ export async function listAllEvents(db: WattsDb) {
 		.leftJoin(RoomReservations, eq(RoomReservations.eventId, Events.id))
 		.orderBy(asc(Events.startTime));
 	return rows.map(({ event, roomReservation }) => ({ ...event, roomReservation }));
+}
+
+export interface EventActivity {
+	attendeeCount: number;
+	photoCount: number;
+	publicPhotoCount: number;
+}
+
+/**
+ * Per-event check-in and photo counts for the admin event list's post-event checklist.
+ * Two grouped counts over indexed event_id columns; events with neither are absent.
+ */
+export async function getEventActivity(db: WattsDb): Promise<Map<string, EventActivity>> {
+	const [attendees, photos] = await Promise.all([
+		db
+			.select({ eventId: EventAttendees.eventId, n: count() })
+			.from(EventAttendees)
+			.groupBy(EventAttendees.eventId),
+		db
+			.select({ eventId: EventPhotos.eventId, visibility: EventPhotos.visibility, n: count() })
+			.from(EventPhotos)
+			.groupBy(EventPhotos.eventId, EventPhotos.visibility),
+	]);
+
+	const byEvent = new Map<string, EventActivity>();
+	const entry = (id: string) => {
+		let e = byEvent.get(id);
+		if (!e) {
+			e = { attendeeCount: 0, photoCount: 0, publicPhotoCount: 0 };
+			byEvent.set(id, e);
+		}
+		return e;
+	};
+	for (const row of attendees) entry(row.eventId).attendeeCount = row.n;
+	for (const row of photos) {
+		const e = entry(row.eventId);
+		e.photoCount += row.n;
+		if (row.visibility === 'public') e.publicPhotoCount += row.n;
+	}
+	return byEvent;
 }
 
 /**
