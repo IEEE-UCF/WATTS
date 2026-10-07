@@ -7,11 +7,11 @@ import { hasCapability } from '@watts/permissions';
 export default async function AdminEventsPage({
 	searchParams,
 }: {
-	searchParams: Promise<{ view?: string }>;
+	searchParams: Promise<{ view?: string; month?: string }>;
 }) {
 	const { roles } = await getSessionRoles();
 	if (!hasCapability(roles, 'manage_events')) redirect('/dashboard');
-	const { view } = await searchParams;
+	const { view, month } = await searchParams;
 
 	return (
 		<div className="mx-auto w-full max-w-6xl">
@@ -21,7 +21,10 @@ export default async function AdminEventsPage({
 				Calendar; tick <span className="text-foreground">Global</span> to also publish a
 				Discord scheduled event.
 			</p>
-			<EventManager initialView={view === 'past' ? 'past' : 'upcoming'} />
+			<EventManager
+				initialView={view === 'past' || view === 'calendar' ? view : 'upcoming'}
+				initialMonth={month && /^\d{4}-\d{2}$/.test(month) ? month : undefined}
+			/>
 		</div>
 	);
 }

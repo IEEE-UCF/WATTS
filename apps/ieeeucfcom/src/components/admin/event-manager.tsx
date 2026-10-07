@@ -7,6 +7,7 @@ import type { RouterOutputs } from '@watts/api';
 import { eventPath } from '@watts/core/event-path';
 import { uploadEventFlyer } from '@watts/storage/client';
 import { EventAttendeesSheet } from './event-attendees-sheet';
+import { EventCalendar, monthKeyOf } from './event-calendar';
 import {
 	EMPTY_FILTERS,
 	EventFilterBar,
@@ -90,6 +91,28 @@ function groupLabel(start: Date, by: Exclude<GroupBy, 'none'>): string {
 	return `${term} ${start.getFullYear()}`;
 }
 
+/**
+ * All-day events are stored Google-style as UTC midnights (exclusive end), so reading them
+ * in Eastern time lands on the evening before. Read the date in UTC instead.
+ */
+function allDayLabel(ev: AdminEvent): string {
+	const fmt = (raw: string) =>
+		parseWire(raw).toLocaleDateString('en-US', {
+			timeZone: 'UTC',
+			month: 'long',
+			day: 'numeric',
+			year: 'numeric',
+		});
+	const lastDay = ev.endTimeRaw
+		? new Date(parseWire(ev.endTimeRaw).getTime() - 86_400_000)
+		: null;
+	const multi = lastDay && lastDay > parseWire(ev.startTimeRaw);
+	const end = multi
+		? ` – ${lastDay.toLocaleDateString('en-US', { timeZone: 'UTC', month: 'long', day: 'numeric' })}`
+		: '';
+	return `${fmt(ev.startTimeRaw)}${end} · All day`;
+}
+
 /** yyyy-mm-dd in the browser's time zone, for <input type="date"> / the date filters. */
 function toDateInput(d: Date): string {
 	return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
@@ -125,7 +148,7 @@ function isPast(ev: AdminEvent, now = Date.now()): boolean {
 	return parseWire(ev.endTimeRaw ?? ev.startTimeRaw).getTime() < now;
 }
 
-export type EventView = 'upcoming' | 'past';
+export type EventView = 'upcoming' | 'past' | 'calendar';
 
 /** Postgres wire string → value for a <input type="datetime-local"> in the browser's local tz. */
 function toLocalInput(raw: string | null | undefined): string {
@@ -285,13 +308,14 @@ interface FormState {
 	pingCreatorOnUpdate: boolean;
 }
 
-function emptyForm(): FormState {
+/** `day` (yyyy-mm-dd) pre-fills a 6–7 PM slot, e.g. from clicking a calendar square. */
+function emptyForm(day?: string): FormState {
 	return {
 		title: '',
 		location: '',
 		description: '',
-		startTime: '',
-		endTime: '',
+		startTime: day ? `${day}T18:00` : '',
+		endTime: day ? `${day}T19:00` : '',
 		labelId: '',
 		timeZone: 'America/New_York',
 		isGlobal: false,
@@ -330,13 +354,18 @@ function fromEvent(ev: AdminEvent): FormState {
 function EventForm({
 	labels,
 	editing,
+	defaultDay,
 	onDone,
 }: {
 	labels: Label[];
 	editing: AdminEvent | null;
+	/** New events only: start on this day (yyyy-mm-dd). */
+	defaultDay?: string;
 	onDone: (saved?: SavedEvent) => void;
 }) {
-	const [form, setForm] = useState<FormState>(editing ? fromEvent(editing) : emptyForm());
+	const [form, setForm] = useState<FormState>(
+		editing ? fromEvent(editing) : emptyForm(defaultDay),
+	);
 	const [flyerFile, setFlyerFile] = useState<File | null>(null);
 	const [uploadingFlyer, setUploadingFlyer] = useState(false);
 	const utils = trpc.useUtils();
@@ -858,7 +887,14 @@ interface PendingDelete {
 	mode: 'archive' | 'purge';
 }
 
-export function EventManager({ initialView = 'upcoming' }: { initialView?: EventView }) {
+export function EventManager({
+	initialView = 'upcoming',
+	initialMonth,
+}: {
+	initialView?: EventView;
+	/** "yyyy-mm" for the Calendar tab; defaults to this month. */
+	initialMonth?: string;
+}) {
 	const utils = trpc.useUtils();
 	const { data: events, isLoading } = trpc.event.getAllForAdmin.useQuery();
 	const { data: labels } = trpc.eventLabel.list.useQuery();
@@ -871,6 +907,8 @@ export function EventManager({ initialView = 'upcoming' }: { initialView?: Event
 	const [attendeesFor, setAttendeesFor] = useState<string | null>(null);
 	const [showArchived, setShowArchived] = useState(false);
 	const [view, setViewState] = useState<EventView>(initialView);
+	const [calMonth, setCalMonthState] = useState(() => initialMonth ?? monthKeyOf(new Date()));
+	const [createDay, setCreateDay] = useState<string | undefined>(undefined);
 	// Shared by both tabs, so switching Upcoming ↔ Past keeps the search.
 	const [filters, setFilters] = useState<EventFilters>(EMPTY_FILTERS);
 	const [groupBy, setGroupBy] = useState<GroupBy>('semester');
@@ -984,12 +1022,13 @@ export function EventManager({ initialView = 'upcoming' }: { initialView?: Event
 			.filter(({ ev, start }) => matchesEventFilters(ev, start, filters, isPastTab))
 			.map(({ ev }) => ev);
 	const filtered = { upcoming: filterTab(upcoming, false), past: filterTab(past, true) };
-	const inView = filtered[view];
+	// The calendar shows both sides of "now" at once.
+	const inView = view === 'calendar' ? [...filtered.upcoming, ...filtered.past] : filtered[view];
 	const archivedCount = inView.filter((e) => !e.active).length;
 	const visible = inView.filter((e) => showArchived || e.active);
-	const unfilteredInView = (view === 'past' ? past : upcoming).filter(
-		({ ev }) => showArchived || ev.active,
-	).length;
+	const unfilteredInView = (
+		view === 'past' ? past : view === 'upcoming' ? upcoming : [...upcoming, ...past]
+	).filter(({ ev }) => showArchived || ev.active).length;
 	const isPastView = view === 'past';
 	// Event / Start / Category / (Global, Room | —) / Sync / Flyer / (— | Wrap-up) / actions
 	const colCount = isPastView ? 7 : 8;
@@ -1047,16 +1086,26 @@ export function EventManager({ initialView = 'upcoming' }: { initialView?: Event
 		);
 	}
 
-	/** Keep the tab in the URL (?view=past) so the past list can be linked/bookmarked. */
-	function setView(next: EventView) {
-		setViewState(next);
+	/** Keep the tab (and calendar month) in the URL so each view can be linked/bookmarked. */
+	function syncUrl(nextView: EventView, month: string) {
 		const url = new URL(window.location.href);
-		if (next === 'past') url.searchParams.set('view', 'past');
-		else url.searchParams.delete('view');
+		if (nextView === 'upcoming') url.searchParams.delete('view');
+		else url.searchParams.set('view', nextView);
+		if (nextView === 'calendar') url.searchParams.set('month', month);
+		else url.searchParams.delete('month');
 		window.history.replaceState(null, '', url);
 	}
+	function setView(next: EventView) {
+		setViewState(next);
+		syncUrl(next, calMonth);
+	}
+	function setCalMonth(month: string) {
+		setCalMonthState(month);
+		syncUrl(view, month);
+	}
 
-	function openCreate() {
+	function openCreate(day?: string) {
+		setCreateDay(day);
 		setEditing(null);
 		setFormKey((k) => k + 1);
 		setShowForm(true);
@@ -1148,7 +1197,7 @@ export function EventManager({ initialView = 'upcoming' }: { initialView?: Event
 			<div className="mb-4 flex flex-wrap gap-3">
 				<button
 					type="button"
-					onClick={openCreate}
+					onClick={() => openCreate()}
 					className="rounded-md bg-ieee-dark-yellow px-4 py-2 text-sm font-semibold text-black"
 				>
 					+ New event
@@ -1249,6 +1298,7 @@ export function EventManager({ initialView = 'upcoming' }: { initialView?: Event
 					[
 						['upcoming', 'Upcoming', filtered.upcoming],
 						['past', 'Past', filtered.past],
+						['calendar', 'Calendar', null],
 					] as const
 				).map(([key, label, list]) => (
 					<button
@@ -1263,10 +1313,12 @@ export function EventManager({ initialView = 'upcoming' }: { initialView?: Event
 								: 'border-transparent text-muted-foreground hover:text-foreground'
 						}`}
 					>
-						{label}{' '}
-						<span className="text-xs font-normal text-muted-foreground">
-							({list.filter((e) => e.active).length})
-						</span>
+						{label}
+						{list && (
+							<span className="ml-1 text-xs font-normal text-muted-foreground">
+								({list.filter((e) => e.active).length})
+							</span>
+						)}
 					</button>
 				))}
 				{isPastView && (
@@ -1333,6 +1385,7 @@ export function EventManager({ initialView = 'upcoming' }: { initialView?: Event
 					key={formKey}
 					labels={labels ?? []}
 					editing={editing}
+					defaultDay={createDay}
 					onDone={onFormDone}
 				/>
 			</Dialog>
@@ -1347,6 +1400,15 @@ export function EventManager({ initialView = 'upcoming' }: { initialView?: Event
 
 			{isLoading ? (
 				<p className="text-sm text-muted-foreground">Loading…</p>
+			) : view === 'calendar' ? (
+				<EventCalendar
+					events={visible}
+					parse={parseWire}
+					month={calMonth}
+					onMonthChange={setCalMonth}
+					onOpen={openEdit}
+					onCreate={openCreate}
+				/>
 			) : (
 				<Table>
 					<TableHeader className="bg-card/60 text-xs uppercase">
@@ -1396,7 +1458,7 @@ export function EventManager({ initialView = 'upcoming' }: { initialView?: Event
 										</div>
 									</TableCell>
 									<TableCell className="text-xs text-muted-foreground">
-										{ev.startTime}
+										{ev.allDay ? allDayLabel(ev) : ev.startTime}
 									</TableCell>
 									<TableCell>
 										{ev.label ? (
