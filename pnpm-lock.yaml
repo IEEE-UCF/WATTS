@@ -344,9 +344,15 @@ importers:
       '@aws-sdk/client-s3':
         specifier: ^3.1124.0
         version: 3.1125.0
+      '@watts/api':
+        specifier: workspace:*
+        version: link:../../packages/api
       '@watts/config':
         specifier: workspace:*
         version: link:../../packages/config
+      '@watts/permissions':
+        specifier: workspace:*
+        version: link:../../packages/permissions
       pg:
         specifier: 8.16.3
         version: 8.16.3
@@ -372,6 +378,9 @@ importers:
       pdf-lib:
         specifier: ^1.17.1
         version: 1.17.1
+      tsx:
+        specifier: ^4.19.2
+        version: 4.23.13
 
   infra/mirror:
     dependencies:

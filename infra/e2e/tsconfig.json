@@ -8,6 +8,7 @@
 		"global-setup.ts",
 		"global-teardown.ts",
 		"tests/**/*.ts",
-		"lib/**/*.ts"
+		"lib/**/*.ts",
+		"scripts/**/*.mts"
 	]
 }
