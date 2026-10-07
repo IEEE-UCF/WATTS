@@ -20,6 +20,8 @@ export default function robots(): MetadataRoute.Robots {
 				'/test',
 				'/style-guide',
 				'/component-showcase',
+				// Short-link redirects: a crawler hit would count as a click.
+				'/go/',
 			],
 		},
 		sitemap: 'https://www.ieeeucf.com/sitemap.xml',

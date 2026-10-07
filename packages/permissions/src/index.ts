@@ -22,6 +22,9 @@ export const CAPABILITIES = {
 	// committee/project page without it (their edits go to review).
 	manage_site_content: { label: 'Edit website content', staff: true },
 	review_resumes: { label: 'View résumés', staff: true },
+	// /admin/links: /go/<slug> short links + branded QR codes. A granted (non-officer)
+	// member can edit only the links they made — see @watts/core/short-links.
+	manage_links: { label: 'Create short links & QR codes', staff: true },
 	// Résumé-upload rollout — Phase 2: grant to a pilot cohort while the env audience
 	// stays at "officers". Phase 3 = flip RESUME_UPLOAD_AUDIENCE to "members".
 	upload_resume: { label: 'Upload a résumé (pilot)', staff: false },
@@ -39,6 +42,7 @@ export const OFFICER_DELEGABLE_CAPABILITIES = [
 	'scan_attendance',
 	'manage_event_photos',
 	'upload_resume',
+	'manage_links',
 ] as const satisfies readonly Capability[];
 export type OfficerDelegableCapability = (typeof OFFICER_DELEGABLE_CAPABILITIES)[number];
 
