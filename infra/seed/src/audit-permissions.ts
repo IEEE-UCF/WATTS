@@ -319,8 +319,10 @@ function analyze(data: Awaited<ReturnType<typeof load>>) {
 				f('info', 'granted-by-former', `${who}'s ${g.permission} was granted by ${nameOf(by.id)}, who is no longer an officer/admin.`);
 		}
 		const target = byId.get(g.member_id);
-		if (liveGrant(g) && target && (target.administrator || target.officer_status) && isCapability(g.permission))
-			f('info', 'redundant-grant', `${who}'s ${g.permission} grant is redundant — admins/officers already have it.`);
+		// Redundant = their role already implies it (without any grants).
+		const roleOnly = target && { administrator: target.administrator, officerStatus: target.officer_status, officerRole: target.officer_role, permissions: [] };
+		if (liveGrant(g) && roleOnly && isCapability(g.permission) && hasCapability(roleOnly, g.permission))
+			f('info', 'redundant-grant', `${who}'s ${g.permission} grant is redundant — their role already includes it.`);
 	}
 
 	for (const c of data.committees) {
