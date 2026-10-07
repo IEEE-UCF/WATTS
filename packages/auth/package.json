@@ -15,12 +15,12 @@
     "@auth/drizzle-adapter": "^1.11.1",
     "@watts/core": "workspace:*",
     "@watts/db": "workspace:*",
-    "drizzle-orm": "0.45.2",
+    "drizzle-orm": "0.45.3",
     "next-auth": "^4.24.13"
   },
   "devDependencies": {
     "@watts/eslint-config": "workspace:*",
     "@watts/tsconfig": "workspace:*",
-    "eslint": "^10.10.0"
+    "eslint": "^10.12.0"
   }
 }
