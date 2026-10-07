@@ -46,6 +46,7 @@ export interface NavAuthStatus {
 	isMember: boolean;
 	isOfficer: boolean;
 	isAdmin: boolean;
+	officerRole?: string | null; // executive officers hold some capabilities other officers don't
 	hasStaffAccess: boolean;
 	permissions: string[];
 }
@@ -65,6 +66,7 @@ export function meetsRequirement(requires: NavRequirement, auth: NavAuthStatus):
 				{
 					administrator: auth.isAdmin,
 					officerStatus: auth.isOfficer,
+					officerRole: auth.officerRole,
 					permissions: auth.permissions,
 				},
 				requires,

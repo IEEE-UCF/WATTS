@@ -18,11 +18,11 @@ is read from Discord roles.
 | Role | Where it's stored | What it gives |
 |---|---|---|
 | **Admin** | `members.administrator` | Everything. Admin-only: member roles, officers, committees, awards, meeting times, delegation settings. |
-| **Officer** | `members.officer_status` (+ `officer_role`) | Every capability below that is *implied for officers*, `/staff`, `/admin/*` (except admin-only pages), member and committee/project membership management. |
-| **Exec officer** | officer whose `officer_role` is Executive Chair, Vice Chair, Secretary, Treasurer | Same as officer on the website, plus every capability *implied for execs*; tier 6 on the bot. |
+| **Officer** | `members.officer_status` (+ `officer_role`) | Every capability *implied for officers*, `/staff`, `/admin/*` (except admin-only pages), every **project** (page + members), and **only the committees they chair** (page + members — the chair link below is what ties an officer to a committee). |
+| **Exec officer** | officer whose `officer_role` is Executive Chair, Vice Chair, Secretary, Treasurer | Everything an officer has, plus every capability *implied for execs* (`manage_site_content`: every committee and the site-wide CMS) and every committee's members; tier 6 on the bot. |
 | **Capability grant** | `member_permissions` row (active, unexpired) | Exactly that capability (see table). Staff capabilities also open `/staff`. |
-| **Committee chair** | `committees.chair_id` or `committee_members.is_chair` | Edit that committee's public page (changes go to review). |
-| **Project lead** | `project_members.is_lead` | Edit that project's page (review), review its join requests, edit its hardware/software/skills. |
+| **Committee chair** | `committees.chair_id` or `committee_members.is_chair` | Edit that committee's public page (goes live if they're an officer, otherwise to review); an officer chairing it also manages its members. |
+| **Project lead** | `project_members.is_lead` | Edit that project's page (review), manage its members and lead, review its join requests, edit its hardware/software/skills. |
 | **Page editor** | `page_editors` row (optional expiry) | Edit that one committee/project page (review). |
 | **Linked officer profile** | `officer_profiles.member_id` | Edit their own officer bio/portrait (review). |
 
@@ -38,7 +38,7 @@ unexpired grant for it (`hasCapability` in `packages/permissions/src/index.ts`).
 | `manage_events` | Create & edit events | ✓ |  | ✓ | ✓ |
 | `manage_event_photos` | Upload & manage event photos | ✓ | ✓ | ✓ | ✓ |
 | `manage_projects` | Create & edit projects | ✓ |  | ✓ | ✓ |
-| `manage_site_content` | Edit website content | ✓ |  | ✓ | ✓ |
+| `manage_site_content` | Edit website content | ✓ |  |  | ✓ |
 | `review_resumes` | View résumés | ✓ |  | ✓ | ✓ |
 | `manage_links` | Create short links & QR codes | ✓ | ✓ | ✓ | ✓ |
 | `upload_resume` | Upload a résumé (pilot) |  | ✓ | ✓ | ✓ |
@@ -60,13 +60,13 @@ Public pages (home, about, committees, events, projects, sponsorships, sign-in, 
 | `/dashboard` | session | 🔒 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |  |
 | `/settings` | session | 🔒 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |  |
 | `/pages/[type]/[slug]/edit` | session (per-page check in siteContent.pageForEdit) | 🔒 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |  |
-| `/pages/[type]/[slug]/preview` | session + canEditScope, else 404 | 🔒 | 404 | 404 | 404 | ✅ | 404 | ✅ | ✅ | ✅ | ✅ | ✅ |  |
+| `/pages/[type]/[slug]/preview` | session + canEditScope, else 404 | 🔒 | 404 | 404 | 404 | ✅ | 404 | ✅ | 404 | ✅ | ✅ | ✅ |  |
 | `/staff` | officer, admin, or any staff-capability grant | 🔒 | ↩ | ↩ | ✅ | ↩ | ↩ | ↩ | ✅ | ✅ | ✅ | ✅ |  |
 | `/admin/members` | officer or admin | 🔒 | ↩ | ↩ | ↩ | ↩ | ↩ | ↩ | ✅ | ✅ | ✅ | ✅ |  |
 | `/admin/events` | /admin floor (officer or admin) + manage_events | 🔒 | ↩ | ↩ | ↩ | ↩ | ↩ | ↩ | ✅ | ✅ | ✅ | ✅ | D1 |
 | `/admin/photos` | /admin floor (officer or admin) + manage_event_photos | 🔒 | ↩ | ↩ | ↩ | ↩ | ↩ | ↩ | ✅ | ✅ | ✅ | ✅ | D1 |
 | `/admin/resumes` | /admin floor (officer or admin) + review_resumes | 🔒 | ↩ | ↩ | ↩ | ↩ | ↩ | ↩ | ✅ | ✅ | ✅ | ✅ | D1 |
-| `/admin/site-content` | /admin floor (officer or admin) + manage_site_content | 🔒 | ↩ | ↩ | ↩ | ↩ | ↩ | ↩ | ✅ | ✅ | ✅ | ✅ | D1 |
+| `/admin/site-content` | /admin floor (officer or admin) + manage_site_content | 🔒 | ↩ | ↩ | ↩ | ↩ | ↩ | ↩ | ↩ | ↩ | ✅ | ✅ | D1 |
 | `/admin/links` | /admin floor (officer or admin) + manage_links | 🔒 | ↩ | ↩ | ↩ | ↩ | ↩ | ↩ | ✅ | ✅ | ✅ | ✅ | D1 |
 | `/admin/projects` | admin (middleware) — the page itself checks manage_projects | 🔒 | ↩ | ↩ | ↩ | ↩ | ↩ | ↩ | ↩ | ↩ | ↩ | ✅ | D2 |
 | `/admin/dashboard` | admin | 🔒 | ↩ | ↩ | ↩ | ↩ | ↩ | ↩ | ↩ | ↩ | ↩ | ✅ |  |
@@ -106,7 +106,8 @@ read; a per-record rule then narrows it further inside the procedure.
 | eventLabel | nativeLabels, create, update, setActive, pullFromGoogle | cap:manage_events | 🔒 | ⛔ | ⛔ | ✅ | ⛔ | ⛔ | ⛔ | ✅ | ✅ | ✅ | ✅ |  |
 | project | getAll, getById, getBySlug | public | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |  |
 | project | create, update, delete, confirmPhoto, reorder, removePhoto, reorderPhotos | cap:manage_projects | 🔒 | ⛔ | ⛔ | ✅ | ⛔ | ⛔ | ⛔ | ✅ | ✅ | ✅ | ✅ |  |
-| project | listMembers, addMember, removeMember, setLead | officer | 🔒 | ⛔ | ⛔ | ⛔ | ⛔ | ⛔ | ⛔ | ✅ | ✅ | ✅ | ✅ |  |
+| project | listMembers | member | 🔒 | ⛔ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | manage_projects (any officer), or lead of THAT project |
+| project | addMember, removeMember, setLead | member | 🔒 | ⛔ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | manage_projects (any officer), or lead of THAT project; a lead can’t remove themselves |
 | project | requestMembership | member | 🔒 | ⛔ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |  |
 | project | listMembershipRequests | member | 🔒 | ⛔ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | manage_projects, or lead of THAT project |
 | project | approveRequest, denyRequest | member | 🔒 | ⛔ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | manage_projects, or lead of THAT project; request must belong to it |
@@ -114,8 +115,9 @@ read; a per-record rule then narrows it further inside the procedure.
 | project | updateOwnProjectInfo | member | 🔒 | ⛔ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | manage_projects, or lead of THAT project (hardware/software/skills only) |
 | projectCategory | list | public | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |  |
 | projectCategory | create, update, setArchived | cap:manage_projects | 🔒 | ⛔ | ⛔ | ✅ | ⛔ | ⛔ | ⛔ | ✅ | ✅ | ✅ | ✅ |  |
-| committee | getAll, listMembers, addMember, removeMember, setChair | officer | 🔒 | ⛔ | ⛔ | ⛔ | ⛔ | ⛔ | ⛔ | ✅ | ✅ | ✅ | ✅ |  |
+| committee | getAll, listMembers | officer | 🔒 | ⛔ | ⛔ | ⛔ | ⛔ | ⛔ | ⛔ | ✅ | ✅ | ✅ | ✅ |  |
 | committee | create | admin | 🔒 | ⛔ | ⛔ | ⛔ | ⛔ | ⛔ | ⛔ | ⛔ | ⛔ | ⛔ | ✅ |  |
+| committee | addMember, removeMember, setChair | officer | 🔒 | ⛔ | ⛔ | ⛔ | ⛔ | ⛔ | ⛔ | ✅ | ✅ | ✅ | ✅ | executive officer / admin, or an officer chairing THAT committee; a non-exec chair can’t remove themselves |
 | award | getAll, getById | public | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |  |
 | award | create, update, delete | admin | 🔒 | ⛔ | ⛔ | ⛔ | ⛔ | ⛔ | ⛔ | ⛔ | ⛔ | ⛔ | ✅ |  |
 | meetingTime | getAll | public | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |  |
@@ -127,7 +129,7 @@ read; a per-record rule then narrows it further inside the procedure.
 | settings | setOfficerGrantableCapabilities | admin | 🔒 | ⛔ | ⛔ | ⛔ | ⛔ | ⛔ | ⛔ | ⛔ | ⛔ | ⛔ | ✅ |  |
 | shortLink | list, history, eventOptions, create | cap:manage_links | 🔒 | ⛔ | ⛔ | ✅ | ⛔ | ⛔ | ⛔ | ✅ | ✅ | ✅ | ✅ |  |
 | shortLink | update, setActive | cap:manage_links | 🔒 | ⛔ | ⛔ | ✅ | ⛔ | ⛔ | ⛔ | ✅ | ✅ | ✅ | ✅ | officers/admins: any link; grant holders: links they created |
-| siteContent | refreshCache, listSlots, setSlot, listOfficers, memberOptions, createOfficer, updateOfficer, deleteOfficer, reorderOfficers, listSponsors, createSponsor, updateSponsor, deleteSponsor, reorderSponsors, listPending, approve, reject, history, restore, listPageEditors, assignPageEditor, revokePageEditor | cap:manage_site_content | 🔒 | ⛔ | ⛔ | ✅ | ⛔ | ⛔ | ⛔ | ✅ | ✅ | ✅ | ✅ |  |
+| siteContent | refreshCache, listSlots, setSlot, listOfficers, memberOptions, createOfficer, updateOfficer, deleteOfficer, reorderOfficers, listSponsors, createSponsor, updateSponsor, deleteSponsor, reorderSponsors, listPending, approve, reject, history, restore, listPageEditors, assignPageEditor, revokePageEditor | cap:manage_site_content | 🔒 | ⛔ | ⛔ | ✅ | ⛔ | ⛔ | ⛔ | ⛔ | ⛔ | ✅ | ✅ |  |
 | siteContent | confirmMedia | session | 🔒 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | canEditScope on the media scope (or own officer portrait) |
 | siteContent | editablePages | session | 🔒 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | lists only pages the caller may edit |
 | siteContent | pageForEdit | session | 🔒 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | canEditScope |
@@ -135,6 +137,23 @@ read; a per-record rule then narrows it further inside the procedure.
 | siteContent | myOfficerProfile | member | 🔒 | ⛔ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | own linked officer profile |
 | siteContent | submitMyOfficerProfile | member | 🔒 | ⛔ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | own linked officer profile; goes to review |
 | siteContent | myRevisions | member | 🔒 | ⛔ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | own revisions |
+
+### Committees and projects — who manages which
+
+"Their" committee is one they chair (officers are tied to a committee by the chair link,
+not by their `officer_role` title); "their" project is one they lead. **live** = the edit
+publishes immediately; **review** = it waits in the site-content review queue.
+
+|  | Member | Committee chair (not an officer) | Project lead | Page editor | Officer chairing nothing | Officer chairing the committee | Exec officer | Admin |
+|---|---|---|---|---|---|---|---|---|
+| Edit **their** committee’s page | ⛔ | ✅ review | ⛔ | ✅ review | ⛔ | ✅ live | ✅ live | ✅ live |
+| Edit **another** committee’s page | ⛔ | ⛔ | ⛔ | ⛔ | ⛔ | ⛔ | ✅ live | ✅ live |
+| Manage **their** committee’s members / chairs | ⛔ | ⛔ | ⛔ | ⛔ | ⛔ | ✅ | ✅ | ✅ |
+| Manage **another** committee’s members / chairs | ⛔ | ⛔ | ⛔ | ⛔ | ⛔ | ⛔ | ✅ | ✅ |
+| Edit **their** project’s page | ⛔ | ⛔ | ✅ review | ⛔ | ✅ live | ✅ live | ✅ live | ✅ live |
+| Edit **another** project’s page | ⛔ | ⛔ | ⛔ | ⛔ | ✅ live | ✅ live | ✅ live | ✅ live |
+| Manage **their** project’s members / lead | ⛔ | ⛔ | ✅ | ⛔ | ✅ | ✅ | ✅ | ✅ |
+| Manage **another** project’s members / lead | ⛔ | ⛔ | ⛔ | ⛔ | ✅ | ✅ | ✅ | ✅ |
 
 ### Per-record rules
 
@@ -146,12 +165,19 @@ These are checked inside the procedure, on top of the gate, and are covered by
 - `member.getMyDashboard` — own data only
 - `member.setPermission` — officers: only admin-enabled delegable capabilities, only for plain members (core/members.ts setMemberCapability)
 - `member.setAdmin` — can't remove your own admin
+- `project.listMembers` — manage_projects (any officer), or lead of THAT project
+- `project.addMember` — manage_projects (any officer), or lead of THAT project; a lead can’t remove themselves
+- `project.removeMember` — manage_projects (any officer), or lead of THAT project; a lead can’t remove themselves
+- `project.setLead` — manage_projects (any officer), or lead of THAT project; a lead can’t remove themselves
 - `project.listMembershipRequests` — manage_projects, or lead of THAT project
 - `project.approveRequest` — manage_projects, or lead of THAT project; request must belong to it
 - `project.denyRequest` — manage_projects, or lead of THAT project; request must belong to it
 - `project.myLeadRequests` — own led projects
 - `project.myLedProjects` — own led projects
 - `project.updateOwnProjectInfo` — manage_projects, or lead of THAT project (hardware/software/skills only)
+- `committee.addMember` — executive officer / admin, or an officer chairing THAT committee; a non-exec chair can’t remove themselves
+- `committee.removeMember` — executive officer / admin, or an officer chairing THAT committee; a non-exec chair can’t remove themselves
+- `committee.setChair` — executive officer / admin, or an officer chairing THAT committee; a non-exec chair can’t remove themselves
 - `storage.confirmResume` — résumé upload audience (admin, upload_resume grant, or RESUME_UPLOAD_AUDIENCE)
 - `storage.deleteMyResume` — own résumé only
 - `shortLink.update` — officers/admins: any link; grant holders: links they created
@@ -182,13 +208,13 @@ Uploads (`POST /api/blob/upload`) by kind (résumé shown for the default `RESUM
 | `event-flyer` | 🔒 | ⛔ | ⛔ | ✅ | ⛔ | ⛔ | ⛔ | ✅ | ✅ | ✅ | ✅ |
 | `project-photo` | 🔒 | ⛔ | ⛔ | ✅ | ⛔ | ⛔ | ⛔ | ✅ | ✅ | ✅ | ✅ |
 | `event-photo` | 🔒 | ⛔ | ⛔ | ✅ | ⛔ | ⛔ | ⛔ | ✅ | ✅ | ✅ | ✅ |
-| `site-media` | 🔒 | ⛔ | ⛔ | ✅ | ✅ | ⛔ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `site-media` | 🔒 | ⛔ | ⛔ | ✅ | ✅ | ⛔ | ✅ | ⛔ | ✅ | ✅ | ✅ |
 
 ## Delegation — who can grant what
 
 - **Admins** grant or revoke any capability, admin and officer status (`/admin/members`), and choose which capabilities officers may delegate.
 - **Officers** grant or revoke only capabilities that are officer-delegable (`scan_attendance`, `manage_event_photos`, `upload_resume`, `manage_links`) **and** enabled by an admin, and only for plain members — never for officers or admins.
-- **Officers** set committee chairs and project leads; **`manage_site_content` holders** assign page editors.
+- **Executive officers / admins** set any committee's chairs and members; an **officer chairing a committee** manages that committee's. **Any officer, or the project's lead,** manages a project's members and lead. **`manage_site_content` holders** assign page editors.
 - An admin can't remove their own admin access.
 
 ## Discord bot

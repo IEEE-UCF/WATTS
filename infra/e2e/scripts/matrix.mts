@@ -33,8 +33,12 @@ import {
 	ROUTES,
 	UPLOAD_KINDS,
 	apiOutcome,
+	canEditPage,
+	canManageCommittee,
+	canManageProject,
 	factsFor,
 	gateLabel,
+	publishesDirectly,
 	type ApiOutcome,
 	type Facts,
 	type PageOutcome,
@@ -197,6 +201,34 @@ function uploadsTable() {
 	);
 }
 
+/** Who manages which committee / project — relative to "their own" (A) vs "another" (B). */
+function scopeTable() {
+	const cols = [
+		{ head: 'Member', key: 'member' },
+		{ head: 'Committee chair (not an officer)', key: 'chair_is_chair' },
+		{ head: 'Project lead', key: 'lead_a' },
+		{ head: 'Page editor', key: 'editor_a' },
+		{ head: 'Officer chairing nothing', key: 'officer' },
+		{ head: 'Officer chairing the committee', key: 'officer_chair_a' },
+		{ head: 'Exec officer', key: 'officer_exec' },
+		{ head: 'Admin', key: 'admin' },
+	];
+	type Scope = 'committee:A' | 'committee:B' | 'project:A' | 'project:B';
+	const page = (scope: Scope) => (f: Facts) => (!canEditPage(f, scope) ? '⛔' : publishesDirectly(f, scope) ? '✅ live' : '✅ review');
+	const yes = (ok: boolean) => (ok ? '✅' : '⛔');
+	const rows: [string, (f: Facts) => string][] = [
+		['Edit **their** committee’s page', page('committee:A')],
+		['Edit **another** committee’s page', page('committee:B')],
+		['Manage **their** committee’s members / chairs', (f) => yes(canManageCommittee(f, 'A'))],
+		['Manage **another** committee’s members / chairs', (f) => yes(canManageCommittee(f, 'B'))],
+		['Edit **their** project’s page', page('project:A')],
+		['Edit **another** project’s page', page('project:B')],
+		['Manage **their** project’s members / lead', (f) => yes(canManageProject(f, 'A'))],
+		['Manage **another** project’s members / lead', (f) => yes(canManageProject(f, 'B'))],
+	];
+	return table(['', ...cols.map((c) => c.head)], rows.map(([label, fn]) => [label, ...cols.map((c) => fn(factsFor(c.key)))]));
+}
+
 const scopedRules = Object.entries(PROCEDURES)
 	.filter(([, e]) => e.scoped)
 	.map(([path, e]) => `- \`${path}\` — ${e.scoped}`);
@@ -221,11 +253,11 @@ is read from Discord roles.
 | Role | Where it's stored | What it gives |
 |---|---|---|
 | **Admin** | \`members.administrator\` | Everything. Admin-only: member roles, officers, committees, awards, meeting times, delegation settings. |
-| **Officer** | \`members.officer_status\` (+ \`officer_role\`) | Every capability below that is *implied for officers*, \`/staff\`, \`/admin/*\` (except admin-only pages), member and committee/project membership management. |
-| **Exec officer** | officer whose \`officer_role\` is ${EXEC_ROLES.join(', ')} | Same as officer on the website, plus every capability *implied for execs*; tier 6 on the bot. |
+| **Officer** | \`members.officer_status\` (+ \`officer_role\`) | Every capability *implied for officers*, \`/staff\`, \`/admin/*\` (except admin-only pages), every **project** (page + members), and **only the committees they chair** (page + members — the chair link below is what ties an officer to a committee). |
+| **Exec officer** | officer whose \`officer_role\` is ${EXEC_ROLES.join(', ')} | Everything an officer has, plus every capability *implied for execs* (\`manage_site_content\`: every committee and the site-wide CMS) and every committee's members; tier 6 on the bot. |
 | **Capability grant** | \`member_permissions\` row (active, unexpired) | Exactly that capability (see table). Staff capabilities also open \`/staff\`. |
-| **Committee chair** | \`committees.chair_id\` or \`committee_members.is_chair\` | Edit that committee's public page (changes go to review). |
-| **Project lead** | \`project_members.is_lead\` | Edit that project's page (review), review its join requests, edit its hardware/software/skills. |
+| **Committee chair** | \`committees.chair_id\` or \`committee_members.is_chair\` | Edit that committee's public page (goes live if they're an officer, otherwise to review); an officer chairing it also manages its members. |
+| **Project lead** | \`project_members.is_lead\` | Edit that project's page (review), manage its members and lead, review its join requests, edit its hardware/software/skills. |
 | **Page editor** | \`page_editors\` row (optional expiry) | Edit that one committee/project page (review). |
 | **Linked officer profile** | \`officer_profiles.member_id\` | Edit their own officer bio/portrait (review). |
 
@@ -258,6 +290,14 @@ read; a per-record rule then narrows it further inside the procedure.
 
 ${proceduresTable()}
 
+### Committees and projects — who manages which
+
+"Their" committee is one they chair (officers are tied to a committee by the chair link,
+not by their \`officer_role\` title); "their" project is one they lead. **live** = the edit
+publishes immediately; **review** = it waits in the site-content review queue.
+
+${scopeTable()}
+
 ### Per-record rules
 
 These are checked inside the procedure, on top of the gate, and are covered by
@@ -277,7 +317,7 @@ ${uploadsTable()}
 
 - **Admins** grant or revoke any capability, admin and officer status (\`/admin/members\`), and choose which capabilities officers may delegate.
 - **Officers** grant or revoke only capabilities that are officer-delegable (${OFFICER_DELEGABLE.map((c) => `\`${c}\``).join(', ')}) **and** enabled by an admin, and only for plain members — never for officers or admins.
-- **Officers** set committee chairs and project leads; **\`manage_site_content\` holders** assign page editors.
+- **Executive officers / admins** set any committee's chairs and members; an **officer chairing a committee** manages that committee's. **Any officer, or the project's lead,** manages a project's members and lead. **\`manage_site_content\` holders** assign page editors.
 - An admin can't remove their own admin access.
 
 ## Discord bot

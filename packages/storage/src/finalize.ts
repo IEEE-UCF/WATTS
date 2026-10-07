@@ -359,6 +359,7 @@ type SiteMediaUploader = {
 	memberId?: string | null;
 	administrator?: boolean;
 	officerStatus?: boolean;
+	officerRole?: string | null; // executive officers edit every page (manage_site_content)
 	permissions?: string[] | null;
 };
 

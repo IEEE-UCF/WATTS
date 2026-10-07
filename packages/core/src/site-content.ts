@@ -65,6 +65,7 @@ export function contentActor(
 		memberId: roles?.memberId ?? null,
 		administrator: roles?.administrator ?? false,
 		officerStatus: roles?.officerStatus ?? false,
+		officerRole: roles?.officerRole ?? null,
 		permissions: roles?.permissions ?? [],
 	};
 }
@@ -142,9 +143,30 @@ export interface PublicAsset {
 // Permissions
 // ---------------------------------------------------------------------------
 
-/** Site-wide editors publish straight to the live site; everyone else goes to review. */
+/**
+ * Site-wide editors (manage_site_content: executives, admins, explicit grants) — every
+ * page plus the global content (officers, sponsors, slots, review queue, page editors).
+ */
 export function publishesDirectly(actor: CapabilitySubject | null | undefined): boolean {
 	return hasCapability(actor, 'manage_site_content');
+}
+
+/**
+ * Does an edit by `actor` to this page go live immediately (vs. the review queue)?
+ * Site-wide editors anywhere; any officer on a project page; an officer on a committee
+ * page only for a committee they chair. Everyone else (chairs, leads, assigned editors
+ * who aren't officers) goes to review.
+ */
+export async function publishesDirectlyTo(
+	db: WattsDb,
+	actor: (CapabilitySubject & { memberId?: string | null }) | null | undefined,
+	scope: ContentScope,
+): Promise<boolean> {
+	if (!actor) return false;
+	if (publishesDirectly(actor)) return true;
+	if (!actor.officerStatus || !actor.memberId || scope.type === 'global') return false;
+	if (scope.type === 'project') return true;
+	return isCommitteeChair(db, scope.id, actor.memberId);
 }
 
 async function hasActivePageEditorRow(db: WattsDb, memberId: string, scope: ContentScope & { id: string }) {
@@ -195,9 +217,10 @@ async function isLeadOf(db: WattsDb, projectId: string, memberId: string): Promi
 
 /**
  * May this actor edit content in `scope`?
- *   - manage_site_content → everything
- *   - committee: its chair, or an unexpired page_editors assignment
- *   - project: a lead, or an unexpired page_editors assignment
+ *   - manage_site_content (executives, admins, grant holders) → everything
+ *   - committee: its chair (officer or not), or an unexpired page_editors assignment.
+ *     A non-executive officer reaches a committee ONLY by chairing it.
+ *   - project: any officer, a lead, or an unexpired page_editors assignment
  *   - global (page media, officers, sponsors): manage_site_content only
  */
 export async function canEditScope(
@@ -208,6 +231,7 @@ export async function canEditScope(
 	if (!actor) return false;
 	if (publishesDirectly(actor)) return true;
 	if (scope.type === 'global' || !actor.memberId) return false;
+	if (scope.type === 'project' && actor.officerStatus) return true;
 	if (await hasActivePageEditorRow(db, actor.memberId, scope)) return true;
 	return scope.type === 'committee'
 		? isCommitteeChair(db, scope.id, actor.memberId)
@@ -903,7 +927,7 @@ export interface EditablePage {
 	title: string;
 	published: boolean;
 	/** Why this member may edit it. */
-	via: 'staff' | 'chair' | 'lead' | 'assigned';
+	via: 'staff' | 'chair' | 'lead' | 'assigned' | 'officer';
 }
 
 /** Pages the actor can edit: all of them for staff; otherwise chair/lead/assigned. */
@@ -954,7 +978,8 @@ export async function listEditablePages(
 		if (via) out.push({ type: 'committee', id: c.id, slug: c.slug, title: c.title, published: c.published, via });
 	}
 	for (const p of projects) {
-		const via = leadOf.has(p.id) ? 'lead' : assignedIds.has(`project:${p.id}`) ? 'assigned' : null;
+		// Any officer may edit any project page (canEditScope).
+		const via = leadOf.has(p.id) ? 'lead' : assignedIds.has(`project:${p.id}`) ? 'assigned' : actor.officerStatus ? 'officer' : null;
 		if (via) out.push({ type: 'project', id: p.id, slug: p.slug, title: p.title, published: p.published, via });
 	}
 	return out;
@@ -1360,7 +1385,7 @@ export async function getPagePreview(
 			.limit(1);
 		const entityType: ContentEntityType = type === 'committee' ? 'committee_page' : 'project_page';
 		if (!rev || rev.entityType !== entityType || rev.entityId !== row.id) return null;
-		if (!publishesDirectly(actor) && rev.authorMemberId !== actor.memberId) return null;
+		if (!(await publishesDirectlyTo(db, actor, { type, id: row.id })) && rev.authorMemberId !== actor.memberId) return null;
 		snap = rev.snapshot as CommitteePageSnapshot | ProjectPageSnapshot;
 		revision = {
 			id: rev.id,

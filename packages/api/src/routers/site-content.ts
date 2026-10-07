@@ -32,6 +32,7 @@ import {
 	listSlotsForAdmin,
 	listSponsorsForAdmin,
 	publishesDirectly,
+	publishesDirectlyTo,
 	readCurrent,
 	rejectRevision,
 	reorderOfficerProfiles,
@@ -427,7 +428,7 @@ export const siteContentRouter = createTRPCRouter({
 								r.entityId === page.id,
 					) ?? null
 					: null;
-				return { ...page, canPublish: publishesDirectly(actor), myLatest };
+				return { ...page, canPublish: await publishesDirectlyTo(ctx.db, actor, { type: input.type, id: page.id }), myLatest };
 			} catch (e) {
 				if (e instanceof TRPCError) throw e;
 				mapDomainError(e);
@@ -443,7 +444,8 @@ export const siteContentRouter = createTRPCRouter({
 				throw new TRPCError({ code: 'FORBIDDEN', message: 'You cannot edit this page' });
 			}
 			try {
-				const staff = publishesDirectly(actor);
+				// "staff" = goes live directly: site-wide editors, or an officer within their scope.
+				const staff = await publishesDirectlyTo(ctx.db, actor, { type: 'committee', id: input.id });
 				const direct = staff && !input.draft;
 				const snapshot: CommitteePageSnapshot = { ...input.snapshot };
 				if (!staff) {
@@ -474,7 +476,7 @@ export const siteContentRouter = createTRPCRouter({
 				throw new TRPCError({ code: 'FORBIDDEN', message: 'You cannot edit this page' });
 			}
 			try {
-				const staff = publishesDirectly(actor);
+				const staff = await publishesDirectlyTo(ctx.db, actor, { type: 'project', id: input.id });
 				const direct = staff && !input.draft;
 				const snapshot: ProjectPageSnapshot = { ...input.snapshot };
 				if (!staff) {

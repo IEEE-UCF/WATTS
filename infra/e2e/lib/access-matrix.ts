@@ -18,8 +18,12 @@ import { CAPS, EXEC_ROLES, PERSONAS, STAFF_CAPS, type Cap, type Persona } from '
 // Policy
 // ---------------------------------------------------------------------------
 
-/** Capabilities an officer holds without a grant (hasCapability's officer shortcut). */
-export const OFFICER_IMPLIED_CAPS: readonly Cap[] = CAPS;
+/**
+ * Capabilities an officer holds without a grant. manage_site_content (every page + the
+ * global CMS) is executive-only: other officers edit the committees they chair and any
+ * project page, nothing site-wide.
+ */
+export const OFFICER_IMPLIED_CAPS: readonly Cap[] = CAPS.filter((c) => c !== 'manage_site_content');
 /** Capabilities an executive officer holds without a grant. */
 export const EXEC_IMPLIED_CAPS: readonly Cap[] = CAPS;
 
@@ -79,12 +83,23 @@ export const hasStaffAccess = (f: Facts) => isOfficerOrAdmin(f) || f.live.some((
 export function canEditPage(f: Facts, scope: 'committee:A' | 'committee:B' | 'project:A' | 'project:B'): boolean {
 	if (holds(f, 'manage_site_content')) return true;
 	if (!f.member) return false;
-	if (f.editorOf.has(scope)) return true;
 	const [type, id] = scope.split(':') as ['committee' | 'project', 'A' | 'B'];
+	if (type === 'project' && f.officer) return true; // any officer, any project
+	if (f.editorOf.has(scope)) return true;
 	return type === 'committee' ? f.chairs.has(id) : f.leads.has(id);
 }
 /** Does an edit by this person go live immediately (vs. the review queue)? */
-export const publishesDirectly = (f: Facts, _scope?: string) => holds(f, 'manage_site_content');
+export function publishesDirectly(f: Facts, scope: 'committee:A' | 'committee:B' | 'project:A' | 'project:B'): boolean {
+	if (holds(f, 'manage_site_content')) return true;
+	if (!f.officer) return false;
+	const [type, id] = scope.split(':') as ['committee' | 'project', 'A' | 'B'];
+	return type === 'project' || f.chairs.has(id); // an officer, within their scope
+}
+
+/** May this person change a committee's members / chairs (committee.addMember etc.)? */
+export const canManageCommittee = (f: Facts, c: 'A' | 'B') => f.admin || f.exec || (f.officer && f.chairs.has(c));
+/** May this person change a project's members / lead (project.addMember etc.)? */
+export const canManageProject = (f: Facts, p: 'A' | 'B') => holds(f, 'manage_projects') || (f.member && f.leads.has(p));
 
 // ---------------------------------------------------------------------------
 // Gates
@@ -212,10 +227,10 @@ export const PROCEDURES: Record<string, ProcEntry> = {
 	'project.reorder': m(cap('manage_projects')),
 	'project.removePhoto': m(cap('manage_projects')),
 	'project.reorderPhotos': m(cap('manage_projects')),
-	'project.listMembers': q('officer'),
-	'project.addMember': m('officer'),
-	'project.removeMember': m('officer'),
-	'project.setLead': m('officer'),
+	'project.listMembers': q('member', { scoped: 'manage_projects (any officer), or lead of THAT project' }),
+	'project.addMember': m('member', { scoped: 'manage_projects (any officer), or lead of THAT project; a lead can’t remove themselves' }),
+	'project.removeMember': m('member', { scoped: 'manage_projects (any officer), or lead of THAT project; a lead can’t remove themselves' }),
+	'project.setLead': m('member', { scoped: 'manage_projects (any officer), or lead of THAT project; a lead can’t remove themselves' }),
 	'project.requestMembership': m('member'),
 	'project.listMembershipRequests': q('member', { scoped: 'manage_projects, or lead of THAT project' }),
 	'project.approveRequest': m('member', { scoped: 'manage_projects, or lead of THAT project; request must belong to it' }),
@@ -231,12 +246,12 @@ export const PROCEDURES: Record<string, ProcEntry> = {
 	'projectCategory.setArchived': m(cap('manage_projects')),
 
 	// --- committee
-	'committee.getAll': q0('officer'),
+	'committee.getAll': q0('officer', { note: 'canManage flag per committee' }),
 	'committee.listMembers': q('officer'),
 	'committee.create': m('admin'),
-	'committee.addMember': m('officer'),
-	'committee.removeMember': m('officer'),
-	'committee.setChair': m('officer'),
+	'committee.addMember': m('officer', { scoped: 'executive officer / admin, or an officer chairing THAT committee; a non-exec chair can’t remove themselves' }),
+	'committee.removeMember': m('officer', { scoped: 'executive officer / admin, or an officer chairing THAT committee; a non-exec chair can’t remove themselves' }),
+	'committee.setChair': m('officer', { scoped: 'executive officer / admin, or an officer chairing THAT committee; a non-exec chair can’t remove themselves' }),
 
 	// --- award / meetingTime
 	'award.getAll': q('public'),

@@ -1,5 +1,5 @@
 import { test, expect, type APIRequestContext } from '@playwright/test';
-import { canEditPage, factsFor, publishesDirectly } from '../lib/access-matrix';
+import { canEditPage, canManageCommittee, canManageProject, factsFor, publishesDirectly } from '../lib/access-matrix';
 import { personaPool } from '../lib/persona-db';
 import { pageOutcomeOf, personaIds, personaRequest, personasReady, trpc } from '../lib/perm-client';
 import { FIX, FIX_SLUGS, MATRIX_PERSONAS } from '../lib/personas';
@@ -71,6 +71,60 @@ test.describe('committee / project page editing (canEditScope)', () => {
 	test('a site-wide editor publishes directly', async () => {
 		const r = await submit('member_manage_site_content', 'A');
 		expect((r.data as { status: string }).status).toBe('published');
+	});
+	test('an officer publishes directly to the committee they chair, and cannot touch another', async () => {
+		const own = await submit('officer_chair_a', 'A');
+		expect((own.data as { status: string }).status).toBe('published');
+		expect((await submit('officer_chair_a', 'B')).code).toBe('FORBIDDEN');
+		expect((await submit('officer', 'A')).code, 'an officer chairing nothing edits no committee').toBe('FORBIDDEN');
+		expect((await submit('officer_exec', 'A')).status, 'executives edit every committee').toBe(200);
+	});
+});
+
+// ---------------------------------------------------------------------------
+test.describe('committee / project membership', () => {
+	const target = () => personaIds().memberIds.grant_target;
+
+	test('committee members: only executives / admins and the officer chairing it', async () => {
+		const problems: string[] = [];
+		for (const key of MATRIX_PERSONAS.filter((k) => k !== 'anon')) {
+			const f = factsFor(key);
+			for (const c of ['A', 'B'] as const) {
+				const committeeId = FIX[`committee${c}`];
+				const r = await trpc(await as(key), 'committee.addMember', 'mutation', { committeeId, memberId: target() });
+				const want = canManageCommittee(f, c);
+				if ((r.status === 200) !== want) problems.push(`${key} → committee ${c}: expected ${want ? 'allowed' : 'FORBIDDEN'}, got ${r.status} ${r.code ?? ''}`);
+				if (r.status === 200) await trpc(await as(key), 'committee.removeMember', 'mutation', { committeeId, memberId: target() });
+			}
+		}
+		expect(problems).toEqual([]);
+	});
+	test('committee.getAll tells the UI which committees the caller can manage', async () => {
+		const r = await trpc(await as('officer_chair_a'), 'committee.getAll', 'query');
+		const rows = r.data as { id: string; canManage: boolean }[];
+		expect(rows.find((x) => x.id === FIX.committeeA)?.canManage).toBe(true);
+		expect(rows.find((x) => x.id === FIX.committeeB)?.canManage).toBe(false);
+	});
+	test('project members: any officer (manage_projects) or that project’s lead', async () => {
+		const problems: string[] = [];
+		for (const key of MATRIX_PERSONAS.filter((k) => k !== 'anon')) {
+			const f = factsFor(key);
+			for (const p of ['A', 'B'] as const) {
+				const projectId = FIX[`project${p}`];
+				const r = await trpc(await as(key), 'project.addMember', 'mutation', { projectId, memberId: target() });
+				const want = canManageProject(f, p);
+				if ((r.status === 200) !== want) problems.push(`${key} → project ${p}: expected ${want ? 'allowed' : 'FORBIDDEN'}, got ${r.status} ${r.code ?? ''}`);
+				if (r.status === 200) await trpc(await as(key), 'project.removeMember', 'mutation', { projectId, memberId: target() });
+			}
+		}
+		expect(problems).toEqual([]);
+	});
+	test('a non-executive chair / a lead cannot remove themselves (lockout guard)', async () => {
+		const ids = personaIds().memberIds;
+		const chair = await trpc(await as('officer_chair_a'), 'committee.setChair', 'mutation', { committeeId: FIX.committeeA, memberId: ids.officer_chair_a, isChair: false });
+		expect(chair.code).toBe('BAD_REQUEST');
+		const lead = await trpc(await as('lead_a'), 'project.setLead', 'mutation', { projectId: FIX.projectA, memberId: ids.lead_a, isLead: false });
+		expect(lead.code).toBe('BAD_REQUEST');
 	});
 });
 
@@ -156,6 +210,16 @@ test.describe('granting capabilities (member.setPermission)', () => {
 		expect((await grant('admin', target(), 'review_resumes', false)).status).toBe(200);
 		const after = await (await as('grant_target')).get('/api/files/resume/export?gy=1900', { maxRedirects: 0 });
 		expect(after.status(), 'revoked on the very next request').toBe(403);
+	});
+	test('a non-executive officer gets the site-wide CMS only through an explicit grant', async () => {
+		const officer = await as('revoke_officer');
+		const site = () => officer.get('/admin/site-content', { maxRedirects: 0 }).then(pageOutcomeOf);
+		expect((await site()).outcome).toBe('dashboard');
+		const ids = personaIds().memberIds;
+		expect((await grant('admin', ids.revoke_officer, 'manage_site_content')).status).toBe(200);
+		expect((await site()).outcome).toBe('render');
+		expect((await grant('admin', ids.revoke_officer, 'manage_site_content', false)).status).toBe(200);
+		expect((await site()).outcome).toBe('dashboard');
 	});
 	test('an admin cannot remove their own admin', async () => {
 		const r = await trpc(await as('admin'), 'member.setAdmin', 'mutation', { id: personaIds().memberIds.admin, value: false });
