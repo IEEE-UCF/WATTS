@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { ImageUp, RefreshCw } from 'lucide-react';
+import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
+import { CircleCheck, ImageUp, RefreshCw } from 'lucide-react';
 import { trpc } from '@/lib/trpc/client';
 import type { RouterOutputs } from '@watts/api';
 import { eventPath } from '@watts/core/event-path';
@@ -11,6 +11,9 @@ import {
 	EMPTY_FILTERS,
 	EventFilterBar,
 	hasActiveFilters,
+	isWrappedUp,
+	needsRoomAction,
+	roomStatus,
 	matchesEventFilters,
 	type EventFilters,
 } from './event-filters';
@@ -66,6 +69,31 @@ const ROOM_RESERVATION_LABELS: Record<RoomReservationStatus, string> = {
 	confirmed: 'Confirmed',
 	rejected: 'Rejected',
 };
+
+const ROOM_BADGE: Record<string, string> = {
+	confirmed: 'bg-green-900/70 text-green-300',
+	pending: 'bg-blue-900/60 text-blue-300',
+	unsubmitted: 'bg-amber-900/50 text-amber-300',
+	rejected: 'bg-red-900/70 text-red-300',
+};
+
+/** Past events younger than this with no check-ins or photos are flagged for wrap-up. */
+const WRAP_UP_WINDOW_DAYS = 30;
+
+type GroupBy = 'semester' | 'month' | 'none';
+
+/** UCF terms by start month: Spring Jan–Apr, Summer May–Jul, Fall Aug–Dec. */
+function groupLabel(start: Date, by: Exclude<GroupBy, 'none'>): string {
+	if (by === 'month') return start.toLocaleString('en-US', { month: 'long', year: 'numeric' });
+	const m = start.getMonth();
+	const term = m <= 3 ? 'Spring' : m <= 6 ? 'Summer' : 'Fall';
+	return `${term} ${start.getFullYear()}`;
+}
+
+/** yyyy-mm-dd in the browser's time zone, for <input type="date"> / the date filters. */
+function toDateInput(d: Date): string {
+	return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+}
 
 const FLYER_ACCEPT = 'image/jpeg,image/png,image/webp';
 /** An upcoming event with no flyer this close to its start gets the loud "missing" badge. */
@@ -845,6 +873,7 @@ export function EventManager({ initialView = 'upcoming' }: { initialView?: Event
 	const [view, setViewState] = useState<EventView>(initialView);
 	// Shared by both tabs, so switching Upcoming ↔ Past keeps the search.
 	const [filters, setFilters] = useState<EventFilters>(EMPTY_FILTERS);
+	const [groupBy, setGroupBy] = useState<GroupBy>('semester');
 	const [flyerBusy, setFlyerBusy] = useState<string | null>(null);
 	const flyerRef = useRef<HTMLInputElement>(null);
 	const flyerTarget = useRef<string | null>(null);
@@ -950,15 +979,73 @@ export function EventManager({ initialView = 'upcoming' }: { initialView?: Event
 			byStart.filter(({ ev }) => isPast(ev, now) === wantPast);
 		return { upcoming: split(false), past: split(true).reverse() };
 	}, [events]);
-	const filterTab = (tab: typeof upcoming) =>
-		tab.filter(({ ev, start }) => matchesEventFilters(ev, start, filters)).map(({ ev }) => ev);
-	const filtered = { upcoming: filterTab(upcoming), past: filterTab(past) };
+	const filterTab = (tab: typeof upcoming, isPastTab: boolean) =>
+		tab
+			.filter(({ ev, start }) => matchesEventFilters(ev, start, filters, isPastTab))
+			.map(({ ev }) => ev);
+	const filtered = { upcoming: filterTab(upcoming, false), past: filterTab(past, true) };
 	const inView = filtered[view];
 	const archivedCount = inView.filter((e) => !e.active).length;
 	const visible = inView.filter((e) => showArchived || e.active);
 	const unfilteredInView = (view === 'past' ? past : upcoming).filter(
 		({ ev }) => showArchived || ev.active,
 	).length;
+	const isPastView = view === 'past';
+	// Event / Start / Category / (Global, Room | —) / Sync / Flyer / (— | Wrap-up) / actions
+	const colCount = isPastView ? 7 : 8;
+
+	/** Live, public events only: archived and hidden ones don't need chasing. */
+	const attention = useMemo(() => {
+		const now = Date.now();
+		const live = (tab: typeof upcoming) =>
+			tab.filter(({ ev }) => ev.active && !ev.hidden).map(({ ev }) => ev);
+		const liveUpcoming = live(upcoming);
+		const wrapUpSince = new Date(now - WRAP_UP_WINDOW_DAYS * 86_400_000);
+		const noFlyer = liveUpcoming.filter((e) => !e.flyerUrl);
+		const syncErrors = (events ?? []).filter((e) => e.active && e.syncStatus === 'error');
+		return {
+			noFlyer: noFlyer.length,
+			noFlyerSoon: noFlyer.filter(
+				(e) => parseWire(e.startTimeRaw).getTime() - now <= FLYER_URGENT_DAYS * 86_400_000,
+			).length,
+			rooms: liveUpcoming.filter(needsRoomAction).length,
+			syncErrors: syncErrors.length,
+			syncErrorsUpcoming: syncErrors.some((e) => !isPast(e, now)),
+			wrapUp: past.filter(
+				({ ev, start }) =>
+					ev.active && !ev.hidden && start >= wrapUpSince && !isWrappedUp(ev),
+			).length,
+			wrapUpSince: toDateInput(wrapUpSince),
+		};
+	}, [events, upcoming, past]);
+
+	/** Jump from an attention chip to the tab + filters that list exactly those events. */
+	function focus(tab: EventView, f: Partial<EventFilters>) {
+		setView(tab);
+		setFilters({ ...EMPTY_FILTERS, ...f });
+	}
+
+	/** A heading row before the first event of each semester / month on the Past tab. */
+	function groupHeaderAt(i: number) {
+		if (!isPastView || groupBy === 'none') return null;
+		const label = (ev: AdminEvent) => groupLabel(parseWire(ev.startTimeRaw), groupBy);
+		const current = label(visible[i]);
+		if (i > 0 && label(visible[i - 1]) === current) return null;
+		const n = visible.filter((ev) => label(ev) === current).length;
+		return (
+			<TableRow className="hover:bg-transparent">
+				<TableCell
+					colSpan={colCount}
+					className="bg-secondary/50 py-1.5 text-xs font-semibold tracking-wide text-ieee-dark-yellow uppercase"
+				>
+					{current}
+					<span className="ml-2 font-normal tracking-normal text-muted-foreground normal-case">
+						{n} event{n === 1 ? '' : 's'}
+					</span>
+				</TableCell>
+			</TableRow>
+		);
+	}
 
 	/** Keep the tab in the URL (?view=past) so the past list can be linked/bookmarked. */
 	function setView(next: EventView) {
@@ -1025,7 +1112,8 @@ export function EventManager({ initialView = 'upcoming' }: { initialView?: Event
 
 	/** Upcoming, live events without a flyer get flagged; past ones just say "none". */
 	function flyerUrgency(ev: AdminEvent): 'urgent' | 'missing' | null {
-		if (ev.flyerUrl || !ev.active) return null;
+		// Hidden events (holidays, breaks) never reach the public feed, so they don't need one.
+		if (ev.flyerUrl || !ev.active || ev.hidden) return null;
 		const now = Date.now();
 		if (isPast(ev, now)) return null;
 		const daysOut = (parseWire(ev.startTimeRaw).getTime() - now) / 86_400_000;
@@ -1087,6 +1175,71 @@ export function EventManager({ initialView = 'upcoming' }: { initialView?: Event
 				</div>
 			</div>
 
+			<div className="mb-4 flex flex-wrap items-center gap-2 text-sm">
+				<span className="mr-1 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+					Needs attention
+				</span>
+				{attention.noFlyer > 0 && (
+					<button
+						type="button"
+						onClick={() => focus('upcoming', { flyer: 'missing', visibility: 'shown' })}
+						className={`rounded-full border px-3 py-1 text-xs font-semibold transition-colors ${
+							attention.noFlyerSoon > 0
+								? 'border-red-800 bg-red-900/40 text-red-200 hover:bg-red-900/60'
+								: 'border-amber-800 bg-amber-900/30 text-amber-200 hover:bg-amber-900/50'
+						}`}
+					>
+						{attention.noFlyer} upcoming without a flyer
+						{attention.noFlyerSoon > 0 && ` · ${attention.noFlyerSoon} this week`}
+					</button>
+				)}
+				{attention.rooms > 0 && (
+					<button
+						type="button"
+						onClick={() => focus('upcoming', { room: 'action', visibility: 'shown' })}
+						className="rounded-full border border-blue-800 bg-blue-900/30 px-3 py-1 text-xs font-semibold text-blue-200 hover:bg-blue-900/50"
+					>
+						{attention.rooms} room reservation{attention.rooms === 1 ? '' : 's'} not
+						confirmed
+					</button>
+				)}
+				{attention.syncErrors > 0 && (
+					<button
+						type="button"
+						onClick={() =>
+							focus(attention.syncErrorsUpcoming ? 'upcoming' : 'past', {
+								sync: 'error',
+							})
+						}
+						className="rounded-full border border-red-800 bg-red-900/40 px-3 py-1 text-xs font-semibold text-red-200 hover:bg-red-900/60"
+					>
+						{attention.syncErrors} sync error{attention.syncErrors === 1 ? '' : 's'}
+					</button>
+				)}
+				{attention.wrapUp > 0 && (
+					<button
+						type="button"
+						onClick={() =>
+							focus('past', {
+								wrapUp: 'incomplete',
+								visibility: 'shown',
+								from: attention.wrapUpSince,
+							})
+						}
+						className="rounded-full border border-input bg-secondary/60 px-3 py-1 text-xs font-semibold text-foreground hover:bg-secondary"
+					>
+						{attention.wrapUp} recent event{attention.wrapUp === 1 ? '' : 's'} missing
+						check-ins or photos
+					</button>
+				)}
+				{attention.noFlyer + attention.rooms + attention.syncErrors + attention.wrapUp ===
+					0 && (
+					<span className="inline-flex items-center gap-1 text-xs text-green-400">
+						<CircleCheck className="size-3.5" /> All caught up
+					</span>
+				)}
+			</div>
+
 			<div
 				role="tablist"
 				aria-label="Event timeframe"
@@ -1116,6 +1269,20 @@ export function EventManager({ initialView = 'upcoming' }: { initialView?: Event
 						</span>
 					</button>
 				))}
+				{isPastView && (
+					<label className="ml-auto flex items-center gap-2 self-center text-xs text-muted-foreground">
+						Group by
+						<select
+							value={groupBy}
+							onChange={(e) => setGroupBy(e.target.value as GroupBy)}
+							className="h-8 rounded-md border border-input bg-card px-2 text-xs text-foreground"
+						>
+							<option value="semester">Semester</option>
+							<option value="month">Month</option>
+							<option value="none">Nothing</option>
+						</select>
+					</label>
+				)}
 			</div>
 
 			<EventFilterBar
@@ -1187,179 +1354,270 @@ export function EventManager({ initialView = 'upcoming' }: { initialView?: Event
 							<TableHead>Event</TableHead>
 							<TableHead>Start</TableHead>
 							<TableHead>Category</TableHead>
-							<TableHead>Global</TableHead>
+							{!isPastView && <TableHead>Global</TableHead>}
+							{!isPastView && <TableHead>Room</TableHead>}
 							<TableHead>Sync</TableHead>
 							<TableHead>Flyer</TableHead>
+							{isPastView && <TableHead>Wrap-up</TableHead>}
 							<TableHead />
 						</TableRow>
 					</TableHeader>
 					<TableBody>
-						{visible.map((ev) => (
-							<TableRow key={ev.id} inactive={!ev.active}>
-								<TableCell>
-									<div className="font-medium">
-										{ev.title}
-										{!ev.active && (
-											<span className="ml-2 rounded bg-secondary px-1.5 py-0.5 text-[10px] text-muted-foreground uppercase">
-												archived
-											</span>
-										)}
-										{ev.hidden && (
-											<span className="ml-2 rounded bg-secondary px-1.5 py-0.5 text-[10px] text-amber-400 uppercase">
-												hidden
-											</span>
-										)}
-									</div>
-									<div className="text-xs text-muted-foreground-dim">
-										{ev.location}
-										{ev.active && !ev.hidden && (
-											<a
-												href={eventPath(ev)}
-												target="_blank"
-												rel="noreferrer"
-												className="ml-2 text-blue-400 hover:underline"
-											>
-												View page ↗
-											</a>
-										)}
-									</div>
-								</TableCell>
-								<TableCell className="text-xs text-muted-foreground">
-									{ev.startTime}
-								</TableCell>
-								<TableCell>
-									{ev.label ? (
-										<span className="inline-flex items-center gap-1 text-xs">
-											<span
-												className="h-2.5 w-2.5 rounded-full"
-												style={{
-													backgroundColor: ev.label.hex ?? '#888',
-												}}
-											/>
-											{ev.label.name}
-										</span>
-									) : (
-										<span className="text-xs text-muted-foreground-dim">—</span>
-									)}
-								</TableCell>
-								<TableCell className="text-xs">{ev.isGlobal ? '✓' : ''}</TableCell>
-								<TableCell>
-									<span
-										className={`rounded px-2 py-0.5 text-xs ${SYNC_BADGE[ev.syncStatus] ?? SYNC_BADGE.pending}`}
-									>
-										{ev.syncStatus}
-									</span>
-								</TableCell>
-								<TableCell>
-									{ev.flyerUrl ? (
-										// eslint-disable-next-line @next/next/no-img-element
-										<img
-											src={ev.flyerUrl}
-											alt="flyer"
-											className="h-10 w-10 rounded object-cover"
-										/>
-									) : flyerUrgency(ev) === 'urgent' ? (
-										<span
-											title={`Starts within ${FLYER_URGENT_DAYS} days and has no flyer`}
-											className="rounded bg-red-900/70 px-2 py-0.5 text-xs font-semibold text-red-300"
-										>
-											missing
-										</span>
-									) : flyerUrgency(ev) === 'missing' ? (
-										<span className="rounded bg-amber-900/50 px-2 py-0.5 text-xs text-amber-300">
-											missing
-										</span>
-									) : (
-										<span className="text-xs text-muted-foreground-dim">
-											none
-										</span>
-									)}
-								</TableCell>
-								<TableCell>
-									<div className="flex justify-end gap-3 text-xs">
-										<button
-											type="button"
-											onClick={() => openEdit(ev)}
-											className="text-blue-400 hover:underline"
-										>
-											edit
-										</button>
-										<button
-											type="button"
-											onClick={() => setAttendeesFor(ev.id)}
-											className="text-blue-400 hover:underline"
-										>
-											attendees
-										</button>
-										<button
-											type="button"
-											disabled={setHidden.isPending}
-											onClick={() =>
-												setHidden.mutate({
-													id: ev.id,
-													data: { hidden: !ev.hidden },
-												})
-											}
-											className="text-blue-400 hover:underline disabled:opacity-50"
-										>
-											{ev.hidden ? 'unhide' : 'hide'}
-										</button>
-										<button
-											type="button"
-											disabled={flyerBusy === ev.id}
-											onClick={() => pickFlyer(ev.id)}
-											className="text-blue-400 hover:underline disabled:opacity-50"
-										>
-											{flyerBusy === ev.id ? 'uploading…' : 'flyer'}
-										</button>
-										{ev.syncStatus === 'error' && (
-											<button
-												type="button"
-												disabled={resync.isPending}
-												onClick={() => resync.mutate({ id: ev.id })}
-												className="text-yellow-400 hover:underline disabled:opacity-50"
-											>
-												re-sync
-											</button>
-										)}
-										{ev.active ? (
-											<button
-												type="button"
-												onClick={() =>
-													setPendingDelete({ ev, mode: 'archive' })
-												}
-												className="text-red-400 hover:underline"
-											>
-												delete
-											</button>
-										) : (
-											<>
-												<button
-													type="button"
-													disabled={restore.isPending}
-													onClick={() => restore.mutate({ id: ev.id })}
-													className="text-green-400 hover:underline disabled:opacity-50"
+						{visible.map((ev, i) => (
+							<Fragment key={ev.id}>
+								{groupHeaderAt(i)}
+								<TableRow inactive={!ev.active}>
+									<TableCell>
+										<div className="font-medium">
+											{ev.title}
+											{!ev.active && (
+												<span className="ml-2 rounded bg-secondary px-1.5 py-0.5 text-[10px] text-muted-foreground uppercase">
+													archived
+												</span>
+											)}
+											{ev.hidden && (
+												<span className="ml-2 rounded bg-secondary px-1.5 py-0.5 text-[10px] text-amber-400 uppercase">
+													hidden
+												</span>
+											)}
+										</div>
+										<div className="text-xs text-muted-foreground-dim">
+											{ev.location}
+											{ev.active && !ev.hidden && (
+												<a
+													href={eventPath(ev)}
+													target="_blank"
+													rel="noreferrer"
+													className="ml-2 text-blue-400 hover:underline"
 												>
-													restore
-												</button>
-												<button
-													type="button"
-													onClick={() => {
-														setPurgeText('');
-														setPendingDelete({ ev, mode: 'purge' });
+													View page ↗
+												</a>
+											)}
+										</div>
+									</TableCell>
+									<TableCell className="text-xs text-muted-foreground">
+										{ev.startTime}
+									</TableCell>
+									<TableCell>
+										{ev.label ? (
+											<span className="inline-flex items-center gap-1 text-xs">
+												<span
+													className="h-2.5 w-2.5 rounded-full"
+													style={{
+														backgroundColor: ev.label.hex ?? '#888',
 													}}
-													className="text-red-500 hover:underline"
-												>
-													delete permanently
-												</button>
-											</>
+												/>
+												{ev.label.name}
+											</span>
+										) : (
+											<span className="text-xs text-muted-foreground-dim">
+												—
+											</span>
 										)}
-									</div>
-								</TableCell>
-							</TableRow>
+									</TableCell>
+									{!isPastView && (
+										<TableCell className="text-xs">
+											{ev.isGlobal ? '✓' : ''}
+										</TableCell>
+									)}
+									{!isPastView && (
+										<TableCell>
+											{roomStatus(ev) === 'none' ? (
+												<span className="text-xs text-muted-foreground-dim">
+													—
+												</span>
+											) : (
+												<div
+													title={
+														ev.roomReservation?.reservationNumber
+															? `Reservation #${ev.roomReservation.reservationNumber}`
+															: undefined
+													}
+												>
+													<span
+														className={`rounded px-2 py-0.5 text-xs whitespace-nowrap ${ROOM_BADGE[roomStatus(ev)] ?? ''}`}
+													>
+														{
+															ROOM_RESERVATION_LABELS[
+																roomStatus(
+																	ev,
+																) as RoomReservationStatus
+															]
+														}
+													</span>
+													{ev.roomReservation?.room && (
+														<div className="mt-1 text-[11px] text-muted-foreground-dim">
+															{ev.roomReservation.room}
+														</div>
+													)}
+												</div>
+											)}
+										</TableCell>
+									)}
+									<TableCell>
+										<span
+											className={`rounded px-2 py-0.5 text-xs ${SYNC_BADGE[ev.syncStatus] ?? SYNC_BADGE.pending}`}
+										>
+											{ev.syncStatus}
+										</span>
+									</TableCell>
+									<TableCell>
+										{ev.flyerUrl ? (
+											// eslint-disable-next-line @next/next/no-img-element
+											<img
+												src={ev.flyerUrl}
+												alt="flyer"
+												className="h-10 w-10 rounded object-cover"
+											/>
+										) : flyerUrgency(ev) === 'urgent' ? (
+											<span
+												title={`Starts within ${FLYER_URGENT_DAYS} days and has no flyer`}
+												className="rounded bg-red-900/70 px-2 py-0.5 text-xs font-semibold text-red-300"
+											>
+												missing
+											</span>
+										) : flyerUrgency(ev) === 'missing' ? (
+											<span className="rounded bg-amber-900/50 px-2 py-0.5 text-xs text-amber-300">
+												missing
+											</span>
+										) : (
+											<span className="text-xs text-muted-foreground-dim">
+												none
+											</span>
+										)}
+									</TableCell>
+									{isPastView && (
+										<TableCell>
+											<div className="space-y-1 text-xs whitespace-nowrap">
+												{ev.attendeeCount > 0 ? (
+													<button
+														type="button"
+														onClick={() => setAttendeesFor(ev.id)}
+														className="block text-green-400 hover:underline"
+													>
+														✓ {ev.attendeeCount} checked in
+													</button>
+												) : (
+													<span className="block text-amber-400">
+														○ no check-ins
+													</span>
+												)}
+												{ev.photoCount > 0 ? (
+													<a
+														href={`/admin/photos?event=${ev.id}`}
+														className="block text-green-400 hover:underline"
+													>
+														✓ {ev.photoCount} photo
+														{ev.photoCount === 1 ? '' : 's'}
+														{ev.publicPhotoCount > 0 &&
+															` (${ev.publicPhotoCount} public)`}
+													</a>
+												) : ev.photoUrls ? (
+													<span className="block text-green-400">
+														✓ legacy photos
+													</span>
+												) : (
+													<span className="block text-amber-400">
+														○ no photos ·{' '}
+														<a
+															href={`/admin/photos?event=${ev.id}`}
+															className="text-blue-400 hover:underline"
+														>
+															add
+														</a>
+													</span>
+												)}
+											</div>
+										</TableCell>
+									)}
+									<TableCell>
+										<div className="flex justify-end gap-3 text-xs">
+											<button
+												type="button"
+												onClick={() => openEdit(ev)}
+												className="text-blue-400 hover:underline"
+											>
+												edit
+											</button>
+											<button
+												type="button"
+												onClick={() => setAttendeesFor(ev.id)}
+												className="text-blue-400 hover:underline"
+											>
+												attendees
+											</button>
+											<button
+												type="button"
+												disabled={setHidden.isPending}
+												onClick={() =>
+													setHidden.mutate({
+														id: ev.id,
+														data: { hidden: !ev.hidden },
+													})
+												}
+												className="text-blue-400 hover:underline disabled:opacity-50"
+											>
+												{ev.hidden ? 'unhide' : 'hide'}
+											</button>
+											<button
+												type="button"
+												disabled={flyerBusy === ev.id}
+												onClick={() => pickFlyer(ev.id)}
+												className="text-blue-400 hover:underline disabled:opacity-50"
+											>
+												{flyerBusy === ev.id ? 'uploading…' : 'flyer'}
+											</button>
+											{ev.syncStatus === 'error' && (
+												<button
+													type="button"
+													disabled={resync.isPending}
+													onClick={() => resync.mutate({ id: ev.id })}
+													className="text-yellow-400 hover:underline disabled:opacity-50"
+												>
+													re-sync
+												</button>
+											)}
+											{ev.active ? (
+												<button
+													type="button"
+													onClick={() =>
+														setPendingDelete({ ev, mode: 'archive' })
+													}
+													className="text-red-400 hover:underline"
+												>
+													delete
+												</button>
+											) : (
+												<>
+													<button
+														type="button"
+														disabled={restore.isPending}
+														onClick={() =>
+															restore.mutate({ id: ev.id })
+														}
+														className="text-green-400 hover:underline disabled:opacity-50"
+													>
+														restore
+													</button>
+													<button
+														type="button"
+														onClick={() => {
+															setPurgeText('');
+															setPendingDelete({ ev, mode: 'purge' });
+														}}
+														className="text-red-500 hover:underline"
+													>
+														delete permanently
+													</button>
+												</>
+											)}
+										</div>
+									</TableCell>
+								</TableRow>
+							</Fragment>
 						))}
 						{visible.length === 0 && (
-							<TableEmpty colSpan={7}>
+							<TableEmpty colSpan={colCount}>
 								{(events ?? []).length === 0
 									? 'No events yet.'
 									: hasActiveFilters(filters)

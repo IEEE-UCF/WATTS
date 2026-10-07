@@ -23,6 +23,7 @@ import {
 	getTodaysCheckIns,
 	getEventAttendees,
 	getRoomReservationAlerts,
+	getEventActivity,
 } from '@watts/core/events';
 import { listLabels } from '@watts/core/event-labels';
 import { mapDomainError, mapUploadError } from '../map-domain-error';
@@ -131,8 +132,17 @@ export const eventRouter = createTRPCRouter({
 	/** Staff grid: every event including inactive/soft-deleted ones. */
 	getAllForAdmin: manageEvents.query(async ({ ctx }) => {
 		try {
-			const [events, labels] = await Promise.all([listAllEvents(ctx.db), listLabels(ctx.db)]);
-			return withLabels(events, labels);
+			const [events, labels, activity] = await Promise.all([
+				listAllEvents(ctx.db),
+				listLabels(ctx.db),
+				getEventActivity(ctx.db),
+			]);
+			// Check-in + photo counts for the Past tab's wrap-up column.
+			const none = { attendeeCount: 0, photoCount: 0, publicPhotoCount: 0 };
+			return (await withLabels(events, labels)).map((e) => ({
+				...e,
+				...(activity.get(e.id) ?? none),
+			}));
 		} catch (error) {
 			mapDomainError(error);
 		}

@@ -20,6 +20,10 @@ export interface EventFilters {
 	sync: 'any' | 'synced' | 'pending' | 'error' | 'skipped';
 	scope: 'any' | 'global' | 'local';
 	visibility: 'any' | 'shown' | 'hidden';
+	/** 'action' = upcoming-relevant: unsubmitted, pending or rejected. */
+	room: 'any' | 'action' | 'none' | 'unsubmitted' | 'pending' | 'confirmed' | 'rejected';
+	/** Post-event checklist: 'incomplete' = no check-ins or no photos yet. */
+	wrapUp: 'any' | 'incomplete' | 'complete';
 	/** yyyy-mm-dd, inclusive, compared against the start date in the browser's time zone. */
 	from: string;
 	to: string;
@@ -32,6 +36,8 @@ export const EMPTY_FILTERS: EventFilters = {
 	sync: 'any',
 	scope: 'any',
 	visibility: 'any',
+	room: 'any',
+	wrapUp: 'any',
 	from: '',
 	to: '',
 };
@@ -42,8 +48,33 @@ export function hasActiveFilters(f: EventFilters): boolean {
 	);
 }
 
-/** `start` is the parsed start time; passed in so callers reuse their Safari-safe parse. */
-export function matchesEventFilters(ev: AdminEvent, start: Date, f: EventFilters): boolean {
+const ROOM_NEEDS_ACTION = new Set(['unsubmitted', 'pending', 'rejected']);
+
+/** Has check-ins and photos (new uploads, or legacy photo_urls from before the photo manager). */
+export function isWrappedUp(ev: AdminEvent): boolean {
+	return ev.attendeeCount > 0 && (ev.photoCount > 0 || Boolean(ev.photoUrls));
+}
+
+/** Upcoming events whose room still needs chasing. */
+export function needsRoomAction(ev: AdminEvent): boolean {
+	return ROOM_NEEDS_ACTION.has(roomStatus(ev));
+}
+
+/** Room reservation status, with 'none' when nothing was requested. */
+export function roomStatus(ev: AdminEvent): string {
+	return ev.roomReservation?.status ?? 'none';
+}
+
+/**
+ * `start` is the parsed start time; passed in so callers reuse their Safari-safe parse.
+ * `past`: wrap-up only means something once an event is over, so upcoming events ignore it.
+ */
+export function matchesEventFilters(
+	ev: AdminEvent,
+	start: Date,
+	f: EventFilters,
+	past: boolean,
+): boolean {
 	const words = f.q.toLowerCase().split(/\s+/).filter(Boolean);
 	if (words.length) {
 		const haystack = [
@@ -67,6 +98,10 @@ export function matchesEventFilters(ev: AdminEvent, start: Date, f: EventFilters
 	if (f.scope === 'local' && ev.isGlobal) return false;
 	if (f.visibility === 'shown' && ev.hidden) return false;
 	if (f.visibility === 'hidden' && !ev.hidden) return false;
+	if (f.room === 'action' && !needsRoomAction(ev)) return false;
+	if (f.room !== 'any' && f.room !== 'action' && roomStatus(ev) !== f.room) return false;
+	if (past && f.wrapUp === 'incomplete' && isWrappedUp(ev)) return false;
+	if (past && f.wrapUp === 'complete' && !isWrappedUp(ev)) return false;
 	if (f.from && start < new Date(`${f.from}T00:00:00`)) return false;
 	if (f.to && start > new Date(`${f.to}T23:59:59.999`)) return false;
 	return true;
@@ -168,6 +203,30 @@ export function EventFilterBar({
 					<option value="any">Shown &amp; hidden</option>
 					<option value="shown">Shown on site</option>
 					<option value="hidden">Hidden</option>
+				</select>
+				<select
+					aria-label="Room reservation"
+					value={filters.room}
+					onChange={(e) => set('room', e.target.value as EventFilters['room'])}
+					className={control}
+				>
+					<option value="any">Any room status</option>
+					<option value="action">Room not confirmed</option>
+					<option value="unsubmitted">Room unsubmitted</option>
+					<option value="pending">Room pending</option>
+					<option value="confirmed">Room confirmed</option>
+					<option value="rejected">Room rejected</option>
+					<option value="none">No reservation</option>
+				</select>
+				<select
+					aria-label="Wrap-up"
+					value={filters.wrapUp}
+					onChange={(e) => set('wrapUp', e.target.value as EventFilters['wrapUp'])}
+					className={control}
+				>
+					<option value="any">Any wrap-up</option>
+					<option value="incomplete">Wrap-up incomplete</option>
+					<option value="complete">Wrap-up done</option>
 				</select>
 				<label className="flex items-center gap-1.5 text-xs text-muted-foreground">
 					From

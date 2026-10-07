@@ -11,9 +11,9 @@ interface UploadRow {
 	message?: string;
 }
 
-export function EventPhotoManager() {
+export function EventPhotoManager({ initialEventId = '' }: { initialEventId?: string }) {
 	const fileRef = useRef<HTMLInputElement>(null);
-	const [eventId, setEventId] = useState('');
+	const [eventId, setEventId] = useState(initialEventId);
 	const [rows, setRows] = useState<UploadRow[]>([]);
 	const [busy, setBusy] = useState(false);
 
