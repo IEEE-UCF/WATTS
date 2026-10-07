@@ -17,6 +17,7 @@ export async function middleware(request: NextRequest) {
 		{ prefix: '/admin/photos', capability: 'manage_event_photos' },
 		{ prefix: '/admin/resumes', capability: 'review_resumes' },
 		{ prefix: '/admin/site-content', capability: 'manage_site_content' },
+		{ prefix: '/admin/links', capability: 'manage_links' },
 	];
 	const capabilityRoute = capabilityRoutes.find((r) => pathname.startsWith(r.prefix));
 

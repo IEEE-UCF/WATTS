@@ -19,6 +19,8 @@
     "./projects": "./src/projects.ts",
     "./redirects": "./src/redirects.ts",
     "./settings": "./src/settings.ts",
+    "./short-link-rules": "./src/short-link-rules.ts",
+    "./short-links": "./src/short-links.ts",
     "./site-content": "./src/site-content.ts",
     "./site-media-slots": "./src/site-media-slots.ts"
   },

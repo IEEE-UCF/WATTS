@@ -237,6 +237,16 @@ export function StaffHub() {
 					</Panel>
 				)}
 
+				{can('manage_links') && (
+					<Panel title="QR Links" cap="manage_links">
+						<p className="mb-3 text-sm text-muted-foreground">
+							Make a short ieeeucf.com/go link and a QR code with the IEEE logo for a
+							flyer or slide. You can change where it points after it&apos;s printed.
+						</p>
+						<LinkCard href="/admin/links" label="Open QR links" />
+					</Panel>
+				)}
+
 				{(isAdmin || auth?.isOfficer) && (
 					<Panel title="Committees & Projects" cap="manage_projects">
 						<p className="mb-3 text-sm text-muted-foreground">

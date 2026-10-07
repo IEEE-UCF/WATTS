@@ -12,6 +12,7 @@ import { meetingTimeRouter } from './routers/meetingTime';
 import { storageRouter } from './routers/storage';
 import { settingsRouter } from './routers/settings';
 import { siteContentRouter } from './routers/site-content';
+import { shortLinkRouter } from './routers/short-link';
 
 export const appRouter = createTRPCRouter({
 	member: memberRouter,
@@ -27,6 +28,7 @@ export const appRouter = createTRPCRouter({
 	storage: storageRouter,
 	settings: settingsRouter,
 	siteContent: siteContentRouter,
+	shortLink: shortLinkRouter,
 });
 
 export type AppRouter = typeof appRouter;

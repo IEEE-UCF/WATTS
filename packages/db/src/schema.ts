@@ -872,7 +872,7 @@ export const OfficerProfiles = pgTable('officer_profiles', {
 	index('officer_profiles_idx_active_sort').on(table.active, table.group, table.sortOrder),
 ]);
 
-export const pageRedirectTypeEnum = pgEnum('page_redirect_type_enum', ['event', 'project']);
+export const pageRedirectTypeEnum = pgEnum('page_redirect_type_enum', ['event', 'project', 'link']);
 
 // PageRedirects: addresses a public page used to have. When an event or project slug
 // changes, the old one lands here so links already shared (Discord, flyers, QR codes)
@@ -888,6 +888,47 @@ export const PageRedirects = pgTable('page_redirects', {
 }, (table) => [
 	unique('page_redirects_type_old_slug_unique').on(table.type, table.oldSlug),
 	index('page_redirects_idx_target_id').on(table.targetId),
+]);
+
+// ShortLinks: officer-made short addresses (/go/<slug>) that redirect anywhere. QR codes
+// encode the short address, so the destination can change after a flyer is printed.
+// Never hard-deleted — an archived or expired link shows a "retired" page instead.
+// Renamed slugs keep working through page_redirects (type 'link').
+export const ShortLinks = pgTable('short_links', {
+	id: uuid('id').primaryKey().defaultRandom(),
+	slug: varchar('slug', { length: 64 }).notNull(),
+	targetUrl: text('target_url').notNull(),
+	title: varchar('title', { length: 120 }).notNull(),
+	notes: text('notes'),
+	// Who the link belongs to once its creator graduates, e.g. "Software committee".
+	owner: varchar('owner', { length: 80 }),
+	// Counted separately: the QR encodes ?s=qr. Known bots and link unfurlers aren't counted.
+	qrScans: integer('qr_scans').notNull().default(0),
+	linkClicks: integer('link_clicks').notNull().default(0),
+	lastClickedAt: timestamp('last_clicked_at', { withTimezone: true }),
+	active: boolean('active').notNull().default(true),
+	expiresAt: timestamp('expires_at', { withTimezone: true }),
+	createdByMemberId: uuid('created_by_member_id').references(() => Members.id, { onDelete: 'set null' }),
+	updatedByMemberId: uuid('updated_by_member_id').references(() => Members.id, { onDelete: 'set null' }),
+	createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+	updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow().$onUpdate(() => sql`now()`),
+}, (table) => [
+	unique('short_links_slug_unique').on(table.slug),
+	index('short_links_idx_created_by').on(table.createdByMemberId),
+]);
+
+// ShortLinkHistory: one row per changed field on a short link (destination, slug,
+// archive…), so a retargeted printed QR can always be traced to who changed it.
+export const ShortLinkHistory = pgTable('short_link_history', {
+	id: uuid('id').primaryKey().defaultRandom(),
+	linkId: uuid('link_id').notNull().references(() => ShortLinks.id, { onDelete: 'cascade' }),
+	field: varchar('field', { length: 32 }).notNull(),
+	oldValue: text('old_value'),
+	newValue: text('new_value'),
+	changedByMemberId: uuid('changed_by_member_id').references(() => Members.id, { onDelete: 'set null' }),
+	changedAt: timestamp('changed_at', { withTimezone: true }).notNull().defaultNow(),
+}, (table) => [
+	index('short_link_history_idx_link').on(table.linkId, table.changedAt),
 ]);
 
 // PageEditors: explicit per-page edit assignments (on top of chairs/leads, who can

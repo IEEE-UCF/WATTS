@@ -1,11 +1,12 @@
-// Old public-page addresses → the page they belong to now (page_redirects).
+// Old public-page addresses → the page they belong to now (page_redirects). Also
+// holds renamed short-link slugs (type 'link', target = short_links.id).
 // Written whenever an event or project slug changes; read when a URL doesn't match a
 // current slug, so links already shared keep working.
 import { and, eq } from 'drizzle-orm';
 import type { WattsDb } from '@watts/db';
 import { PageRedirects } from '@watts/db/schema';
 
-export type RedirectType = 'event' | 'project';
+export type RedirectType = 'event' | 'project' | 'link';
 
 /**
  * Remember that `oldSlug` used to point at `targetId`. If another page held that old
