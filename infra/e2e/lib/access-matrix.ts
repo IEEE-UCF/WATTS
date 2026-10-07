@@ -385,6 +385,7 @@ export const PAGES: PageEntry[] = [
 			['/admin/resumes', 'review_resumes'],
 			['/admin/site-content', 'manage_site_content'],
 			['/admin/links', 'manage_links'],
+			['/admin/projects', 'manage_projects'],
 		] as [string, Cap][]
 	).map(
 		([route, c]): PageEntry => ({
@@ -395,13 +396,6 @@ export const PAGES: PageEntry[] = [
 			decision: 'D1',
 		}),
 	),
-	{
-		route: '/admin/projects',
-		probe: '/admin/projects',
-		gate: 'admin (middleware) — the page itself checks manage_projects',
-		expect: (f) => signin(f, () => (f.admin ? 'render' : 'dashboard')),
-		decision: 'D2',
-	},
 	{ route: '/admin/dashboard', probe: '/admin/dashboard', gate: 'admin', expect: (f) => signin(f, () => (f.admin ? 'render' : 'dashboard')) },
 	...['/test/demos', '/test/scan-qr', '/test/show-id', '/test/test-qr', '/style-guide', '/component-showcase'].map(
 		(route): PageEntry => ({
@@ -517,7 +511,7 @@ export const BOT_COMMANDS = [
 
 export const DECISIONS: Record<string, string> = {
 	D1: 'A plain member holding a capability grant (e.g. manage_links) still cannot open the matching /admin/* page: app/admin/layout.tsx requires officer or admin first. Should grant holders get in?',
-	D2: '/admin/projects is admin-only in middleware, though the page checks manage_projects and /staff links officers to it. Should officers (and manage_projects holders) get in?',
+	D2: 'RESOLVED: /admin/projects now opens for officers and admins (middleware checks manage_projects, like the other /admin capability pages).',
 	D3: '/test/*, /style-guide and /component-showcase are guarded by middleware only (no server-side check). Add a server guard or delete the pages?',
 	D4: 'Committee-scoped capability grants act site-wide, and revoking in /admin/members leaves scoped rows behind. Honour the scope, or drop scoped grants?',
 	D5: '/admin/members lists expired grants as if they were live. Hide them?',

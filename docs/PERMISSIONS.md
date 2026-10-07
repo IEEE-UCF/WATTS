@@ -68,7 +68,7 @@ Public pages (home, about, committees, events, projects, sponsorships, sign-in, 
 | `/admin/resumes` | /admin floor (officer or admin) + review_resumes | 🔒 | ↩ | ↩ | ↩ | ↩ | ↩ | ↩ | ✅ | ✅ | ✅ | ✅ | D1 |
 | `/admin/site-content` | /admin floor (officer or admin) + manage_site_content | 🔒 | ↩ | ↩ | ↩ | ↩ | ↩ | ↩ | ↩ | ↩ | ✅ | ✅ | D1 |
 | `/admin/links` | /admin floor (officer or admin) + manage_links | 🔒 | ↩ | ↩ | ↩ | ↩ | ↩ | ↩ | ✅ | ✅ | ✅ | ✅ | D1 |
-| `/admin/projects` | admin (middleware) — the page itself checks manage_projects | 🔒 | ↩ | ↩ | ↩ | ↩ | ↩ | ↩ | ↩ | ↩ | ↩ | ✅ | D2 |
+| `/admin/projects` | /admin floor (officer or admin) + manage_projects | 🔒 | ↩ | ↩ | ↩ | ↩ | ↩ | ↩ | ✅ | ✅ | ✅ | ✅ | D1 |
 | `/admin/dashboard` | admin | 🔒 | ↩ | ↩ | ↩ | ↩ | ↩ | ↩ | ↩ | ↩ | ↩ | ✅ |  |
 | `/test/demos` | admin (middleware only — no server-side guard) | 🔒 | ↩ | ↩ | ↩ | ↩ | ↩ | ↩ | ↩ | ↩ | ↩ | ✅ | D3 |
 | `/test/scan-qr` | admin (middleware only — no server-side guard) | 🔒 | ↩ | ↩ | ↩ | ↩ | ↩ | ↩ | ↩ | ↩ | ↩ | ✅ | D3 |
@@ -244,7 +244,7 @@ command's level; buttons go through the same check.
 Current behaviour is locked in by the tests; when one is decided, change the matrix, the code and the test together.
 
 - **D1.** A plain member holding a capability grant (e.g. manage_links) still cannot open the matching /admin/* page: app/admin/layout.tsx requires officer or admin first. Should grant holders get in?
-- **D2.** /admin/projects is admin-only in middleware, though the page checks manage_projects and /staff links officers to it. Should officers (and manage_projects holders) get in?
+- **D2.** RESOLVED: /admin/projects now opens for officers and admins (middleware checks manage_projects, like the other /admin capability pages).
 - **D3.** /test/*, /style-guide and /component-showcase are guarded by middleware only (no server-side check). Add a server guard or delete the pages?
 - **D4.** Committee-scoped capability grants act site-wide, and revoking in /admin/members leaves scoped rows behind. Honour the scope, or drop scoped grants?
 - **D5.** /admin/members lists expired grants as if they were live. Hide them?
