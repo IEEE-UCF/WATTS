@@ -275,6 +275,7 @@ export const PROCEDURES: Record<string, ProcEntry> = {
 
 	// --- botSignal
 	'botSignal.sendTest': m0('admin', { note: 'probed only for denial (allowed would post to the bot)' }),
+	'botSignal.syncEvents': m0('admin', { note: 'probed only for denial (allowed would make the bot sync)' }),
 
 	// --- shortLink
 	'shortLink.list': q0(cap('manage_links')),

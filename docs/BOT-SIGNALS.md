@@ -43,7 +43,7 @@ Then run `pnpm --filter @watts/bot check:signals`. If you added a tRPC procedure
 | Type | Sent by | Bot does |
 |---|---|---|
 | `bot.test` | Admin dashboard → **Bot connection → Send test signal** (`botSignal.sendTest`, admin only) | Posts "✅ Test webhook received" in `CHANNEL_DEFAULT_LOGGING_ID` |
-| `events.changed` | Event create, update, delete, restore, hardDelete, confirmFlyer, and importFromGoogle | One Discord event-sync pass after a 10-second debounce (needs `DISCORD_EVENT_SYNC_ENABLED`) |
+| `events.changed` | Event create, update, delete, restore, hardDelete, confirmFlyer, importFromGoogle, and Admin dashboard → **Sync Discord events** (`botSignal.syncEvents`, admin only) | One Discord event-sync pass after a 10-second debounce (needs `DISCORD_EVENT_SYNC_ENABLED`) |
 
 ## Security
 

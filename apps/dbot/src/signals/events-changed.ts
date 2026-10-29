@@ -17,6 +17,7 @@ export class EventsChangedSignal extends SignalHandler<'events.changed'> {
 
 	async run(payloads: SignalPayload<'events.changed'>[], context: SignalContext): Promise<void> {
 		const ran = await this.client.discordEventSync.reconcile();
+		if (ran) this.client.logger.log(`events.changed: sync pass done (${payloads.length} signal(s)).`);
 		// A fallback-poll pass was already running and may have read the DB before this
 		// change: queue one more pass (it runs after this one, past the debounce).
 		if (!ran) this.enqueue(payloads[0] ?? {}, context.sentAt);
