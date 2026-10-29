@@ -286,6 +286,23 @@ export const PROCEDURES: Record<string, ProcEntry> = {
 	'shortLink.update': m(cap('manage_links'), { scoped: 'officers/admins: any link; grant holders: links they created' }),
 	'shortLink.setActive': m(cap('manage_links'), { scoped: 'officers/admins: any link; grant holders: links they created' }),
 
+	// --- merch: buyers are any signed-in account; the store staff need manage_merch
+	'merch.storefront': q0('session'),
+	'merch.myOrders': q0('session', { scoped: "the caller's own orders" }),
+	'merch.placeOrder': m('session', { note: 'one open order per account (DB unique index)' }),
+	'merch.cancelMyOrder': m('session', { scoped: 'own order, only while requested' }),
+	'merch.listOrders': q(cap('manage_merch')),
+	'merch.moveOrder': m(cap('manage_merch')),
+	'merch.catalog': q0(cap('manage_merch')),
+	'merch.createProduct': m(cap('manage_merch')),
+	'merch.updateProduct': m(cap('manage_merch')),
+	'merch.setProductActive': m(cap('manage_merch')),
+	'merch.deleteProduct': m(cap('manage_merch')),
+	'merch.reorderProducts': m(cap('manage_merch')),
+	'merch.addVariant': m(cap('manage_merch')),
+	'merch.updateVariant': m(cap('manage_merch')),
+	'merch.deleteVariant': m(cap('manage_merch')),
+
 	// --- siteContent: site-wide CMS
 	'siteContent.refreshCache': m0(cap('manage_site_content'), { note: 'probed only for denial' }),
 	'siteContent.listSlots': q0(cap('manage_site_content')),
@@ -310,7 +327,7 @@ export const PROCEDURES: Record<string, ProcEntry> = {
 	'siteContent.assignPageEditor': m(cap('manage_site_content')),
 	'siteContent.revokePageEditor': m(cap('manage_site_content')),
 	// --- siteContent: per-page / self-service
-	'siteContent.confirmMedia': m('session', { scoped: 'canEditScope on the media scope (or own officer portrait)' }),
+	'siteContent.confirmMedia': m('session', { scoped: 'canEditScope on the media scope (or own officer portrait, or a merch photo with manage_merch)' }),
 	'siteContent.editablePages': q0('session', { scoped: 'lists only pages the caller may edit' }),
 	'siteContent.pageForEdit': q('session', { scoped: 'canEditScope' }),
 	'siteContent.submitCommitteePage': m('session', { scoped: 'canEditScope; non-staff edits go to review' }),
@@ -359,6 +376,7 @@ export const PAGES: PageEntry[] = [
 	pub('/auth/register', 'the post-sign-in registration form'),
 	{ route: '/dashboard', probe: '/dashboard', gate: 'session', expect: (f) => signin(f, () => 'render') },
 	{ route: '/settings', probe: '/settings', gate: 'session', expect: (f) => signin(f, () => 'render') },
+	{ route: '/merch', probe: '/merch', gate: 'session', expect: (f) => signin(f, () => 'render') },
 	{
 		route: '/pages/[type]/[slug]/edit',
 		probe: '/pages/committee/e2e-perm-committee-a/edit',
@@ -397,6 +415,7 @@ export const PAGES: PageEntry[] = [
 			['/admin/resumes', 'review_resumes'],
 			['/admin/site-content', 'manage_site_content'],
 			['/admin/links', 'manage_links'],
+			['/admin/merch', 'manage_merch'],
 			['/admin/projects', 'manage_projects'],
 		] as [string, Cap][]
 	).map(

@@ -41,7 +41,7 @@ const intentSchema = z.object({
 	mediaKind: z.enum(['image', 'animated', 'document']).optional(),
 	scopeType: z.enum(['global', 'committee', 'project']).optional(),
 	scopeId: z.string().uuid().nullish(),
-	purpose: z.literal('officer-portrait').optional(),
+	purpose: z.enum(['officer-portrait', 'merch-image']).optional(),
 	officerProfileId: z.string().uuid().optional(),
 	alt: z.string().max(500).nullish(),
 });

@@ -21,6 +21,7 @@ export const NAV_GROUPS: NavGroup[] = [
 		items: [
 			{ label: 'Dashboard', href: '/dashboard', requires: 'member' },
 			{ label: 'Settings', href: '/settings', requires: 'member' },
+			{ label: 'Merch store', href: '/merch', requires: 'member' },
 		],
 	},
 	{
@@ -37,6 +38,7 @@ export const NAV_GROUPS: NavGroup[] = [
 			{ label: 'Résumés', href: '/admin/resumes', requires: 'review_resumes' },
 			{ label: 'Site content', href: '/admin/site-content', requires: 'manage_site_content' },
 			{ label: 'QR links', href: '/admin/links', requires: 'manage_links' },
+			{ label: 'Merch orders', href: '/admin/merch', requires: 'manage_merch' },
 		],
 	},
 ];

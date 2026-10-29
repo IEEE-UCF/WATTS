@@ -1,4 +1,4 @@
-import { pgTable, uuid, foreignKey, varchar, boolean, date, integer, serial, text, timestamp, pgEnum, index, unique, uniqueIndex, jsonb } from 'drizzle-orm/pg-core';
+import { pgTable, uuid, foreignKey, varchar, boolean, date, integer, serial, text, timestamp, pgEnum, index, unique, uniqueIndex, jsonb, check } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm/sql/sql';
 import { relations } from "drizzle-orm";
 
@@ -997,4 +997,100 @@ export const ContentRevisions = pgTable('content_revisions', {
 }, (table) => [
 	index('content_revisions_idx_entity').on(table.entityType, table.entityId, table.createdAt),
 	index('content_revisions_idx_status').on(table.status),
+]);
+
+// ==== Merch store ====
+// Officer-run shirt sales: a signed-in user requests sizes, an officer approves, marks
+// paid (paid in person — no payment integration), then delivered. Every write in
+// @watts/core/merch is ONE SQL statement (the prod neon-http driver has no
+// interactive transactions), so the invariants below live in the database.
+
+export const merchOrderStatusEnum = pgEnum('merch_order_status_enum', [
+	'requested',
+	'approved',
+	'paid',
+	'delivered',
+	'denied', // closed by an officer
+	'cancelled', // closed by the buyer (while requested) or an officer
+]);
+
+// MerchProducts: one sellable item (a shirt design). Hidden with active = false once it
+// has orders — it can't be deleted then (merch_order_items → merch_variants restricts).
+export const MerchProducts = pgTable('merch_products', {
+	id: uuid('id').primaryKey().defaultRandom(),
+	name: varchar('name', { length: 120 }).notNull(),
+	description: text('description'),
+	priceCents: integer('price_cents').notNull(),
+	imageAssetId: uuid('image_asset_id').references(() => MediaAssets.id, { onDelete: 'set null' }),
+	active: boolean('active').notNull().default(true),
+	sortOrder: integer('sort_order').notNull().default(0),
+	createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+	updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow().$onUpdate(() => sql`now()`),
+}, (table) => [
+	check('merch_products_price_check', sql`${table.priceCents} >= 0`),
+]);
+
+// MerchVariants: a size of a product. `stock` = units we have; `reserved` = units held by
+// live orders (requested/approved/paid/delivered). Left = stock − reserved. The CHECK is
+// what stops two simultaneous orders from overselling the last shirt.
+export const MerchVariants = pgTable('merch_variants', {
+	id: uuid('id').primaryKey().defaultRandom(),
+	productId: uuid('product_id').notNull().references(() => MerchProducts.id, { onDelete: 'cascade' }),
+	label: varchar('label', { length: 24 }).notNull(),
+	stock: integer('stock').notNull().default(0),
+	reserved: integer('reserved').notNull().default(0),
+	sortOrder: integer('sort_order').notNull().default(0),
+	createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+	updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow().$onUpdate(() => sql`now()`),
+}, (table) => [
+	unique('merch_variants_product_label_unique').on(table.productId, table.label),
+	check('merch_variants_reserved_check', sql`${table.reserved} >= 0 AND ${table.reserved} <= ${table.stock}`),
+]);
+
+// MerchOrders: one request from one signed-in account. Keyed on users (any signed-in
+// account may order); memberId is filled in when the buyer has a member profile. The
+// partial unique index allows one open order per person.
+export const MerchOrders = pgTable('merch_orders', {
+	id: uuid('id').primaryKey().defaultRandom(),
+	userId: uuid('user_id').notNull().references(() => Users.id, { onDelete: 'cascade' }),
+	memberId: uuid('member_id').references(() => Members.id, { onDelete: 'set null' }),
+	buyerName: varchar('buyer_name', { length: 200 }),
+	buyerEmail: varchar('buyer_email', { length: 320 }),
+	status: merchOrderStatusEnum('status').notNull().default('requested'),
+	totalCents: integer('total_cents').notNull(),
+	note: text('note'),
+	officerNote: text('officer_note'),
+	approvedAt: timestamp('approved_at', { withTimezone: true }),
+	approvedByMemberId: uuid('approved_by_member_id').references(() => Members.id, { onDelete: 'set null' }),
+	paidAt: timestamp('paid_at', { withTimezone: true }),
+	paidByMemberId: uuid('paid_by_member_id').references(() => Members.id, { onDelete: 'set null' }),
+	deliveredAt: timestamp('delivered_at', { withTimezone: true }),
+	deliveredByMemberId: uuid('delivered_by_member_id').references(() => Members.id, { onDelete: 'set null' }),
+	closedAt: timestamp('closed_at', { withTimezone: true }),
+	closedByMemberId: uuid('closed_by_member_id').references(() => Members.id, { onDelete: 'set null' }),
+	createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+	updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow().$onUpdate(() => sql`now()`),
+}, (table) => [
+	index('merch_orders_idx_status').on(table.status, table.createdAt),
+	index('merch_orders_idx_user').on(table.userId),
+	uniqueIndex('merch_orders_open_unique')
+		.on(table.userId)
+		.where(sql`${table.status} in ('requested', 'approved', 'paid')`),
+]);
+
+// MerchOrderItems: the sizes in an order. Name, size and price are copied at order time
+// so catalog edits never rewrite past orders.
+export const MerchOrderItems = pgTable('merch_order_items', {
+	id: uuid('id').primaryKey().defaultRandom(),
+	orderId: uuid('order_id').notNull().references(() => MerchOrders.id, { onDelete: 'cascade' }),
+	variantId: uuid('variant_id').notNull().references(() => MerchVariants.id, { onDelete: 'restrict' }),
+	productName: varchar('product_name', { length: 120 }).notNull(),
+	variantLabel: varchar('variant_label', { length: 24 }).notNull(),
+	quantity: integer('quantity').notNull(),
+	unitPriceCents: integer('unit_price_cents').notNull(),
+	createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+}, (table) => [
+	unique('merch_order_items_order_variant_unique').on(table.orderId, table.variantId),
+	index('merch_order_items_idx_variant').on(table.variantId),
+	check('merch_order_items_quantity_check', sql`${table.quantity} > 0`),
 ]);

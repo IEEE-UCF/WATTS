@@ -150,7 +150,7 @@ export const siteContentRouter = createTRPCRouter({
 				mediaKind: z.enum(['image', 'animated', 'document']),
 				scopeType: z.enum(['global', 'committee', 'project']).optional(),
 				scopeId: uuid.nullish(),
-				purpose: z.literal('officer-portrait').optional(),
+				purpose: z.enum(['officer-portrait', 'merch-image']).optional(),
 				officerProfileId: uuid.optional(),
 				alt: z.string().max(500).nullish(),
 			}),

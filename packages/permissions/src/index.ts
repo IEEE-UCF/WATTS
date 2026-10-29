@@ -32,6 +32,9 @@ export const CAPABILITIES = {
 	// /admin/links: /go/<slug> short links + branded QR codes. A granted (non-officer)
 	// member can edit only the links they made — see @watts/core/short-links.
 	manage_links: { label: 'Create short links & QR codes', staff: true, impliedFor: 'officer' },
+	// /admin/merch: approve / mark paid / mark delivered merch orders, and edit the store's
+	// products, sizes, stock and photos. See @watts/core/merch.
+	manage_merch: { label: 'Manage merch store & orders', staff: true, impliedFor: 'officer' },
 	// Résumé-upload rollout — Phase 2: grant to a pilot cohort while the env audience
 	// stays at "officers". Phase 3 = flip RESUME_UPLOAD_AUDIENCE to "members".
 	upload_resume: { label: 'Upload a résumé (pilot)', staff: false, impliedFor: 'officer' },
