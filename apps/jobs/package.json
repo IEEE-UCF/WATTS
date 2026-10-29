@@ -11,13 +11,13 @@
   },
   "dependencies": {
     "@watts/config": "workspace:*",
-    "@aws-sdk/client-s3": "^3.1124.0",
-    "@vercel/blob": "^2.8.0",
-    "pg": "8.16.3"
+    "@aws-sdk/client-s3": "^3.1157.0",
+    "@vercel/blob": "^2.8.2",
+    "pg": "8.23.1"
   },
   "devDependencies": {
     "@watts/eslint-config": "workspace:*",
     "@watts/tsconfig": "workspace:*",
-    "eslint": "^10.10.0"
+    "eslint": "^10.13.0"
   }
 }
