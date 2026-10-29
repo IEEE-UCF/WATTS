@@ -14,6 +14,8 @@ import { eventsAutomation } from '../modules/calendar/eventsAutomation.ts';
 import { DiscordEventSync } from '../modules/events/discordEventSync.ts';
 import { SignalRouter } from '../modules/signals/SignalRouter.ts';
 import { SignalHandler } from './SignalHandler.ts';
+import { EventNotification } from './EventNotification.ts';
+import { NotificationScheduler } from '../modules/notifications/NotificationScheduler.ts';
 
 interface CachedPermission {
 	level: PermissionLevel;
@@ -27,6 +29,9 @@ class Fritz extends Client {
 	/** Website → bot signal handlers, by signal type (a type may have several). */
 	public signals: Collection<string, SignalHandler[]>;
 	public signalRouter: SignalRouter;
+	/** Timed event reminders, by kind (src/notifications/). */
+	public notifications: Collection<string, EventNotification>;
+	public notificationScheduler: NotificationScheduler;
 	public logger: any;
 	public database: Database;
 	public calendar: any;
@@ -52,12 +57,14 @@ class Fritz extends Client {
 		this.eventsAutomation = new eventsAutomation(this);
 		this.discordEventSync = new DiscordEventSync(this);
 		this.signalRouter = new SignalRouter(this);
+		this.notificationScheduler = new NotificationScheduler(this);
 		this.utils = new Utils(this);
 		this.permissionCache = new Collection();
 
 		this.commands = new Collection();
 		this.events = new Collection();
 		this.signals = new Collection();
+		this.notifications = new Collection();
 	}
 
 	/**
@@ -361,6 +368,47 @@ class Fritz extends Client {
 	}
 
 	/**
+	 * Load timed event reminders (src/notifications/)
+	 */
+	async loadNotifications(): Promise<void> {
+		try {
+			const notificationFiles = await this.getFiles('notifications', '.ts');
+
+			for (const filePath of notificationFiles) {
+				try {
+					const fileUrl = pathToFileURL(filePath).href;
+					const notificationModule = await import(fileUrl);
+					const NotificationClass = notificationModule.default ?? Object.values(notificationModule)[0];
+
+					if (!NotificationClass) {
+						this.logger.fail(`No notification class found in ${path.basename(filePath)}`);
+						continue;
+					}
+
+					const notification = new (NotificationClass as any)(this);
+
+					if (!notification?.isEventNotification) {
+						this.logger.fail(`${path.basename(filePath)} does not export an EventNotification`);
+						continue;
+					}
+
+					this.notifications.set(notification.kind, notification);
+
+					if (this.config.debug) {
+						this.logger.log(`Loaded notification: ${notification.kind} (${notification.constructor.name})`);
+					}
+				} catch (error) {
+					this.logger.fail(`Failed to load notification ${path.basename(filePath)}: ${error}`);
+				}
+			}
+
+			this.logger.success(`Loaded ${this.notifications.size} event notifications.`);
+		} catch (error) {
+			this.logger.fail(`Error loading event notifications: ${error}`);
+		}
+	}
+
+	/**
 	 * Initialize the bot
 	 */
 	async init(): Promise<void> {
@@ -374,6 +422,7 @@ class Fritz extends Client {
 		await this.loadCommands();
 		await this.loadEvents();
 		await this.loadSignalHandlers();
+		await this.loadNotifications();
 
 		// Login to Discord
 		await this.login(this.config.token)
@@ -420,6 +469,7 @@ class Fritz extends Client {
 		await this.eventsAutomation.cleanupOnShutdown();
 		this.discordEventSync.stop();
 		this.signals.forEach(handlers => handlers.forEach(handler => handler.stop()));
+		this.notificationScheduler.stop();
 		await this.database.closeDatabase();
 		await super.destroy();
 		this.logger.shutdown('Client destroyed and database connection closed.');

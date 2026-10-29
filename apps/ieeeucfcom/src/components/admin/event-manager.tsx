@@ -4,7 +4,7 @@ import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
 import { CircleCheck, ImageUp, RefreshCw } from 'lucide-react';
 import { trpc } from '@/lib/trpc/client';
 import type { RouterOutputs } from '@watts/api';
-import { eventPath } from '@watts/core/event-path';
+import { adminEventPath, eventPath } from '@watts/core/event-path';
 import { uploadEventFlyer } from '@watts/storage/client';
 import { EventAttendeesSheet } from './event-attendees-sheet';
 import { EventCalendar, monthKeyOf } from './event-calendar';
@@ -306,7 +306,22 @@ interface FormState {
 	roomReservationRoom: string;
 	roomReservationNumber: string;
 	pingCreatorOnUpdate: boolean;
+	/** Discord reminders (global events only) — stored in events.notification_settings. */
+	officerReminder: boolean;
+	officerReminderMinutes: number;
+	wrapUp: boolean;
+	wrapUpDelayHours: number;
 }
+
+/** Defaults mirror @watts/core/event-notifications (not imported: it's server code). */
+const WRAP_UP_DEFAULT_DELAY_HOURS = 24;
+const WRAP_UP_DELAY_OPTIONS = [2, 12, 24, 48, 72];
+const OFFICER_REMINDER_DEFAULT_MINUTES = 15;
+const OFFICER_REMINDER_OPTIONS = [5, 10, 15, 30, 60];
+
+/** A preset list that always includes the event's current value. */
+const withCurrent = (options: number[], current: number) =>
+	[...new Set([...options, current])].sort((a, b) => a - b);
 
 /** `day` (yyyy-mm-dd) pre-fills a 6–7 PM slot, e.g. from clicking a calendar square. */
 function emptyForm(day?: string): FormState {
@@ -327,6 +342,10 @@ function emptyForm(day?: string): FormState {
 		roomReservationRoom: '',
 		roomReservationNumber: '',
 		pingCreatorOnUpdate: false,
+		officerReminder: true,
+		officerReminderMinutes: OFFICER_REMINDER_DEFAULT_MINUTES,
+		wrapUp: true,
+		wrapUpDelayHours: WRAP_UP_DEFAULT_DELAY_HOURS,
 	};
 }
 
@@ -348,6 +367,11 @@ function fromEvent(ev: AdminEvent): FormState {
 		roomReservationRoom: ev.roomReservation?.room ?? '',
 		roomReservationNumber: ev.roomReservation?.reservationNumber ?? '',
 		pingCreatorOnUpdate: ev.pingCreatorOnUpdate ?? false,
+		officerReminder: ev.notificationSettings?.officerReminder ?? true,
+		officerReminderMinutes:
+			ev.notificationSettings?.officerReminderMinutes ?? OFFICER_REMINDER_DEFAULT_MINUTES,
+		wrapUp: ev.notificationSettings?.wrapUp ?? true,
+		wrapUpDelayHours: ev.notificationSettings?.wrapUpDelayHours ?? WRAP_UP_DEFAULT_DELAY_HOURS,
 	};
 }
 
@@ -410,6 +434,12 @@ function EventForm({
 					? undefined
 					: form.roomReservationNumber || undefined,
 			pingCreatorOnUpdate: form.pingCreatorOnUpdate,
+			notificationSettings: {
+				officerReminder: form.officerReminder,
+				officerReminderMinutes: form.officerReminderMinutes,
+				wrapUp: form.wrapUp,
+				wrapUpDelayHours: form.wrapUpDelayHours,
+			},
 		};
 		let eventId: string | undefined;
 		try {
@@ -450,7 +480,17 @@ function EventForm({
 			onEscapeKeyDown={(e) => pending && e.preventDefault()}
 		>
 			<DialogHeader className="border-b border-border px-6 py-4">
-				<DialogTitle>{editing ? `Edit “${editing.title}”` : 'New event'}</DialogTitle>
+				<DialogTitle className="flex flex-wrap items-baseline gap-x-3">
+					{editing ? `Edit “${editing.title}”` : 'New event'}
+					{editing && (
+						<a
+							href={adminEventPath(editing)}
+							className="font-sans text-xs font-normal text-blue-400 hover:underline"
+						>
+							Review page →
+						</a>
+					)}
+				</DialogTitle>
 				<DialogDescription>
 					{editing
 						? 'Changes sync to Google Calendar (and Discord, if global) on save.'
@@ -653,6 +693,79 @@ function EventForm({
 								Requires dues
 							</label>
 						</div>
+
+						{form.isGlobal && (
+							<fieldset className="flex flex-wrap items-center gap-x-6 gap-y-2 rounded-md border border-border p-3 text-sm text-muted-foreground">
+								<legend className="px-1 text-xs">
+									Discord reminders (link to the event page)
+								</legend>
+								<label className="flex items-center gap-2">
+									<input
+										id="officerReminder"
+										type="checkbox"
+										checked={form.officerReminder}
+										onChange={(e) => set('officerReminder', e.target.checked)}
+									/>
+									Officer heads-up before it starts (pings the creator + officers
+									to open check-in)
+								</label>
+								<label className="flex items-center gap-2">
+									<span>Send</span>
+									<select
+										id="officerReminderMinutes"
+										value={form.officerReminderMinutes}
+										disabled={!form.officerReminder}
+										onChange={(e) =>
+											set('officerReminderMinutes', Number(e.target.value))
+										}
+										className="rounded-md border border-input bg-card px-2 py-1 text-sm text-foreground disabled:opacity-50"
+									>
+										{withCurrent(
+											OFFICER_REMINDER_OPTIONS,
+											form.officerReminderMinutes,
+										).map((m) => (
+											<option key={m} value={m}>
+												{m} minutes
+											</option>
+										))}
+									</select>
+									<span>before it starts</span>
+								</label>
+								<div className="basis-full" />
+								<label className="flex items-center gap-2">
+									<input
+										id="wrapUp"
+										type="checkbox"
+										checked={form.wrapUp}
+										onChange={(e) => set('wrapUp', e.target.checked)}
+									/>
+									Officer wrap-up nudge (pings the creator + officers if photos or
+									check-ins are missing)
+								</label>
+								<label className="flex items-center gap-2">
+									<span>Send</span>
+									<select
+										id="wrapUpDelayHours"
+										value={form.wrapUpDelayHours}
+										disabled={!form.wrapUp}
+										onChange={(e) =>
+											set('wrapUpDelayHours', Number(e.target.value))
+										}
+										className="rounded-md border border-input bg-card px-2 py-1 text-sm text-foreground disabled:opacity-50"
+									>
+										{withCurrent(
+											WRAP_UP_DELAY_OPTIONS,
+											form.wrapUpDelayHours,
+										).map((h) => (
+											<option key={h} value={h}>
+												{h} hours
+											</option>
+										))}
+									</select>
+									<span>after it ends</span>
+								</label>
+							</fieldset>
+						)}
 
 						<div className="grid gap-4 sm:grid-cols-3">
 							<label className="block">
@@ -890,10 +1003,13 @@ interface PendingDelete {
 export function EventManager({
 	initialView = 'upcoming',
 	initialMonth,
+	openEventId,
 }: {
 	initialView?: EventView;
 	/** "yyyy-mm" for the Calendar tab; defaults to this month. */
 	initialMonth?: string;
+	/** Deep link (?event=<id>, e.g. from the bot's wrap-up nudge): open this event once loaded. */
+	openEventId?: string;
 }) {
 	const utils = trpc.useUtils();
 	const { data: events, isLoading } = trpc.event.getAllForAdmin.useQuery();
@@ -1115,6 +1231,15 @@ export function EventManager({
 		setFormKey((k) => k + 1);
 		setShowForm(true);
 	}
+
+	// Open once, when the list first loads (the ref stops a refetch reopening it).
+	const openedFromLink = useRef(false);
+	useEffect(() => {
+		if (!openEventId || openedFromLink.current || !events) return;
+		openedFromLink.current = true;
+		const ev = events.find((e) => e.id === openEventId);
+		if (ev) openEdit(ev);
+	}, [openEventId, events]);
 
 	function pickFlyer(eventId: string) {
 		flyerTarget.current = eventId;
@@ -1431,7 +1556,12 @@ export function EventManager({
 								<TableRow inactive={!ev.active}>
 									<TableCell>
 										<div className="font-medium">
-											{ev.title}
+											<a
+												href={adminEventPath(ev)}
+												className="hover:underline"
+											>
+												{ev.title}
+											</a>
 											{!ev.active && (
 												<span className="ml-2 rounded bg-secondary px-1.5 py-0.5 text-[10px] text-muted-foreground uppercase">
 													archived
@@ -1566,7 +1696,7 @@ export function EventManager({
 												)}
 												{ev.photoCount > 0 ? (
 													<a
-														href={`/admin/photos?event=${ev.id}`}
+														href={adminEventPath(ev)}
 														className="block text-green-400 hover:underline"
 													>
 														✓ {ev.photoCount} photo
@@ -1582,7 +1712,7 @@ export function EventManager({
 													<span className="block text-amber-400">
 														○ no photos ·{' '}
 														<a
-															href={`/admin/photos?event=${ev.id}`}
+															href={adminEventPath(ev)}
 															className="text-blue-400 hover:underline"
 														>
 															add
@@ -1594,6 +1724,12 @@ export function EventManager({
 									)}
 									<TableCell>
 										<div className="flex justify-end gap-3 text-xs">
+											<a
+												href={adminEventPath(ev)}
+												className="text-blue-400 hover:underline"
+											>
+												review
+											</a>
 											<button
 												type="button"
 												onClick={() => openEdit(ev)}

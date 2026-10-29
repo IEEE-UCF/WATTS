@@ -27,7 +27,8 @@ const RESULT_LABELS: Record<CheckInResult['status'], string> = {
 	error: 'Check-in failed',
 };
 
-export function QREventScanner() {
+/** `lockedEventId`: check in to this event only, no picker (the per-event review page). */
+export function QREventScanner({ lockedEventId }: { lockedEventId?: string } = {}) {
 	// Continuous mode keeps the camera live between members; remembered per device.
 	const [continuous, setContinuous] = React.useState(true);
 	React.useEffect(() => {
@@ -59,7 +60,7 @@ export function QREventScanner() {
 		setIsScanning,
 	} = useMemberScanner({ continuous });
 
-	const [selectedEventId, setSelectedEventId] = React.useState<string>('');
+	const [selectedEventId, setSelectedEventId] = React.useState<string>(lockedEventId ?? '');
 	// Check-in outcome per scan, so overlapping check-ins in continuous mode don't clobber
 	// each other and the history can show each one.
 	const [results, setResults] = React.useState<Record<number, CheckInResult>>({});
@@ -115,7 +116,9 @@ export function QREventScanner() {
 						IEEE Member Check-In
 					</h1>
 					<p className="mb-4 text-center text-sm text-muted-foreground">
-						Select an event and scan member QR codes to check in.
+						{lockedEventId
+							? 'Scan member QR codes to check them in to this event.'
+							: 'Select an event and scan member QR codes to check in.'}
 					</p>
 					{eventsLoading ? (
 						<p className="text-center text-muted-foreground-dim">Loading events...</p>
@@ -125,12 +128,14 @@ export function QREventScanner() {
 						<div className="mx-auto max-w-xs">
 							<label
 								htmlFor="event-select"
+								hidden={Boolean(lockedEventId)}
 								className="mb-1 block text-sm font-medium text-muted-foreground"
 							>
 								Select Event
 							</label>
 							<select
 								id="event-select"
+								hidden={Boolean(lockedEventId)}
 								value={selectedEventId}
 								onChange={(e) => {
 									setSelectedEventId(e.target.value);

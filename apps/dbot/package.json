@@ -35,6 +35,7 @@
     "check:whois": "tsx scripts/whois-check.mts",
     "check:tier": "tsx scripts/tier-check.mts",
     "check:signals": "tsx scripts/signals-check.mts",
+    "check:notifications": "tsx scripts/notifications-check.mts",
     "docker:build": "docker build -f ./Dockerfile -t watts-bot ../..",
     "docker:run": "docker run --rm --env-file ../../.env watts-bot"
   },

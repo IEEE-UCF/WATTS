@@ -57,6 +57,16 @@ interface Config {
 			};
 		};
 	};
+	/** Timed event reminders (modules/notifications/NotificationScheduler.ts). */
+	eventNotifications: {
+		enabled: boolean;
+		/** Where officer nudges go ('' → the default logging channel). */
+		officersChannel: string;
+		/** Role pinged on officer nudges ('' → no role ping). */
+		officerRole: string;
+		/** Website origin for links in reminders. */
+		siteUrl: string;
+	};
 	/** Website → bot signals (see modules/signals/SignalRouter.ts). */
 	signals: {
 		/** Id of the Discord webhook the website posts signals through ('' = off). */
@@ -129,6 +139,13 @@ const config: Config = {
 				logs: process.env.DEV_CHANNEL_LOGS_ID ?? '',
 			},
 		},
+	},
+
+	eventNotifications: {
+		enabled: process.env.EVENT_NOTIFICATIONS_ENABLED === 'true',
+		officersChannel: process.env.CHANNEL_OFFICERS_ID ?? '',
+		officerRole: process.env.ROLE_OFFICER_ID ?? '',
+		siteUrl: process.env.NEXTAUTH_URL ?? 'https://ieeeucf.com', // same fallback as the website's layout
 	},
 
 	signals: {

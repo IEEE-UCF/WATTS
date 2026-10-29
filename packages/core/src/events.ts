@@ -7,6 +7,7 @@ import {
 	EventPhotos,
 	Members,
 	RoomReservations,
+	type EventNotificationSettings,
 } from '@watts/db/schema';
 import { DomainError } from './errors';
 import { recordRedirect } from './redirects';
@@ -38,6 +39,8 @@ export interface CreateEventInput {
 	roomReservationNumber?: string;
 	/** Whether the creator wants to be pinged via Discord when this event updates */
 	pingCreatorOnUpdate?: boolean;
+	/** Discord reminder settings (see ./event-notifications); unset keys use defaults. */
+	notificationSettings?: EventNotificationSettings;
 }
 
 export type UpdateEventInput = Partial<CreateEventInput>;
@@ -269,6 +272,7 @@ export async function createEvent(
 			allDay: input.allDay ?? false,
 			createdByUserId: opts.createdByUserId ?? null,
 			pingCreatorOnUpdate: input.pingCreatorOnUpdate ?? false,
+			notificationSettings: input.notificationSettings ?? {},
 		})
 		.returning();
 
@@ -322,6 +326,7 @@ export async function updateEvent(db: WattsDb, id: string, data: UpdateEventInpu
 	if (data.timeZone !== undefined) patch.timeZone = data.timeZone;
 	if (data.allDay !== undefined) patch.allDay = data.allDay;
 	if (data.pingCreatorOnUpdate !== undefined) patch.pingCreatorOnUpdate = data.pingCreatorOnUpdate;
+	if (data.notificationSettings !== undefined) patch.notificationSettings = data.notificationSettings;
 
 	const [event] = await db.update(Events).set(patch).where(eq(Events.id, id)).returning();
 	if (!event) throw new DomainError('NOT_FOUND', 'Event not found');
