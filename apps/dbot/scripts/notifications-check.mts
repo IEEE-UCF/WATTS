@@ -10,6 +10,7 @@
 import { resolveEventNotificationSettings, type NotifiableEvent } from '@watts/core/event-notifications';
 import { planNotifications } from '../src/modules/notifications/plan.ts';
 import { WrapUpNudge } from '../src/notifications/wrap-up.ts';
+import { OfficerReminder } from '../src/notifications/officer-reminder.ts';
 
 let failures = 0;
 
@@ -29,6 +30,7 @@ function event(overrides: Partial<NotifiableEvent> = {}): NotifiableEvent {
 		number: 1,
 		title: 'Test event',
 		slug: 'test-event',
+		location: 'HEC 101',
 		startTime: iso(now - 4 * HOUR),
 		endTime: iso(now - 3 * HOUR),
 		settings: resolveEventNotificationSettings({}),
@@ -43,6 +45,8 @@ console.log('\nper-event settings\n');
 
 const defaults = resolveEventNotificationSettings({});
 check('unset → wrap-up on, 24h', defaults.wrapUp === true && defaults.wrapUpDelayHours === 24, JSON.stringify(defaults));
+check('unset → officer heads-up on, 15 min', defaults.officerReminder === true && defaults.officerReminderMinutes === 15);
+check('officer heads-up minutes kept', resolveEventNotificationSettings({ officerReminderMinutes: 30 }).officerReminderMinutes === 30);
 check('null settings → defaults', resolveEventNotificationSettings(null).wrapUpDelayHours === 24);
 check('explicit off kept', resolveEventNotificationSettings({ wrapUp: false }).wrapUp === false);
 check('custom delay kept', resolveEventNotificationSettings({ wrapUpDelayHours: 2 }).wrapUpDelayHours === 2);
@@ -57,15 +61,24 @@ check(
 	'no end time → start + 1h + delay',
 	nudge.fireAt(event({ endTime: null })) === now - 4 * HOUR + HOUR + 24 * HOUR,
 );
-check('turned off for the event → never', nudge.fireAt(event({ settings: { wrapUp: false, wrapUpDelayHours: 24 } })) === null);
+check('turned off for the event → never', nudge.fireAt(event({ settings: { ...defaults, wrapUp: false } })) === null);
+
+const heads = new OfficerReminder({});
+const upcoming = event({ startTime: iso(now + 2 * HOUR), endTime: iso(now + 3 * HOUR) });
+check('officer heads-up due 15 min before the start', heads.fireAt(upcoming) === now + 2 * HOUR - 15 * 60 * 1000);
+check('officer heads-up off → never', heads.fireAt(event({ settings: { ...defaults, officerReminder: false } })) === null);
 
 // ---------------------------------------------------------------------------
 console.log('\nplanning\n');
 
 const plan = (events: NotifiableEvent[]) => planNotifications(events, [nudge], now, 7 * DAY);
-const short = { wrapUp: true, wrapUpDelayHours: 2 };
+const short = { ...defaults, officerReminder: false, wrapUpDelayHours: 2 };
 
 check('due in the future → planned', plan([event()]).length === 1);
+check(
+	'both kinds planned for an upcoming event',
+	planNotifications([upcoming], [nudge, heads], now, 7 * DAY).map((p) => p.kind).join(',') === 'officer-reminder,wrap-up',
+);
 check('already handled → not planned', plan([event({ handled: ['wrap-up'] })]).length === 0);
 check('due 1h ago (bot was down) → planned to fire now', plan([event({ settings: short })])[0]?.fireAt === now - HOUR);
 check(

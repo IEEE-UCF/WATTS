@@ -447,6 +447,10 @@ export const Events = pgTable("events", {
 // EventAttendees: Join table for many-to-many relation between Events and Members
 /** Per-event reminder settings (events.notification_settings). Absent keys → defaults. */
 export interface EventNotificationSettings {
+	/** Officer heads-up shortly before the event starts (open check-in). */
+	officerReminder?: boolean;
+	/** Minutes before the start for the officer heads-up. */
+	officerReminderMinutes?: number;
 	/** Officer wrap-up nudge (no photos / check-ins after the event). */
 	wrapUp?: boolean;
 	/** Hours after the event ends before the wrap-up nudge goes out. */

@@ -307,6 +307,8 @@ interface FormState {
 	roomReservationNumber: string;
 	pingCreatorOnUpdate: boolean;
 	/** Discord reminders (global events only) — stored in events.notification_settings. */
+	officerReminder: boolean;
+	officerReminderMinutes: number;
 	wrapUp: boolean;
 	wrapUpDelayHours: number;
 }
@@ -314,6 +316,12 @@ interface FormState {
 /** Defaults mirror @watts/core/event-notifications (not imported: it's server code). */
 const WRAP_UP_DEFAULT_DELAY_HOURS = 24;
 const WRAP_UP_DELAY_OPTIONS = [2, 12, 24, 48, 72];
+const OFFICER_REMINDER_DEFAULT_MINUTES = 15;
+const OFFICER_REMINDER_OPTIONS = [5, 10, 15, 30, 60];
+
+/** A preset list that always includes the event's current value. */
+const withCurrent = (options: number[], current: number) =>
+	[...new Set([...options, current])].sort((a, b) => a - b);
 
 /** `day` (yyyy-mm-dd) pre-fills a 6–7 PM slot, e.g. from clicking a calendar square. */
 function emptyForm(day?: string): FormState {
@@ -334,6 +342,8 @@ function emptyForm(day?: string): FormState {
 		roomReservationRoom: '',
 		roomReservationNumber: '',
 		pingCreatorOnUpdate: false,
+		officerReminder: true,
+		officerReminderMinutes: OFFICER_REMINDER_DEFAULT_MINUTES,
 		wrapUp: true,
 		wrapUpDelayHours: WRAP_UP_DEFAULT_DELAY_HOURS,
 	};
@@ -357,6 +367,9 @@ function fromEvent(ev: AdminEvent): FormState {
 		roomReservationRoom: ev.roomReservation?.room ?? '',
 		roomReservationNumber: ev.roomReservation?.reservationNumber ?? '',
 		pingCreatorOnUpdate: ev.pingCreatorOnUpdate ?? false,
+		officerReminder: ev.notificationSettings?.officerReminder ?? true,
+		officerReminderMinutes:
+			ev.notificationSettings?.officerReminderMinutes ?? OFFICER_REMINDER_DEFAULT_MINUTES,
 		wrapUp: ev.notificationSettings?.wrapUp ?? true,
 		wrapUpDelayHours: ev.notificationSettings?.wrapUpDelayHours ?? WRAP_UP_DEFAULT_DELAY_HOURS,
 	};
@@ -421,7 +434,12 @@ function EventForm({
 					? undefined
 					: form.roomReservationNumber || undefined,
 			pingCreatorOnUpdate: form.pingCreatorOnUpdate,
-			notificationSettings: { wrapUp: form.wrapUp, wrapUpDelayHours: form.wrapUpDelayHours },
+			notificationSettings: {
+				officerReminder: form.officerReminder,
+				officerReminderMinutes: form.officerReminderMinutes,
+				wrapUp: form.wrapUp,
+				wrapUpDelayHours: form.wrapUpDelayHours,
+			},
 		};
 		let eventId: string | undefined;
 		try {
@@ -668,7 +686,34 @@ function EventForm({
 
 						{form.isGlobal && (
 							<fieldset className="flex flex-wrap items-center gap-x-6 gap-y-2 rounded-md border border-border p-3 text-sm text-muted-foreground">
-								<legend className="px-1 text-xs">Discord reminders</legend>
+								<legend className="px-1 text-xs">Discord reminders (link to the event page)</legend>
+								<label className="flex items-center gap-2">
+									<input
+										id="officerReminder"
+										type="checkbox"
+										checked={form.officerReminder}
+										onChange={(e) => set('officerReminder', e.target.checked)}
+									/>
+									Officer heads-up before it starts (pings the creator + officers to open check-in)
+								</label>
+								<label className="flex items-center gap-2">
+									<span>Send</span>
+									<select
+										id="officerReminderMinutes"
+										value={form.officerReminderMinutes}
+										disabled={!form.officerReminder}
+										onChange={(e) => set('officerReminderMinutes', Number(e.target.value))}
+										className="rounded-md border border-input bg-card px-2 py-1 text-sm text-foreground disabled:opacity-50"
+									>
+										{withCurrent(OFFICER_REMINDER_OPTIONS, form.officerReminderMinutes).map((m) => (
+											<option key={m} value={m}>
+												{m} minutes
+											</option>
+										))}
+									</select>
+									<span>before it starts</span>
+								</label>
+								<div className="basis-full" />
 								<label className="flex items-center gap-2">
 									<input
 										id="wrapUp"
@@ -688,13 +733,11 @@ function EventForm({
 										onChange={(e) => set('wrapUpDelayHours', Number(e.target.value))}
 										className="rounded-md border border-input bg-card px-2 py-1 text-sm text-foreground disabled:opacity-50"
 									>
-										{[...new Set([...WRAP_UP_DELAY_OPTIONS, form.wrapUpDelayHours])]
-											.sort((a, b) => a - b)
-											.map((h) => (
-												<option key={h} value={h}>
-													{h} hours
-												</option>
-											))}
+										{withCurrent(WRAP_UP_DELAY_OPTIONS, form.wrapUpDelayHours).map((h) => (
+											<option key={h} value={h}>
+												{h} hours
+											</option>
+										))}
 									</select>
 									<span>after it ends</span>
 								</label>
@@ -1490,7 +1533,9 @@ export function EventManager({
 								<TableRow inactive={!ev.active}>
 									<TableCell>
 										<div className="font-medium">
-											{ev.title}
+											<a href={`/admin/events/${ev.id}`} className="hover:underline">
+												{ev.title}
+											</a>
 											{!ev.active && (
 												<span className="ml-2 rounded bg-secondary px-1.5 py-0.5 text-[10px] text-muted-foreground uppercase">
 													archived

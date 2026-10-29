@@ -63,6 +63,7 @@ Public pages (home, about, committees, events, projects, sponsorships, sign-in, 
 | `/pages/[type]/[slug]/preview` | session + canEditScope, else 404 | 🔒 | 404 | 404 | 404 | ✅ | 404 | ✅ | 404 | ✅ | ✅ | ✅ |  |
 | `/staff` | officer, admin, or any staff-capability grant | 🔒 | ↩ | ↩ | ✅ | ↩ | ↩ | ↩ | ✅ | ✅ | ✅ | ✅ |  |
 | `/admin/members` | officer or admin | 🔒 | ↩ | ↩ | ↩ | ↩ | ↩ | ↩ | ✅ | ✅ | ✅ | ✅ |  |
+| `/admin/events/[id]` | /admin floor (officer or admin) + manage_events (photo / scanner sections also need their capability) | 🔒 | ↩ | ↩ | ↩ | ↩ | ↩ | ↩ | ✅ | ✅ | ✅ | ✅ | D1 |
 | `/admin/events` | /admin floor (officer or admin) + manage_events | 🔒 | ↩ | ↩ | ↩ | ↩ | ↩ | ↩ | ✅ | ✅ | ✅ | ✅ | D1 |
 | `/admin/photos` | /admin floor (officer or admin) + manage_event_photos | 🔒 | ↩ | ↩ | ↩ | ↩ | ↩ | ↩ | ✅ | ✅ | ✅ | ✅ | D1 |
 | `/admin/resumes` | /admin floor (officer or admin) + review_resumes | 🔒 | ↩ | ↩ | ↩ | ↩ | ↩ | ↩ | ✅ | ✅ | ✅ | ✅ | D1 |
@@ -98,7 +99,7 @@ read; a per-record rule then narrows it further inside the procedure.
 | officer | promote, demote | admin | 🔒 | ⛔ | ⛔ | ⛔ | ⛔ | ⛔ | ⛔ | ⛔ | ⛔ | ⛔ | ✅ |  |
 | officer | listResumes | cap:review_resumes | 🔒 | ⛔ | ⛔ | ✅ | ⛔ | ⛔ | ⛔ | ✅ | ✅ | ✅ | ✅ |  |
 | event | getAll, getById, getBySlug, next, listPhotos | public | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |  |
-| event | getAllForAdmin, getAttendees, roomReservationAlerts, create, restore, confirmFlyer, importFromGoogle, resync | cap:manage_events | 🔒 | ⛔ | ⛔ | ✅ | ⛔ | ⛔ | ⛔ | ✅ | ✅ | ✅ | ✅ |  |
+| event | getAllForAdmin, getAttendees, reviewSummary, roomReservationAlerts, create, restore, confirmFlyer, importFromGoogle, resync | cap:manage_events | 🔒 | ⛔ | ⛔ | ✅ | ⛔ | ⛔ | ⛔ | ✅ | ✅ | ✅ | ✅ |  |
 | event | update, delete, hardDelete | cap:manage_events | 🔒 | ⛔ | ⛔ | ✅ | ⛔ | ⛔ | ⛔ | ✅ | ✅ | ✅ | ✅ | D9 |
 | event | todaysCheckIns, addAttendee | cap:scan_attendance | 🔒 | ⛔ | ⛔ | ✅ | ⛔ | ⛔ | ⛔ | ✅ | ✅ | ✅ | ✅ |  |
 | event | pendingVisibilityCount, adminListPhotos, searchPhotos, confirmPhoto, updatePhoto, deletePhoto | cap:manage_event_photos | 🔒 | ⛔ | ⛔ | ✅ | ⛔ | ⛔ | ⛔ | ✅ | ✅ | ✅ | ✅ |  |

@@ -12,7 +12,7 @@
 // Items tagged `decision: 'D#'` are known oddities kept as-is on purpose until someone
 // decides; they're listed (with the question) in DECISIONS at the bottom.
 
-import { CAPS, EXEC_ROLES, PERSONAS, STAFF_CAPS, type Cap, type Persona } from './personas';
+import { CAPS, EXEC_ROLES, FIX, PERSONAS, STAFF_CAPS, type Cap, type Persona } from './personas';
 
 // ---------------------------------------------------------------------------
 // Policy
@@ -190,6 +190,7 @@ export const PROCEDURES: Record<string, ProcEntry> = {
 	'event.listPhotos': q('public', { note: 'approved + public photos only' }),
 	'event.getAllForAdmin': q0(cap('manage_events')),
 	'event.getAttendees': q(cap('manage_events')),
+	'event.reviewSummary': q(cap('manage_events')),
 	'event.roomReservationAlerts': q0(cap('manage_events')),
 	'event.create': m(cap('manage_events')),
 	'event.update': m(cap('manage_events'), { decision: 'D9' }),
@@ -381,6 +382,13 @@ export const PAGES: PageEntry[] = [
 		probe: '/admin/members',
 		gate: 'officer or admin',
 		expect: (f) => signin(f, () => (isOfficerOrAdmin(f) ? 'render' : 'dashboard')),
+	},
+	{
+		route: '/admin/events/[id]',
+		probe: `/admin/events/${FIX.event}`,
+		gate: '/admin floor (officer or admin) + manage_events (photo / scanner sections also need their capability)',
+		expect: (f) => signin(f, () => (isOfficerOrAdmin(f) && holds(f, 'manage_events') ? 'render' : 'dashboard')),
+		decision: 'D1',
 	},
 	...(
 		[

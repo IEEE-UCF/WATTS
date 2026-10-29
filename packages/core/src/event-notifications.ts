@@ -20,24 +20,69 @@ export type { EventNotificationSettings };
 
 export const WRAP_UP_DELAY_HOURS_DEFAULT = 24;
 export const WRAP_UP_DELAY_HOURS_MAX = 168;
+export const OFFICER_REMINDER_MINUTES_DEFAULT = 15;
+export const OFFICER_REMINDER_MINUTES_MAX = 24 * 60;
+
+/** Reminder kinds (event_notifications.kind) and how the admin page names them. */
+export const NOTIFICATION_KINDS = {
+	'officer-reminder': 'Officer heads-up before it starts',
+	'wrap-up': 'Officer wrap-up nudge',
+} as const;
+export type NotificationKind = keyof typeof NOTIFICATION_KINDS;
 
 export interface ResolvedEventNotificationSettings {
+	officerReminder: boolean;
+	officerReminderMinutes: number;
 	wrapUp: boolean;
 	wrapUpDelayHours: number;
+}
+
+function intIn(value: unknown, min: number, max: number, fallback: number): number {
+	const n = Number(value);
+	return Number.isInteger(n) && n >= min && n <= max ? n : fallback;
 }
 
 /** Fill in defaults for an event's stored settings (absent keys → defaults). */
 export function resolveEventNotificationSettings(
 	raw: EventNotificationSettings | null | undefined,
 ): ResolvedEventNotificationSettings {
-	const delay = Number(raw?.wrapUpDelayHours);
 	return {
+		officerReminder: raw?.officerReminder ?? true,
+		officerReminderMinutes: intIn(raw?.officerReminderMinutes, 1, OFFICER_REMINDER_MINUTES_MAX, OFFICER_REMINDER_MINUTES_DEFAULT),
 		wrapUp: raw?.wrapUp ?? true,
-		wrapUpDelayHours:
-			Number.isInteger(delay) && delay >= 1 && delay <= WRAP_UP_DELAY_HOURS_MAX
-				? delay
-				: WRAP_UP_DELAY_HOURS_DEFAULT,
+		wrapUpDelayHours: intIn(raw?.wrapUpDelayHours, 1, WRAP_UP_DELAY_HOURS_MAX, WRAP_UP_DELAY_HOURS_DEFAULT),
 	};
+}
+
+const MINUTE = 60 * 1000;
+const HOUR = 60 * MINUTE;
+/** Events without an end time are treated as an hour long. */
+const DEFAULT_DURATION_MS = HOUR;
+
+/** When an event ends (epoch ms); start + 1h when it has no end time. */
+export function eventEndMs(event: { startTime: string; endTime: string | null }): number {
+	return event.endTime ? Date.parse(event.endTime) : Date.parse(event.startTime) + DEFAULT_DURATION_MS;
+}
+
+/**
+ * When each reminder is due for an event (epoch ms), or null when it's turned off.
+ * Shared by the bot's scheduler and the admin event page, so both agree.
+ */
+export function notificationDueAt(
+	event: { startTime: string; endTime: string | null; settings: ResolvedEventNotificationSettings },
+): Record<NotificationKind, number | null> {
+	const { settings } = event;
+	return {
+		'officer-reminder': settings.officerReminder
+			? Date.parse(event.startTime) - settings.officerReminderMinutes * MINUTE
+			: null,
+		'wrap-up': settings.wrapUp ? eventEndMs(event) + settings.wrapUpDelayHours * HOUR : null,
+	};
+}
+
+/** The officer/admin review page for one event. */
+export function adminEventPath(eventId: string): string {
+	return `/admin/events/${eventId}`;
 }
 
 export interface NotifiableEvent {
@@ -45,6 +90,7 @@ export interface NotifiableEvent {
 	number: number;
 	title: string;
 	slug: string | null;
+	location: string;
 	startTime: string;
 	endTime: string | null;
 	settings: ResolvedEventNotificationSettings;
@@ -63,6 +109,7 @@ async function selectNotifiable(db: WattsDb, where: SQL | undefined): Promise<No
 			number: Events.number,
 			title: Events.title,
 			slug: Events.slug,
+			location: Events.location,
 			startTime: Events.startTime,
 			endTime: Events.endTime,
 			notificationSettings: Events.notificationSettings,
@@ -85,6 +132,7 @@ async function selectNotifiable(db: WattsDb, where: SQL | undefined): Promise<No
 		number: r.number,
 		title: r.title,
 		slug: r.slug,
+		location: r.location,
 		startTime: r.startTime,
 		endTime: r.endTime,
 		settings: resolveEventNotificationSettings(r.notificationSettings),
@@ -170,4 +218,61 @@ export async function listEventNotifications(db: WattsDb, eventIds?: string[]) {
 		})
 		.from(EventNotifications)
 		.where(eventIds ? inArray(EventNotifications.eventId, eventIds) : undefined);
+}
+
+export type ReminderState =
+	| { state: 'sent' | 'skipped' | 'failed'; at: string; detail: string | null }
+	| { state: 'scheduled' | 'due'; at: number }
+	| { state: 'off' | 'not-global' };
+
+/**
+ * Everything the admin event page shows for one event: the basics, check-in and photo
+ * counts, and each reminder's state (sent / skipped / failed from the log, otherwise
+ * scheduled or off from the settings). Null if the event doesn't exist.
+ */
+export async function getEventReview(db: WattsDb, eventId: string) {
+	const [row] = await db
+		.select({
+			id: Events.id,
+			number: Events.number,
+			title: Events.title,
+			slug: Events.slug,
+			location: Events.location,
+			startTime: Events.startTime,
+			endTime: Events.endTime,
+			isGlobal: Events.isGlobal,
+			active: Events.active,
+			hidden: Events.hidden,
+			notificationSettings: Events.notificationSettings,
+		})
+		.from(Events)
+		.where(eq(Events.id, eventId))
+		.limit(1);
+	if (!row) return null;
+
+	const [counts, log] = await Promise.all([
+		getEventWrapUpCounts(db, eventId),
+		listEventNotifications(db, [eventId]),
+	]);
+	const settings = resolveEventNotificationSettings(row.notificationSettings);
+	const due = notificationDueAt({ ...row, settings });
+	const remindable = row.isGlobal && row.active && !row.hidden;
+
+	const reminders = (Object.keys(NOTIFICATION_KINDS) as NotificationKind[]).map((kind) => {
+		const logged = log.find((l) => l.kind === kind);
+		const at = due[kind];
+		let state: ReminderState;
+		if (logged) {
+			state = { state: logged.status as 'sent' | 'skipped' | 'failed', at: logged.createdAt, detail: logged.detail };
+		} else if (!remindable) {
+			state = { state: 'not-global' };
+		} else if (at === null) {
+			state = { state: 'off' };
+		} else {
+			state = { state: at > Date.now() ? 'scheduled' : 'due', at };
+		}
+		return { kind, label: NOTIFICATION_KINDS[kind], ...state };
+	});
+
+	return { event: { ...row, settings }, counts, reminders };
 }

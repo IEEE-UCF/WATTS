@@ -26,7 +26,12 @@ import {
 	getEventActivity,
 } from '@watts/core/events';
 import { listLabels } from '@watts/core/event-labels';
-import { WRAP_UP_DELAY_HOURS_MAX } from '@watts/core/event-notifications';
+import {
+	getEventReview,
+	OFFICER_REMINDER_MINUTES_MAX,
+	WRAP_UP_DELAY_HOURS_MAX,
+} from '@watts/core/event-notifications';
+import { hasCapability } from '@watts/permissions';
 import { mapDomainError, mapUploadError } from '../map-domain-error';
 
 const manageEvents = capabilityProcedure('manage_events');
@@ -150,6 +155,8 @@ const eventCreateSchema = z.object({
 	pingCreatorOnUpdate: z.boolean().optional(),
 	notificationSettings: z
 		.object({
+			officerReminder: z.boolean().optional(),
+			officerReminderMinutes: z.number().int().min(1).max(OFFICER_REMINDER_MINUTES_MAX).optional(),
 			wrapUp: z.boolean().optional(),
 			wrapUpDelayHours: z.number().int().min(1).max(WRAP_UP_DELAY_HOURS_MAX).optional(),
 		})
@@ -185,6 +192,23 @@ export const eventRouter = createTRPCRouter({
 		} catch (error) {
 			mapDomainError(error);
 		}
+	}),
+
+	/**
+	 * The per-event review page (/admin/events/[id]): basics, check-in + photo counts,
+	 * each Discord reminder's state, and which of the page's tools this user may use.
+	 */
+	reviewSummary: manageEvents.input(z.object({ id: z.string().uuid() })).query(async ({ ctx, input }) => {
+		const review = await getEventReview(ctx.db, input.id);
+		if (!review) throw new TRPCError({ code: 'NOT_FOUND', message: 'Event not found' });
+		const roles = await ctx.getRoles();
+		return {
+			...review,
+			can: {
+				managePhotos: hasCapability(roles, 'manage_event_photos'),
+				scanAttendance: hasCapability(roles, 'scan_attendance'),
+			},
+		};
 	}),
 
 	// Staff Hub's Event Ops panel.

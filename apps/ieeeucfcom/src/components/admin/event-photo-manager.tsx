@@ -11,7 +11,14 @@ interface UploadRow {
 	message?: string;
 }
 
-export function EventPhotoManager({ initialEventId = '' }: { initialEventId?: string }) {
+export function EventPhotoManager({
+	initialEventId = '',
+	lockEvent = false,
+}: {
+	initialEventId?: string;
+	/** Hide the event picker (the per-event review page fixes the event). */
+	lockEvent?: boolean;
+}) {
 	const fileRef = useRef<HTMLInputElement>(null);
 	const [eventId, setEventId] = useState(initialEventId);
 	const [rows, setRows] = useState<UploadRow[]>([]);
@@ -77,7 +84,7 @@ export function EventPhotoManager({ initialEventId = '' }: { initialEventId?: st
 
 	return (
 		<div className="space-y-6 text-foreground">
-			<div>
+			<div hidden={lockEvent}>
 				<label className="mb-1 block text-sm font-medium">Event</label>
 				<select
 					value={eventId}
