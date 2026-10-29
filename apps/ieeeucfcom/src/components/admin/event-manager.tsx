@@ -306,7 +306,14 @@ interface FormState {
 	roomReservationRoom: string;
 	roomReservationNumber: string;
 	pingCreatorOnUpdate: boolean;
+	/** Discord reminders (global events only) — stored in events.notification_settings. */
+	wrapUp: boolean;
+	wrapUpDelayHours: number;
 }
+
+/** Defaults mirror @watts/core/event-notifications (not imported: it's server code). */
+const WRAP_UP_DEFAULT_DELAY_HOURS = 24;
+const WRAP_UP_DELAY_OPTIONS = [2, 12, 24, 48, 72];
 
 /** `day` (yyyy-mm-dd) pre-fills a 6–7 PM slot, e.g. from clicking a calendar square. */
 function emptyForm(day?: string): FormState {
@@ -327,6 +334,8 @@ function emptyForm(day?: string): FormState {
 		roomReservationRoom: '',
 		roomReservationNumber: '',
 		pingCreatorOnUpdate: false,
+		wrapUp: true,
+		wrapUpDelayHours: WRAP_UP_DEFAULT_DELAY_HOURS,
 	};
 }
 
@@ -348,6 +357,8 @@ function fromEvent(ev: AdminEvent): FormState {
 		roomReservationRoom: ev.roomReservation?.room ?? '',
 		roomReservationNumber: ev.roomReservation?.reservationNumber ?? '',
 		pingCreatorOnUpdate: ev.pingCreatorOnUpdate ?? false,
+		wrapUp: ev.notificationSettings?.wrapUp ?? true,
+		wrapUpDelayHours: ev.notificationSettings?.wrapUpDelayHours ?? WRAP_UP_DEFAULT_DELAY_HOURS,
 	};
 }
 
@@ -410,6 +421,7 @@ function EventForm({
 					? undefined
 					: form.roomReservationNumber || undefined,
 			pingCreatorOnUpdate: form.pingCreatorOnUpdate,
+			notificationSettings: { wrapUp: form.wrapUp, wrapUpDelayHours: form.wrapUpDelayHours },
 		};
 		let eventId: string | undefined;
 		try {
@@ -653,6 +665,41 @@ function EventForm({
 								Requires dues
 							</label>
 						</div>
+
+						{form.isGlobal && (
+							<fieldset className="flex flex-wrap items-center gap-x-6 gap-y-2 rounded-md border border-border p-3 text-sm text-muted-foreground">
+								<legend className="px-1 text-xs">Discord reminders</legend>
+								<label className="flex items-center gap-2">
+									<input
+										id="wrapUp"
+										type="checkbox"
+										checked={form.wrapUp}
+										onChange={(e) => set('wrapUp', e.target.checked)}
+									/>
+									Officer wrap-up nudge (pings the creator + officers if photos or check-ins are
+									missing)
+								</label>
+								<label className="flex items-center gap-2">
+									<span>Send</span>
+									<select
+										id="wrapUpDelayHours"
+										value={form.wrapUpDelayHours}
+										disabled={!form.wrapUp}
+										onChange={(e) => set('wrapUpDelayHours', Number(e.target.value))}
+										className="rounded-md border border-input bg-card px-2 py-1 text-sm text-foreground disabled:opacity-50"
+									>
+										{[...new Set([...WRAP_UP_DELAY_OPTIONS, form.wrapUpDelayHours])]
+											.sort((a, b) => a - b)
+											.map((h) => (
+												<option key={h} value={h}>
+													{h} hours
+												</option>
+											))}
+									</select>
+									<span>after it ends</span>
+								</label>
+							</fieldset>
+						)}
 
 						<div className="grid gap-4 sm:grid-cols-3">
 							<label className="block">

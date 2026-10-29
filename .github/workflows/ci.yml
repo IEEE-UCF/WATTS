@@ -135,6 +135,9 @@ jobs:
       - name: Bot signal checks (envelope, handler delivery, router)
         run: pnpm --filter @watts/bot check:signals
 
+      - name: Event reminder planning checks
+        run: pnpm --filter @watts/bot check:notifications
+
   e2e:
     runs-on: ubuntu-latest
     timeout-minutes: 20

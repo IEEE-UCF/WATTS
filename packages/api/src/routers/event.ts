@@ -26,6 +26,7 @@ import {
 	getEventActivity,
 } from '@watts/core/events';
 import { listLabels } from '@watts/core/event-labels';
+import { WRAP_UP_DELAY_HOURS_MAX } from '@watts/core/event-notifications';
 import { mapDomainError, mapUploadError } from '../map-domain-error';
 
 const manageEvents = capabilityProcedure('manage_events');
@@ -147,6 +148,12 @@ const eventCreateSchema = z.object({
 	roomReservationRoom: z.string().max(255).optional(),
 	roomReservationNumber: z.string().max(64).optional(),
 	pingCreatorOnUpdate: z.boolean().optional(),
+	notificationSettings: z
+		.object({
+			wrapUp: z.boolean().optional(),
+			wrapUpDelayHours: z.number().int().min(1).max(WRAP_UP_DELAY_HOURS_MAX).optional(),
+		})
+		.optional(),
 });
 
 const eventUpdateSchema = eventCreateSchema.partial();

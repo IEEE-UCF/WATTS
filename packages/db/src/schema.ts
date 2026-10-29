@@ -410,6 +410,9 @@ export const Events = pgTable("events", {
 	lastSyncedAt: timestamp("last_synced_at", { withTimezone: true, mode: 'string' }),
 	createdByUserId: uuid("created_by_user_id"),
 	pingCreatorOnUpdate: boolean("ping_creator_on_update").default(false).notNull(),
+	// Per-event Discord reminder settings; unset keys use the defaults in
+	// @watts/core/event-notifications. Sent reminders are logged in event_notifications.
+	notificationSettings: jsonb("notification_settings").$type<EventNotificationSettings>().default({}).notNull(),
 }, (table) => [
 	index("events_idx_committee_id").using("btree", table.committeeId.asc().nullsLast().op("uuid_ops")),
 	index("events_idx_created_at").using("btree", table.createdAt.asc().nullsLast().op("timestamptz_ops")),
@@ -442,6 +445,31 @@ export const Events = pgTable("events", {
 	index("events_idx_slug").on(table.slug),
 ]);
 // EventAttendees: Join table for many-to-many relation between Events and Members
+/** Per-event reminder settings (events.notification_settings). Absent keys → defaults. */
+export interface EventNotificationSettings {
+	/** Officer wrap-up nudge (no photos / check-ins after the event). */
+	wrapUp?: boolean;
+	/** Hours after the event ends before the wrap-up nudge goes out. */
+	wrapUpDelayHours?: number;
+}
+
+/**
+ * One row per (event, reminder kind) the Discord bot has handled — the bot's memory of
+ * what it already sent, so restarts never repeat a reminder. status: sent | skipped | failed.
+ */
+export const EventNotifications = pgTable('event_notifications', {
+	id: uuid('id').primaryKey().defaultRandom(),
+	eventId: uuid('event_id').notNull().references(() => Events.id, { onDelete: 'cascade' }),
+	kind: varchar('kind', { length: 32 }).notNull(),
+	status: varchar('status', { length: 16 }).notNull(),
+	/** Why it was skipped / failed, or a short summary of what was sent. */
+	detail: varchar('detail', { length: 255 }),
+	discordMessageId: varchar('discord_message_id', { length: 64 }),
+	createdAt: timestamp('created_at', { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+}, (table) => [
+	unique('event_notifications_event_kind_unique').on(table.eventId, table.kind),
+]);
+
 export const EventAttendees = pgTable('event_attendees', {
 	id: uuid('id').primaryKey().defaultRandom(),
 	eventId: uuid('event_id').notNull().references(() => Events.id, { onDelete: 'cascade' }),
