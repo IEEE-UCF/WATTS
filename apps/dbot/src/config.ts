@@ -59,6 +59,13 @@ interface Config {
 			};
 		};
 	};
+	/** Website → bot signals (see modules/signals/SignalRouter.ts). */
+	signals: {
+		/** Id of the Discord webhook the website posts signals through ('' = off). */
+		webhookId: string;
+		/** Shared HMAC secret; signals are ignored while it's unset. */
+		secret: string;
+	};
 	embed: {
 		color: string;
 		footer: string;
@@ -125,6 +132,12 @@ const config: Config = {
 				logs: process.env.DEV_CHANNEL_LOGS_ID ?? '',
 			},
 		},
+	},
+
+	signals: {
+		// Same webhook URL the website posts to; only its id is needed here.
+		webhookId: process.env.BOT_SIGNAL_WEBHOOK_URL?.match(/\/webhooks\/(\d+)\//)?.[1] ?? '',
+		secret: process.env.BOT_SIGNAL_SECRET?.trim() ?? '',
 	},
 
 	embed: {

@@ -10,6 +10,7 @@ import { eq } from 'drizzle-orm';
 import type { WattsDb } from '@watts/db';
 import { Members } from '@watts/db/schema';
 import { hasCapability, type Capability } from '@watts/permissions';
+import type { BotSignalSender } from '@watts/bot-signals';
 import {
 	memberRolesFromSessionUser,
 	resolveMemberRoles,
@@ -60,6 +61,11 @@ export interface CreateContextOptions {
 	 * the bot-sync Discord webhook; must not throw or block.
 	 */
 	onEventsChanged?: () => void;
+	/**
+	 * Reaches the Discord bot (signals in @watts/bot-signals). The Next route handler
+	 * passes its webhook-relay sender; unset → signals are skipped.
+	 */
+	botSignals?: BotSignalSender;
 }
 
 export const createTRPCContext = (opts: CreateContextOptions) => {
@@ -90,6 +96,7 @@ export const createTRPCContext = (opts: CreateContextOptions) => {
 		getRoles,
 		onContentChanged: opts.onContentChanged,
 		onEventsChanged: opts.onEventsChanged,
+		botSignals: opts.botSignals,
 	};
 };
 

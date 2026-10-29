@@ -10,6 +10,10 @@ export class MessageCreateEvent extends Event {
 	}
 
 	async run(message: Message): Promise<void> {
+		// Website → bot signals arrive as webhook posts (webhooks count as bots, so this
+		// runs before the bot filter). See modules/signals/SignalRouter.ts.
+		if (await this.client.signalRouter.fromMessage(message)) return;
+
 		// The website's "events changed" ping (a Discord webhook post) → sync to Discord
 		// now, then tidy the ping away. Checked before the bot filter: webhooks are bots.
 		const sync = this.client.discordEventSync;

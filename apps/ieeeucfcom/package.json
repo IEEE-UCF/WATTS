@@ -34,6 +34,7 @@
 		"@vercel/blob": "^2.8.0",
 		"@watts/api": "workspace:*",
 		"@watts/auth": "workspace:*",
+		"@watts/bot-signals": "workspace:*",
 		"@watts/config": "workspace:*",
 		"@watts/core": "workspace:*",
 		"@watts/db": "workspace:*",

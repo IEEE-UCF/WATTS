@@ -5,11 +5,14 @@ import { appRouter, createTRPCContext } from '@watts/api';
 import { authOptions } from '@/lib/auth';
 import { db } from '@/lib/database/client';
 import { requestBotSync } from '@/lib/bot-sync';
+import { createBotSignalSender } from '@/lib/bot-signals';
 
 const handler = async (req: Request) => {
 	const session = await getServerSession(authOptions);
 	// One bot nudge per request, however many event mutations it batched.
 	let botSyncRequested = false;
+	// Website → bot signals for this request (batched into one webhook post).
+	const botSignals = createBotSignalSender();
 
 	return fetchRequestHandler({
 		endpoint: '/api/trpc',
@@ -28,6 +31,7 @@ const handler = async (req: Request) => {
 					botSyncRequested = true;
 					requestBotSync();
 				},
+				botSignals,
 			}),
 		onError:
 			process.env.NODE_ENV === 'development'

@@ -127,6 +127,7 @@ read; a per-record rule then narrows it further inside the procedure.
 | storage | deleteMyResume | session | 🔒 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | own résumé only |
 | settings | officerGrantableCapabilities | officer | 🔒 | ⛔ | ⛔ | ⛔ | ⛔ | ⛔ | ⛔ | ✅ | ✅ | ✅ | ✅ |  |
 | settings | setOfficerGrantableCapabilities | admin | 🔒 | ⛔ | ⛔ | ⛔ | ⛔ | ⛔ | ⛔ | ⛔ | ⛔ | ⛔ | ✅ |  |
+| botSignal | sendTest | admin | 🔒 | ⛔ | ⛔ | ⛔ | ⛔ | ⛔ | ⛔ | ⛔ | ⛔ | ⛔ | ✅ |  |
 | shortLink | list, history, eventOptions, create | cap:manage_links | 🔒 | ⛔ | ⛔ | ✅ | ⛔ | ⛔ | ⛔ | ✅ | ✅ | ✅ | ✅ |  |
 | shortLink | update, setActive | cap:manage_links | 🔒 | ⛔ | ⛔ | ✅ | ⛔ | ⛔ | ⛔ | ✅ | ✅ | ✅ | ✅ | officers/admins: any link; grant holders: links they created |
 | siteContent | refreshCache, listSlots, setSlot, listOfficers, memberOptions, createOfficer, updateOfficer, deleteOfficer, reorderOfficers, listSponsors, createSponsor, updateSponsor, deleteSponsor, reorderSponsors, listPending, approve, reject, history, restore, listPageEditors, assignPageEditor, revokePageEditor | cap:manage_site_content | 🔒 | ⛔ | ⛔ | ✅ | ⛔ | ⛔ | ⛔ | ⛔ | ⛔ | ✅ | ✅ |  |
