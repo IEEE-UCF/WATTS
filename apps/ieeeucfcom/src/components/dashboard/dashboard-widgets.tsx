@@ -9,6 +9,7 @@ import { MyProjectInfoPanel } from '@/components/dashboard/my-project-info-panel
 import { AttendanceSummary } from '@/components/dashboard/attendance-summary';
 import { ResumeStatus } from '@/components/dashboard/resume-status';
 import { OfficerQuickTools } from '@/components/dashboard/officer-quick-tools';
+import { MerchCard } from '@/components/dashboard/merch-card';
 
 /** The six member-dashboard widgets, fed by one shared getMyDashboard call — mirrors how
  * DashboardShellView separates data-fetching from presentation. */
@@ -56,6 +57,8 @@ export function DashboardWidgets() {
 				/>
 				<CommitteesProjects committees={committees} projects={projects} />
 			</div>
+
+			<MerchCard />
 
 			<LeadRequestsPanel />
 			<MyProjectInfoPanel />

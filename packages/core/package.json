@@ -14,6 +14,7 @@
     "./event-path": "./src/event-path.ts",
     "./events": "./src/events.ts",
     "./meetings": "./src/meetings.ts",
+    "./merch": "./src/merch.ts",
     "./members": "./src/members.ts",
     "./officers": "./src/officers.ts",
     "./project-categories": "./src/project-categories.ts",

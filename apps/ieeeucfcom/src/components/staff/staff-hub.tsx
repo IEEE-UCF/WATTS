@@ -248,6 +248,16 @@ export function StaffHub() {
 					</Panel>
 				)}
 
+				{can('manage_merch') && (
+					<Panel title="Merch Store" cap="manage_merch">
+						<p className="mb-3 text-sm text-muted-foreground">
+							Approve shirt orders, mark them paid and delivered, and edit what&apos;s
+							in the store — sizes, stock, prices and photos.
+						</p>
+						<LinkCard href="/admin/merch" label="Open merch orders" />
+					</Panel>
+				)}
+
 				{(isAdmin || auth?.isOfficer) && (
 					<Panel title="Committees & Projects" cap="manage_projects">
 						<p className="mb-3 text-sm text-muted-foreground">

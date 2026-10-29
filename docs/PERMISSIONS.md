@@ -41,6 +41,7 @@ unexpired grant for it (`hasCapability` in `packages/permissions/src/index.ts`).
 | `manage_site_content` | Edit website content | ✓ |  |  | ✓ |
 | `review_resumes` | View résumés | ✓ |  | ✓ | ✓ |
 | `manage_links` | Create short links & QR codes | ✓ | ✓ | ✓ | ✓ |
+| `manage_merch` | Manage merch store & orders | ✓ |  | ✓ | ✓ |
 | `upload_resume` | Upload a résumé (pilot) |  | ✓ | ✓ | ✓ |
 
 ## Legend
@@ -59,6 +60,7 @@ Public pages (home, about, committees, events, projects, sponsorships, sign-in, 
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|
 | `/dashboard` | session | 🔒 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |  |
 | `/settings` | session | 🔒 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |  |
+| `/merch` | session | 🔒 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |  |
 | `/pages/[type]/[slug]/edit` | session (per-page check in siteContent.pageForEdit) | 🔒 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |  |
 | `/pages/[type]/[slug]/preview` | session + canEditScope, else 404 | 🔒 | 404 | 404 | 404 | ✅ | 404 | ✅ | 404 | ✅ | ✅ | ✅ |  |
 | `/staff` | officer, admin, or any staff-capability grant | 🔒 | ↩ | ↩ | ✅ | ↩ | ↩ | ↩ | ✅ | ✅ | ✅ | ✅ |  |
@@ -69,6 +71,7 @@ Public pages (home, about, committees, events, projects, sponsorships, sign-in, 
 | `/admin/resumes` | /admin floor (officer or admin) + review_resumes | 🔒 | ↩ | ↩ | ↩ | ↩ | ↩ | ↩ | ✅ | ✅ | ✅ | ✅ | D1 |
 | `/admin/site-content` | /admin floor (officer or admin) + manage_site_content | 🔒 | ↩ | ↩ | ↩ | ↩ | ↩ | ↩ | ↩ | ↩ | ✅ | ✅ | D1 |
 | `/admin/links` | /admin floor (officer or admin) + manage_links | 🔒 | ↩ | ↩ | ↩ | ↩ | ↩ | ↩ | ✅ | ✅ | ✅ | ✅ | D1 |
+| `/admin/merch` | /admin floor (officer or admin) + manage_merch | 🔒 | ↩ | ↩ | ↩ | ↩ | ↩ | ↩ | ✅ | ✅ | ✅ | ✅ | D1 |
 | `/admin/projects` | /admin floor (officer or admin) + manage_projects | 🔒 | ↩ | ↩ | ↩ | ↩ | ↩ | ↩ | ✅ | ✅ | ✅ | ✅ | D1 |
 | `/admin/dashboard` | admin | 🔒 | ↩ | ↩ | ↩ | ↩ | ↩ | ↩ | ↩ | ↩ | ↩ | ✅ |  |
 | `/test/demos` | admin (middleware only — no server-side guard) | 🔒 | ↩ | ↩ | ↩ | ↩ | ↩ | ↩ | ↩ | ↩ | ↩ | ✅ | D3 |
@@ -131,8 +134,12 @@ read; a per-record rule then narrows it further inside the procedure.
 | botSignal | sendTest, syncEvents | admin | 🔒 | ⛔ | ⛔ | ⛔ | ⛔ | ⛔ | ⛔ | ⛔ | ⛔ | ⛔ | ✅ |  |
 | shortLink | list, history, eventOptions, create | cap:manage_links | 🔒 | ⛔ | ⛔ | ✅ | ⛔ | ⛔ | ⛔ | ✅ | ✅ | ✅ | ✅ |  |
 | shortLink | update, setActive | cap:manage_links | 🔒 | ⛔ | ⛔ | ✅ | ⛔ | ⛔ | ⛔ | ✅ | ✅ | ✅ | ✅ | officers/admins: any link; grant holders: links they created |
+| merch | storefront, placeOrder | session | 🔒 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |  |
+| merch | myOrders | session | 🔒 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | the caller's own orders |
+| merch | cancelMyOrder | session | 🔒 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | own order, only while requested |
+| merch | listOrders, moveOrder, catalog, createProduct, updateProduct, setProductActive, deleteProduct, reorderProducts, addVariant, updateVariant, deleteVariant | cap:manage_merch | 🔒 | ⛔ | ⛔ | ✅ | ⛔ | ⛔ | ⛔ | ✅ | ✅ | ✅ | ✅ |  |
 | siteContent | refreshCache, listSlots, setSlot, listOfficers, memberOptions, createOfficer, updateOfficer, deleteOfficer, reorderOfficers, listSponsors, createSponsor, updateSponsor, deleteSponsor, reorderSponsors, listPending, approve, reject, history, restore, listPageEditors, assignPageEditor, revokePageEditor | cap:manage_site_content | 🔒 | ⛔ | ⛔ | ✅ | ⛔ | ⛔ | ⛔ | ⛔ | ⛔ | ✅ | ✅ |  |
-| siteContent | confirmMedia | session | 🔒 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | canEditScope on the media scope (or own officer portrait) |
+| siteContent | confirmMedia | session | 🔒 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | canEditScope on the media scope (or own officer portrait, or a merch photo with manage_merch) |
 | siteContent | editablePages | session | 🔒 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | lists only pages the caller may edit |
 | siteContent | pageForEdit | session | 🔒 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | canEditScope |
 | siteContent | submitCommitteePage, submitProjectPage | session | 🔒 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | canEditScope; non-staff edits go to review |
@@ -184,7 +191,9 @@ These are checked inside the procedure, on top of the gate, and are covered by
 - `storage.deleteMyResume` — own résumé only
 - `shortLink.update` — officers/admins: any link; grant holders: links they created
 - `shortLink.setActive` — officers/admins: any link; grant holders: links they created
-- `siteContent.confirmMedia` — canEditScope on the media scope (or own officer portrait)
+- `merch.myOrders` — the caller's own orders
+- `merch.cancelMyOrder` — own order, only while requested
+- `siteContent.confirmMedia` — canEditScope on the media scope (or own officer portrait, or a merch photo with manage_merch)
 - `siteContent.editablePages` — lists only pages the caller may edit
 - `siteContent.pageForEdit` — canEditScope
 - `siteContent.submitCommitteePage` — canEditScope; non-staff edits go to review

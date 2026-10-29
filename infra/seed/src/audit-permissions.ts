@@ -426,6 +426,7 @@ const CAP_SHORT: Record<Capability, string> = {
 	manage_site_content: 'site',
 	review_resumes: 'résumés',
 	manage_links: 'links',
+	manage_merch: 'merch',
 	upload_resume: 'upload',
 };
 

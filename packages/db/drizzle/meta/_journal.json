@@ -127,6 +127,13 @@
       "when": 1793300390307,
       "tag": "0017_event_notifications",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1793305567422,
+      "tag": "0018_merch_store",
+      "breakpoints": true
     }
   ]
 }

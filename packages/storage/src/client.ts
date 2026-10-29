@@ -213,7 +213,7 @@ export interface SiteMediaUploadOptions {
 	scopeType?: 'global' | 'committee' | 'project';
 	scopeId?: string | null;
 	/** A linked officer uploading their own portrait. */
-	purpose?: 'officer-portrait';
+	purpose?: 'officer-portrait' | 'merch-image';
 	officerProfileId?: string;
 	alt?: string | null;
 }

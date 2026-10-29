@@ -11,7 +11,8 @@
     "typecheck": "tsc --noEmit",
     "import:site-content": "tsx src/import-site-content.ts",
     "inspect:site-content": "tsx src/inspect-site-content.ts",
-    "audit:permissions": "tsx src/audit-permissions.ts"
+    "audit:permissions": "tsx src/audit-permissions.ts",
+    "check:merch": "tsx src/check-merch.ts"
   },
   "dependencies": {
     "@watts/calendar": "workspace:*",

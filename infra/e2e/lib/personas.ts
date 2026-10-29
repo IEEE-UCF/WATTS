@@ -15,6 +15,7 @@ export const CAPS = [
 	'manage_site_content',
 	'review_resumes',
 	'manage_links',
+	'manage_merch',
 	'upload_resume',
 ] as const;
 export type Cap = (typeof CAPS)[number];

@@ -110,8 +110,9 @@ export interface UploadIntent {
 	mediaKind?: 'image' | 'animated' | 'document';
 	scopeType?: 'global' | 'committee' | 'project';
 	scopeId?: string | null;
-	/** A linked officer uploading their own portrait (no manage_site_content needed). */
-	purpose?: 'officer-portrait';
+	/** A linked officer uploading their own portrait (no manage_site_content needed), or
+	 * a merch product photo (manage_merch is enough). */
+	purpose?: 'officer-portrait' | 'merch-image';
 	officerProfileId?: string;
 	alt?: string | null;
 }
@@ -403,6 +404,11 @@ async function authorizeSiteMedia(
 			.where(eq(OfficerProfiles.id, intent.officerProfileId))
 			.limit(1);
 		allowed = Boolean(profile && profile.memberId === user.memberId);
+	}
+	// Merch product photos: anyone who manages the store, still images only, site-wide scope.
+	if (!allowed && intent.purpose === 'merch-image' && scope.type === 'global' && hasCapability(user, 'manage_merch')) {
+		if (mediaKind !== 'image') throw new UploadError('BAD_REQUEST', 'A product photo must be a still image');
+		allowed = true;
 	}
 	if (!allowed) {
 		throw new UploadError('FORBIDDEN', 'You cannot upload files for this page');
