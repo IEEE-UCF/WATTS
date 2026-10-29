@@ -29,6 +29,10 @@ import {
 } from '@/components/merch/merch-shared';
 import type { MerchProductView } from '@watts/core/merch';
 
+// Mirrors MERCH_MAX_IMAGES / MERCH_IMAGE_LABEL_MAX in @watts/core/merch (the server enforces them).
+const MERCH_MAX_IMAGES = 12;
+const MERCH_IMAGE_LABEL_MAX = 60;
+
 type Flash = { kind: 'ok' | 'err'; text: string } | null;
 type Filter = MerchStatus | 'closed' | 'all';
 
@@ -454,10 +458,8 @@ function ProductEditor({
 	const [description, setDescription] = useState(product?.description ?? '');
 	const [price, setPrice] = useState(product ? (product.priceCents / 100).toFixed(2) : '15.00');
 	const [active, setActive] = useState(product?.active ?? true);
-	const [image, setImage] = useState<{ id: string; url: string } | null>(
-		product?.imageAssetId && product.imageUrl
-			? { id: product.imageAssetId, url: product.imageUrl }
-			: null,
+	const [photos, setPhotos] = useState<Photo[]>(
+		product?.images.map((img) => ({ ...img, label: img.label ?? '' })) ?? [],
 	);
 	const [error, setError] = useState<string | null>(null);
 
@@ -483,7 +485,7 @@ function ProductEditor({
 			name,
 			description: description || null,
 			priceCents: cents,
-			imageAssetId: image?.id ?? null,
+			images: photos.map((ph) => ({ assetId: ph.assetId, label: ph.label || null })),
 			active,
 		};
 		if (product) update.mutate({ id: product.id, ...input });
@@ -498,25 +500,8 @@ function ProductEditor({
 			<h3 className="text-base font-bold">
 				{product ? `Editing: ${product.name}` : 'New product'}
 			</h3>
+			<PhotosEditor photos={photos} onChange={setPhotos} alt={name} />
 			<div className="flex flex-wrap gap-6">
-				<div className="flex w-48 flex-col gap-2">
-					<span className="text-sm font-medium">Photo</span>
-					<div className="flex size-48 items-center justify-center overflow-hidden rounded-lg bg-zinc-900">
-						{image ? (
-							<AssetPreview
-								asset={{ url: image.url, kind: 'image' }}
-								className="size-48"
-							/>
-						) : (
-							<span className="text-xs text-muted-foreground">No photo</span>
-						)}
-					</div>
-					<UploadButton
-						label={image ? 'Replace photo' : 'Upload photo'}
-						options={{ mediaKind: 'image', purpose: 'merch-image', alt: name || null }}
-						onUploaded={setImage}
-					/>
-				</div>
 				<div className="flex min-w-0 flex-1 basis-80 flex-col gap-4">
 					<label className="flex flex-col gap-1.5 text-sm font-medium">
 						Name
@@ -579,6 +564,126 @@ function ProductEditor({
 				</button>
 			</div>
 		</form>
+	);
+}
+
+type Photo = { assetId: string; url: string; label: string };
+
+/** A product's photos: upload several at once, label each, reorder. Saved with the product. */
+function PhotosEditor({
+	photos,
+	onChange,
+	alt,
+}: {
+	photos: Photo[];
+	onChange: React.Dispatch<React.SetStateAction<Photo[]>>;
+	alt: string;
+}) {
+	function move(i: number, d: -1 | 1) {
+		onChange((list) => {
+			const next = [...list];
+			const j = i + d;
+			if (j < 0 || j >= next.length) return list;
+			[next[i], next[j]] = [next[j]!, next[i]!];
+			return next;
+		});
+	}
+	const full = photos.length >= MERCH_MAX_IMAGES;
+
+	return (
+		<div className="flex flex-col gap-2">
+			<span className="text-sm font-medium">Photos</span>
+			<span className="text-xs text-muted-foreground">
+				The first photo is the cover. Labels (like “Front” or “Back”) show under each photo
+				in the store.
+			</span>
+			<ul className="flex flex-wrap gap-3">
+				{photos.map((ph, i) => (
+					<li
+						key={ph.assetId}
+						className="flex w-40 flex-col gap-1.5 rounded-lg border border-border p-2"
+					>
+						<div className="relative flex size-36 items-center justify-center overflow-hidden rounded bg-zinc-900">
+							<AssetPreview
+								asset={{ url: ph.url, kind: 'image' }}
+								className="size-36"
+							/>
+							{i === 0 && (
+								<span className="absolute top-1 left-1 rounded bg-ieee-dark-yellow px-1.5 text-[10px] font-bold text-black">
+									Cover
+								</span>
+							)}
+						</div>
+						<input
+							className={`${fieldClass} text-xs`}
+							placeholder="Label, e.g. Front"
+							aria-label={`Label for photo ${i + 1}`}
+							maxLength={MERCH_IMAGE_LABEL_MAX}
+							value={ph.label}
+							onChange={(e) => {
+								const label = e.target.value;
+								onChange((list) =>
+									list.map((p) =>
+										p.assetId === ph.assetId ? { ...p, label } : p,
+									),
+								);
+							}}
+						/>
+						<div className="flex gap-1">
+							<button
+								type="button"
+								className={buttonClass}
+								aria-label={`Move photo ${i + 1} left`}
+								disabled={i === 0}
+								onClick={() => move(i, -1)}
+							>
+								←
+							</button>
+							<button
+								type="button"
+								className={buttonClass}
+								aria-label={`Move photo ${i + 1} right`}
+								disabled={i === photos.length - 1}
+								onClick={() => move(i, 1)}
+							>
+								→
+							</button>
+							<button
+								type="button"
+								className="ml-auto rounded-md border border-red-400/50 px-2 py-1.5 text-xs text-red-300 hover:border-red-300"
+								aria-label={`Remove photo ${i + 1}`}
+								onClick={() =>
+									onChange((list) => list.filter((p) => p.assetId !== ph.assetId))
+								}
+							>
+								✕
+							</button>
+						</div>
+					</li>
+				))}
+				{photos.length === 0 && (
+					<li className="flex size-36 items-center justify-center rounded-lg bg-zinc-900 text-xs text-muted-foreground">
+						No photos
+					</li>
+				)}
+			</ul>
+			<div>
+				<UploadButton
+					label={full ? `Max ${MERCH_MAX_IMAGES} photos` : 'Add photos'}
+					multiple
+					disabled={full}
+					options={{ mediaKind: 'image', purpose: 'merch-image', alt: alt || null }}
+					onUploaded={(asset) =>
+						onChange((list) =>
+							list.length >= MERCH_MAX_IMAGES ||
+							list.some((p) => p.assetId === asset.id)
+								? list
+								: [...list, { assetId: asset.id, url: asset.url, label: '' }],
+						)
+					}
+				/>
+			</div>
+		</div>
 	);
 }
 

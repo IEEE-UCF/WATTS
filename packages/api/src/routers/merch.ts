@@ -10,6 +10,8 @@ import {
 	listMerchCatalog,
 	listMerchOrders,
 	listMyMerchOrders,
+	MERCH_IMAGE_LABEL_MAX,
+	MERCH_MAX_IMAGES,
 	MERCH_MAX_QTY_PER_SIZE,
 	MERCH_PAYMENT_NOTE,
 	moveMerchOrder,
@@ -31,7 +33,10 @@ const product = {
 	name: z.string().max(120),
 	description: z.string().max(1000).nullish(),
 	priceCents: z.number().int(),
-	imageAssetId: uuid.nullish(),
+	images: z
+		.array(z.object({ assetId: uuid, label: z.string().max(MERCH_IMAGE_LABEL_MAX).nullish() }))
+		.max(MERCH_MAX_IMAGES)
+		.optional(),
 	active: z.boolean().optional(),
 };
 const variant = { label: z.string().max(24), stock: z.number().int() };

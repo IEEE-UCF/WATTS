@@ -1021,6 +1021,8 @@ export const MerchProducts = pgTable('merch_products', {
 	name: varchar('name', { length: 120 }).notNull(),
 	description: text('description'),
 	priceCents: integer('price_cents').notNull(),
+	// Deprecated — the photos live in merch_product_images now. Kept (mirroring the first
+	// photo) until the code that reads it is gone everywhere; drop in a later migration.
 	imageAssetId: uuid('image_asset_id').references(() => MediaAssets.id, { onDelete: 'set null' }),
 	active: boolean('active').notNull().default(true),
 	sortOrder: integer('sort_order').notNull().default(0),
@@ -1028,6 +1030,19 @@ export const MerchProducts = pgTable('merch_products', {
 	updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow().$onUpdate(() => sql`now()`),
 }, (table) => [
 	check('merch_products_price_check', sql`${table.priceCents} >= 0`),
+]);
+
+// MerchProductImages: a product's photos, in display order (the first is the cover).
+// `label` is an optional caption shown with the photo, like "Front" or "Back".
+export const MerchProductImages = pgTable('merch_product_images', {
+	id: uuid('id').primaryKey().defaultRandom(),
+	productId: uuid('product_id').notNull().references(() => MerchProducts.id, { onDelete: 'cascade' }),
+	assetId: uuid('asset_id').notNull().references(() => MediaAssets.id, { onDelete: 'cascade' }),
+	label: varchar('label', { length: 60 }),
+	sortOrder: integer('sort_order').notNull().default(0),
+	createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+}, (table) => [
+	unique('merch_product_images_product_asset_unique').on(table.productId, table.assetId),
 ]);
 
 // MerchVariants: a size of a product. `stock` = units we have; `reserved` = units held by
