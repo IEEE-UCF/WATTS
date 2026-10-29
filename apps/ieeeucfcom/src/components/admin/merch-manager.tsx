@@ -567,7 +567,11 @@ function ProductEditor({
 	);
 }
 
-type Photo = { assetId: string; url: string; label: string };
+interface Photo {
+	assetId: string;
+	url: string;
+	label: string;
+}
 
 /** A product's photos: upload several at once, label each, reorder. Saved with the product. */
 function PhotosEditor({
