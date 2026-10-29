@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { notFound, permanentRedirect } from 'next/navigation';
 import { eventPath, listRecentEventRefs } from '@watts/core/event-page';
 import { EventPageView } from '@/components/pg/event-page';
+import { StaffEventLink } from '@/components/pg/staff-event-link';
 import { db } from '@/lib/database/client';
 import { longDate, timeRange } from '@/lib/event-dates';
 import { getEventPage } from '@/lib/events';
@@ -70,5 +71,10 @@ export default async function EventPage({ params }: Props) {
 	if (!event) notFound();
 	// A renamed event (or a typo in the name part) goes to the current address.
 	if (decodeURIComponent(name) !== event.slug) permanentRedirect(eventPath(event));
-	return <EventPageView event={event} pageUrl={`${SITE}${eventPath(event)}`} />;
+	return (
+		<>
+			<EventPageView event={event} pageUrl={`${SITE}${eventPath(event)}`} />
+			<StaffEventLink number={event.number} />
+		</>
+	);
 }

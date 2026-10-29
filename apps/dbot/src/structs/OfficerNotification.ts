@@ -1,5 +1,6 @@
 import type { EmbedBuilder } from 'discord.js';
-import { adminEventPath, type NotifiableEvent } from '@watts/core/event-notifications';
+import type { NotifiableEvent } from '@watts/core/event-notifications';
+import { adminEventPath } from '@watts/core/event-path';
 import { EventNotification } from './EventNotification.ts';
 
 /**
@@ -13,9 +14,9 @@ export abstract class OfficerNotification<T = unknown> extends EventNotification
 		return this.client.config.eventNotifications;
 	}
 
-	/** Absolute URL of the event's officer/admin review page (/admin/events/[id]). */
+	/** Absolute URL of the event's officer/admin review page (/admin/events/<number>). */
 	reviewUrl(event: NotifiableEvent): string {
-		return `${this.cfg.siteUrl.replace(/\/$/, '')}${adminEventPath(event.id)}`;
+		return `${this.cfg.siteUrl.replace(/\/$/, '')}${adminEventPath(event)}`;
 	}
 
 	/** Post to officers; resolves the Discord message id. */

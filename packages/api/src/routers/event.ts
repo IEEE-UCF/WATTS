@@ -195,21 +195,24 @@ export const eventRouter = createTRPCRouter({
 	}),
 
 	/**
-	 * The per-event review page (/admin/events/[id]): basics, check-in + photo counts,
-	 * each Discord reminder's state, and which of the page's tools this user may use.
+	 * The per-event review page (/admin/events/<number>, or the event id): basics,
+	 * check-in + photo counts, each Discord reminder's state, and which of the page's
+	 * tools this user may use.
 	 */
-	reviewSummary: manageEvents.input(z.object({ id: z.string().uuid() })).query(async ({ ctx, input }) => {
-		const review = await getEventReview(ctx.db, input.id);
-		if (!review) throw new TRPCError({ code: 'NOT_FOUND', message: 'Event not found' });
-		const roles = await ctx.getRoles();
-		return {
-			...review,
-			can: {
-				managePhotos: hasCapability(roles, 'manage_event_photos'),
-				scanAttendance: hasCapability(roles, 'scan_attendance'),
-			},
-		};
-	}),
+	reviewSummary: manageEvents
+		.input(z.union([z.object({ id: z.string().uuid() }), z.object({ number: z.number().int().positive() })]))
+		.query(async ({ ctx, input }) => {
+			const review = await getEventReview(ctx.db, input);
+			if (!review) throw new TRPCError({ code: 'NOT_FOUND', message: 'Event not found' });
+			const roles = await ctx.getRoles();
+			return {
+				...review,
+				can: {
+					managePhotos: hasCapability(roles, 'manage_event_photos'),
+					scanAttendance: hasCapability(roles, 'scan_attendance'),
+				},
+			};
+		}),
 
 	// Staff Hub's Event Ops panel.
 	todaysCheckIns: scanAttendance.query(async ({ ctx }) => getTodaysCheckIns(ctx.db)),

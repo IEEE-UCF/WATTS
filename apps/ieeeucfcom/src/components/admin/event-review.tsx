@@ -1,10 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { trpc } from '@/lib/trpc/client';
 import type { RouterOutputs } from '@watts/api';
-import { eventPath } from '@watts/core/event-path';
+import { adminEventPath, eventPath } from '@watts/core/event-path';
 import { Button } from '@watts/ui/button';
 import { Card } from '@watts/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@watts/ui/dialog';
@@ -57,15 +57,24 @@ function reminderText(r: Reminder): string {
 }
 
 /**
- * Officer/admin review page for one event (/admin/events/[id]): wrap-up checklist,
+ * Officer/admin review page for one event (/admin/events/<number>): wrap-up checklist,
  * photo upload and check-in scanner already set to this event, and the state of its
  * Discord reminders. The bot's reminders link here.
  */
-export function EventReview({ eventId }: { eventId: string }) {
-	const { data, isLoading, error } = trpc.event.reviewSummary.useQuery({ id: eventId });
+export function EventReview({ eventRef }: { eventRef: { id: string } | { number: number } }) {
+	const { data, isLoading, error } = trpc.event.reviewSummary.useQuery(eventRef, {
+		// A wrong number in the address won't appear on retry.
+		retry: (count, err) => err.data?.code !== 'NOT_FOUND' && count < 2,
+	});
 	const [scannerOpen, setScannerOpen] = useState(false);
 	const [attendeesOpen, setAttendeesOpen] = useState(false);
 	const utils = trpc.useUtils();
+
+	// Reached by id (an older link)? Show the short /admin/events/<number> address instead.
+	const canonical = data ? adminEventPath(data.event) : null;
+	useEffect(() => {
+		if (canonical && window.location.pathname !== canonical) window.history.replaceState(null, '', canonical);
+	}, [canonical]);
 
 	if (isLoading) return <p className="text-muted-foreground">Loading event…</p>;
 	if (error || !data) return <p className="text-red-400">{error?.message ?? 'Event not found.'}</p>;
@@ -154,7 +163,7 @@ export function EventReview({ eventId }: { eventId: string }) {
 				onOpenChange={(open) => {
 					setScannerOpen(open);
 					// Refresh the counts once the door closes.
-					if (!open) void utils.event.reviewSummary.invalidate({ id: eventId });
+					if (!open) void utils.event.reviewSummary.invalidate(eventRef);
 				}}
 			>
 				<DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">

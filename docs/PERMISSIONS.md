@@ -63,7 +63,7 @@ Public pages (home, about, committees, events, projects, sponsorships, sign-in, 
 | `/pages/[type]/[slug]/preview` | session + canEditScope, else 404 | 🔒 | 404 | 404 | 404 | ✅ | 404 | ✅ | 404 | ✅ | ✅ | ✅ |  |
 | `/staff` | officer, admin, or any staff-capability grant | 🔒 | ↩ | ↩ | ✅ | ↩ | ↩ | ↩ | ✅ | ✅ | ✅ | ✅ |  |
 | `/admin/members` | officer or admin | 🔒 | ↩ | ↩ | ↩ | ↩ | ↩ | ↩ | ✅ | ✅ | ✅ | ✅ |  |
-| `/admin/events/[id]` | /admin floor (officer or admin) + manage_events (photo / scanner sections also need their capability) | 🔒 | ↩ | ↩ | ↩ | ↩ | ↩ | ↩ | ✅ | ✅ | ✅ | ✅ | D1 |
+| `/admin/events/[ref]` | /admin floor (officer or admin) + manage_events (photo / scanner sections also need their capability) | 🔒 | ↩ | ↩ | ↩ | ↩ | ↩ | ↩ | ✅ | ✅ | ✅ | ✅ | D1 |
 | `/admin/events` | /admin floor (officer or admin) + manage_events | 🔒 | ↩ | ↩ | ↩ | ↩ | ↩ | ↩ | ✅ | ✅ | ✅ | ✅ | D1 |
 | `/admin/photos` | /admin floor (officer or admin) + manage_event_photos | 🔒 | ↩ | ↩ | ↩ | ↩ | ↩ | ↩ | ✅ | ✅ | ✅ | ✅ | D1 |
 | `/admin/resumes` | /admin floor (officer or admin) + review_resumes | 🔒 | ↩ | ↩ | ↩ | ↩ | ↩ | ↩ | ✅ | ✅ | ✅ | ✅ | D1 |

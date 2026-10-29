@@ -384,8 +384,8 @@ export const PAGES: PageEntry[] = [
 		expect: (f) => signin(f, () => (isOfficerOrAdmin(f) ? 'render' : 'dashboard')),
 	},
 	{
-		route: '/admin/events/[id]',
-		probe: `/admin/events/${FIX.event}`,
+		route: '/admin/events/[ref]',
+		probe: `/admin/events/${FIX.event}`, // by id; the number form is the same page
 		gate: '/admin floor (officer or admin) + manage_events (photo / scanner sections also need their capability)',
 		expect: (f) => signin(f, () => (isOfficerOrAdmin(f) && holds(f, 'manage_events') ? 'render' : 'dashboard')),
 		decision: 'D1',

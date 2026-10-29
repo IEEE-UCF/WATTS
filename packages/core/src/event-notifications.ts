@@ -80,10 +80,6 @@ export function notificationDueAt(
 	};
 }
 
-/** The officer/admin review page for one event. */
-export function adminEventPath(eventId: string): string {
-	return `/admin/events/${eventId}`;
-}
 
 export interface NotifiableEvent {
 	id: string;
@@ -230,7 +226,7 @@ export type ReminderState =
  * counts, and each reminder's state (sent / skipped / failed from the log, otherwise
  * scheduled or off from the settings). Null if the event doesn't exist.
  */
-export async function getEventReview(db: WattsDb, eventId: string) {
+export async function getEventReview(db: WattsDb, ref: { id: string } | { number: number }) {
 	const [row] = await db
 		.select({
 			id: Events.id,
@@ -246,13 +242,13 @@ export async function getEventReview(db: WattsDb, eventId: string) {
 			notificationSettings: Events.notificationSettings,
 		})
 		.from(Events)
-		.where(eq(Events.id, eventId))
+		.where('id' in ref ? eq(Events.id, ref.id) : eq(Events.number, ref.number))
 		.limit(1);
 	if (!row) return null;
 
 	const [counts, log] = await Promise.all([
-		getEventWrapUpCounts(db, eventId),
-		listEventNotifications(db, [eventId]),
+		getEventWrapUpCounts(db, row.id),
+		listEventNotifications(db, [row.id]),
 	]);
 	const settings = resolveEventNotificationSettings(row.notificationSettings);
 	const due = notificationDueAt({ ...row, settings });

@@ -4,7 +4,7 @@ import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
 import { CircleCheck, ImageUp, RefreshCw } from 'lucide-react';
 import { trpc } from '@/lib/trpc/client';
 import type { RouterOutputs } from '@watts/api';
-import { eventPath } from '@watts/core/event-path';
+import { adminEventPath, eventPath } from '@watts/core/event-path';
 import { uploadEventFlyer } from '@watts/storage/client';
 import { EventAttendeesSheet } from './event-attendees-sheet';
 import { EventCalendar, monthKeyOf } from './event-calendar';
@@ -480,7 +480,17 @@ function EventForm({
 			onEscapeKeyDown={(e) => pending && e.preventDefault()}
 		>
 			<DialogHeader className="border-b border-border px-6 py-4">
-				<DialogTitle>{editing ? `Edit “${editing.title}”` : 'New event'}</DialogTitle>
+				<DialogTitle className="flex flex-wrap items-baseline gap-x-3">
+					{editing ? `Edit “${editing.title}”` : 'New event'}
+					{editing && (
+						<a
+							href={adminEventPath(editing)}
+							className="font-sans text-xs font-normal text-blue-400 hover:underline"
+						>
+							Review page →
+						</a>
+					)}
+				</DialogTitle>
 				<DialogDescription>
 					{editing
 						? 'Changes sync to Google Calendar (and Discord, if global) on save.'
@@ -1533,7 +1543,7 @@ export function EventManager({
 								<TableRow inactive={!ev.active}>
 									<TableCell>
 										<div className="font-medium">
-											<a href={`/admin/events/${ev.id}`} className="hover:underline">
+											<a href={adminEventPath(ev)} className="hover:underline">
 												{ev.title}
 											</a>
 											{!ev.active && (
@@ -1670,7 +1680,7 @@ export function EventManager({
 												)}
 												{ev.photoCount > 0 ? (
 													<a
-														href={`/admin/photos?event=${ev.id}`}
+														href={adminEventPath(ev)}
 														className="block text-green-400 hover:underline"
 													>
 														✓ {ev.photoCount} photo
@@ -1686,7 +1696,7 @@ export function EventManager({
 													<span className="block text-amber-400">
 														○ no photos ·{' '}
 														<a
-															href={`/admin/photos?event=${ev.id}`}
+															href={adminEventPath(ev)}
 															className="text-blue-400 hover:underline"
 														>
 															add
@@ -1698,6 +1708,9 @@ export function EventManager({
 									)}
 									<TableCell>
 										<div className="flex justify-end gap-3 text-xs">
+											<a href={adminEventPath(ev)} className="text-blue-400 hover:underline">
+												review
+											</a>
 											<button
 												type="button"
 												onClick={() => openEdit(ev)}
