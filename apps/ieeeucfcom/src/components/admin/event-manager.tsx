@@ -696,7 +696,9 @@ function EventForm({
 
 						{form.isGlobal && (
 							<fieldset className="flex flex-wrap items-center gap-x-6 gap-y-2 rounded-md border border-border p-3 text-sm text-muted-foreground">
-								<legend className="px-1 text-xs">Discord reminders (link to the event page)</legend>
+								<legend className="px-1 text-xs">
+									Discord reminders (link to the event page)
+								</legend>
 								<label className="flex items-center gap-2">
 									<input
 										id="officerReminder"
@@ -704,7 +706,8 @@ function EventForm({
 										checked={form.officerReminder}
 										onChange={(e) => set('officerReminder', e.target.checked)}
 									/>
-									Officer heads-up before it starts (pings the creator + officers to open check-in)
+									Officer heads-up before it starts (pings the creator + officers
+									to open check-in)
 								</label>
 								<label className="flex items-center gap-2">
 									<span>Send</span>
@@ -712,10 +715,15 @@ function EventForm({
 										id="officerReminderMinutes"
 										value={form.officerReminderMinutes}
 										disabled={!form.officerReminder}
-										onChange={(e) => set('officerReminderMinutes', Number(e.target.value))}
+										onChange={(e) =>
+											set('officerReminderMinutes', Number(e.target.value))
+										}
 										className="rounded-md border border-input bg-card px-2 py-1 text-sm text-foreground disabled:opacity-50"
 									>
-										{withCurrent(OFFICER_REMINDER_OPTIONS, form.officerReminderMinutes).map((m) => (
+										{withCurrent(
+											OFFICER_REMINDER_OPTIONS,
+											form.officerReminderMinutes,
+										).map((m) => (
 											<option key={m} value={m}>
 												{m} minutes
 											</option>
@@ -731,8 +739,8 @@ function EventForm({
 										checked={form.wrapUp}
 										onChange={(e) => set('wrapUp', e.target.checked)}
 									/>
-									Officer wrap-up nudge (pings the creator + officers if photos or check-ins are
-									missing)
+									Officer wrap-up nudge (pings the creator + officers if photos or
+									check-ins are missing)
 								</label>
 								<label className="flex items-center gap-2">
 									<span>Send</span>
@@ -740,10 +748,15 @@ function EventForm({
 										id="wrapUpDelayHours"
 										value={form.wrapUpDelayHours}
 										disabled={!form.wrapUp}
-										onChange={(e) => set('wrapUpDelayHours', Number(e.target.value))}
+										onChange={(e) =>
+											set('wrapUpDelayHours', Number(e.target.value))
+										}
 										className="rounded-md border border-input bg-card px-2 py-1 text-sm text-foreground disabled:opacity-50"
 									>
-										{withCurrent(WRAP_UP_DELAY_OPTIONS, form.wrapUpDelayHours).map((h) => (
+										{withCurrent(
+											WRAP_UP_DELAY_OPTIONS,
+											form.wrapUpDelayHours,
+										).map((h) => (
 											<option key={h} value={h}>
 												{h} hours
 											</option>
@@ -1543,7 +1556,10 @@ export function EventManager({
 								<TableRow inactive={!ev.active}>
 									<TableCell>
 										<div className="font-medium">
-											<a href={adminEventPath(ev)} className="hover:underline">
+											<a
+												href={adminEventPath(ev)}
+												className="hover:underline"
+											>
 												{ev.title}
 											</a>
 											{!ev.active && (
@@ -1708,7 +1724,10 @@ export function EventManager({
 									)}
 									<TableCell>
 										<div className="flex justify-end gap-3 text-xs">
-											<a href={adminEventPath(ev)} className="text-blue-400 hover:underline">
+											<a
+												href={adminEventPath(ev)}
+												className="text-blue-400 hover:underline"
+											>
 												review
 											</a>
 											<button

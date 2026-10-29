@@ -7,7 +7,13 @@ import type { RouterOutputs } from '@watts/api';
 import { adminEventPath, eventPath } from '@watts/core/event-path';
 import { Button } from '@watts/ui/button';
 import { Card } from '@watts/ui/card';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@watts/ui/dialog';
+import {
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogHeader,
+	DialogTitle,
+} from '@watts/ui/dialog';
 import { EventAttendeesSheet } from './event-attendees-sheet';
 import { EventPhotoManager } from './event-photo-manager';
 import { QREventScanner } from './qr_event_scanner';
@@ -27,14 +33,20 @@ const when = (value: string | number) =>
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
 	return (
 		<Card className="gap-4 rounded-xl border-border bg-card/60 p-5 shadow-lg shadow-black/40 lg:p-6">
-			<h2 className="font-heading text-xs tracking-[0.14em] text-muted-foreground-dim uppercase">{title}</h2>
+			<h2 className="font-heading text-xs tracking-[0.14em] text-muted-foreground-dim uppercase">
+				{title}
+			</h2>
 			{children}
 		</Card>
 	);
 }
 
 function Check({ ok, children }: { ok: boolean; children: React.ReactNode }) {
-	return <span className={ok ? 'text-green-400' : 'text-amber-400'}>{ok ? '✓' : '○'} {children}</span>;
+	return (
+		<span className={ok ? 'text-green-400' : 'text-amber-400'}>
+			{ok ? '✓' : '○'} {children}
+		</span>
+	);
 }
 
 function reminderText(r: Reminder): string {
@@ -73,11 +85,13 @@ export function EventReview({ eventRef }: { eventRef: { id: string } | { number:
 	// Reached by id (an older link)? Show the short /admin/events/<number> address instead.
 	const canonical = data ? adminEventPath(data.event) : null;
 	useEffect(() => {
-		if (canonical && window.location.pathname !== canonical) window.history.replaceState(null, '', canonical);
+		if (canonical && window.location.pathname !== canonical)
+			window.history.replaceState(null, '', canonical);
 	}, [canonical]);
 
 	if (isLoading) return <p className="text-muted-foreground">Loading event…</p>;
-	if (error || !data) return <p className="text-red-400">{error?.message ?? 'Event not found.'}</p>;
+	if (error || !data)
+		return <p className="text-red-400">{error?.message ?? 'Event not found.'}</p>;
 
 	const { event, counts, reminders, can } = data;
 	const ended = Date.now() > Date.parse(event.endTime ?? event.startTime);
@@ -91,7 +105,9 @@ export function EventReview({ eventRef }: { eventRef: { id: string } | { number:
 							← Event management
 						</Link>
 					</p>
-					<h1 className="mt-1 font-heading text-3xl text-ieee-dark-yellow">{event.title}</h1>
+					<h1 className="mt-1 font-heading text-3xl text-ieee-dark-yellow">
+						{event.title}
+					</h1>
 					<p className="mt-1 text-sm text-muted-foreground">
 						{when(event.startTime)} · {event.location}
 						{event.isGlobal && ' · Global'}
@@ -114,7 +130,9 @@ export function EventReview({ eventRef }: { eventRef: { id: string } | { number:
 			<Section title={ended ? 'Wrap-up checklist' : 'Checklist'}>
 				<div className="flex flex-wrap gap-x-8 gap-y-2 text-sm">
 					<Check ok={counts.attendeeCount > 0}>
-						{counts.attendeeCount > 0 ? `${counts.attendeeCount} checked in` : 'no check-ins yet'}
+						{counts.attendeeCount > 0
+							? `${counts.attendeeCount} checked in`
+							: 'no check-ins yet'}
 					</Check>
 					<Check ok={counts.photoCount > 0}>
 						{counts.photoCount > 0
@@ -153,8 +171,8 @@ export function EventReview({ eventRef }: { eventRef: { id: string } | { number:
 					))}
 				</ul>
 				<p className="text-xs text-muted-foreground-dim">
-					Change these under <span className="text-foreground">Discord reminders</span> when editing
-					the event.
+					Change these under <span className="text-foreground">Discord reminders</span>{' '}
+					when editing the event.
 				</p>
 			</Section>
 
@@ -169,13 +187,18 @@ export function EventReview({ eventRef }: { eventRef: { id: string } | { number:
 				<DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
 					<DialogHeader>
 						<DialogTitle>Check-in: {event.title}</DialogTitle>
-						<DialogDescription>Scans are recorded for this event only.</DialogDescription>
+						<DialogDescription>
+							Scans are recorded for this event only.
+						</DialogDescription>
 					</DialogHeader>
 					{scannerOpen && <QREventScanner lockedEventId={event.id} />}
 				</DialogContent>
 			</Dialog>
 
-			<EventAttendeesSheet eventId={attendeesOpen ? event.id : null} onClose={() => setAttendeesOpen(false)} />
+			<EventAttendeesSheet
+				eventId={attendeesOpen ? event.id : null}
+				onClose={() => setAttendeesOpen(false)}
+			/>
 		</div>
 	);
 }
