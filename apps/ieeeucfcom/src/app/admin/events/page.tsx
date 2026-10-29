@@ -7,11 +7,11 @@ import { hasCapability } from '@watts/permissions';
 export default async function AdminEventsPage({
 	searchParams,
 }: {
-	searchParams: Promise<{ view?: string; month?: string }>;
+	searchParams: Promise<{ view?: string; month?: string; event?: string }>;
 }) {
 	const { roles } = await getSessionRoles();
 	if (!hasCapability(roles, 'manage_events')) redirect('/dashboard');
-	const { view, month } = await searchParams;
+	const { view, month, event } = await searchParams;
 
 	return (
 		<div className="mx-auto w-full max-w-6xl">
@@ -23,6 +23,7 @@ export default async function AdminEventsPage({
 			</p>
 			<EventManager
 				initialView={view === 'past' || view === 'calendar' ? view : 'upcoming'}
+				openEventId={event}
 				initialMonth={month && /^\d{4}-\d{2}$/.test(month) ? month : undefined}
 			/>
 		</div>

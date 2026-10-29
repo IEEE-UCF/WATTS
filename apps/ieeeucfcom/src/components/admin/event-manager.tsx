@@ -937,10 +937,13 @@ interface PendingDelete {
 export function EventManager({
 	initialView = 'upcoming',
 	initialMonth,
+	openEventId,
 }: {
 	initialView?: EventView;
 	/** "yyyy-mm" for the Calendar tab; defaults to this month. */
 	initialMonth?: string;
+	/** Deep link (?event=<id>, e.g. from the bot's wrap-up nudge): open this event once loaded. */
+	openEventId?: string;
 }) {
 	const utils = trpc.useUtils();
 	const { data: events, isLoading } = trpc.event.getAllForAdmin.useQuery();
@@ -1162,6 +1165,15 @@ export function EventManager({
 		setFormKey((k) => k + 1);
 		setShowForm(true);
 	}
+
+	// Open once, when the list first loads (the ref stops a refetch reopening it).
+	const openedFromLink = useRef(false);
+	useEffect(() => {
+		if (!openEventId || openedFromLink.current || !events) return;
+		openedFromLink.current = true;
+		const ev = events.find((e) => e.id === openEventId);
+		if (ev) openEdit(ev);
+	}, [openEventId, events]);
 
 	function pickFlyer(eventId: string) {
 		flyerTarget.current = eventId;

@@ -28,6 +28,7 @@ function event(overrides: Partial<NotifiableEvent> = {}): NotifiableEvent {
 		id: 'e1',
 		number: 1,
 		title: 'Test event',
+		slug: 'test-event',
 		startTime: iso(now - 4 * HOUR),
 		endTime: iso(now - 3 * HOUR),
 		settings: resolveEventNotificationSettings({}),

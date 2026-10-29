@@ -44,6 +44,7 @@ export interface NotifiableEvent {
 	id: string;
 	number: number;
 	title: string;
+	slug: string | null;
 	startTime: string;
 	endTime: string | null;
 	settings: ResolvedEventNotificationSettings;
@@ -61,6 +62,7 @@ async function selectNotifiable(db: WattsDb, where: SQL | undefined): Promise<No
 			id: Events.id,
 			number: Events.number,
 			title: Events.title,
+			slug: Events.slug,
 			startTime: Events.startTime,
 			endTime: Events.endTime,
 			notificationSettings: Events.notificationSettings,
@@ -82,6 +84,7 @@ async function selectNotifiable(db: WattsDb, where: SQL | undefined): Promise<No
 		id: r.id,
 		number: r.number,
 		title: r.title,
+		slug: r.slug,
 		startTime: r.startTime,
 		endTime: r.endTime,
 		settings: resolveEventNotificationSettings(r.notificationSettings),

@@ -1,5 +1,6 @@
 import { EmbedBuilder } from 'discord.js';
 import { getEventWrapUpCounts, type NotifiableEvent } from '@watts/core/event-notifications';
+import { eventPath } from '@watts/core/event-path';
 import { EventNotification, type NotificationDecision } from '../structs/EventNotification.ts';
 
 const HOUR = 60 * 60 * 1000;
@@ -13,7 +14,8 @@ interface WrapUpData {
 /**
  * Officer wrap-up nudge: some hours after a global event ends (per-event setting,
  * default 24), if it has no photos or no check-ins, ping the event's creator and the
- * officer role in the officers channel with a link to the admin events page.
+ * officer role in the officers channel. The title links to the event's page; each
+ * missing item links straight to where it's fixed for that event.
  */
 export class WrapUpNudge extends EventNotification<WrapUpData> {
 	constructor(client: any) {
@@ -43,22 +45,23 @@ export class WrapUpNudge extends EventNotification<WrapUpData> {
 			throw new Error(`officers channel ${channelId || '(unset)'} is not a sendable text channel`);
 		}
 
+		const site = cfg.siteUrl.replace(/\/$/, '');
+		const photosUrl = `${site}/admin/photos?event=${event.id}`;
+		const adminEventUrl = `${site}/admin/events?view=past&event=${event.id}`;
+
 		const missing: string[] = [];
-		if (counts.photoCount === 0) missing.push('📸 **Photos**: none uploaded yet');
-		if (counts.attendeeCount === 0) missing.push('🎟️ **Check-ins**: none recorded yet');
+		if (counts.photoCount === 0) missing.push(`📸 **Photos**: none uploaded yet · [upload photos](${photosUrl})`);
+		if (counts.attendeeCount === 0) {
+			missing.push(`🎟️ **Check-ins**: none recorded yet · [open the event](${adminEventUrl})`);
+		}
 
 		const end = event.endTime ? Date.parse(event.endTime) : Date.parse(event.startTime) + DEFAULT_DURATION_MS;
-		const adminUrl = `${cfg.siteUrl.replace(/\/$/, '')}/admin/events`;
 		const embed = this.client
 			.createEmbed()
 			.setTitle(`Event wrap-up: ${event.title}`.slice(0, 256))
+			.setURL(`${site}${eventPath(event)}`)
 			.setDescription(
-				[
-					`Ended <t:${Math.floor(end / 1000)}:R>. Still missing:`,
-					...missing.map((m) => `• ${m}`),
-					'',
-					`Upload photos and record attendance on the [admin events page](${adminUrl}).`,
-				].join('\n'),
+				[`Ended <t:${Math.floor(end / 1000)}:R>. Still missing:`, ...missing.map((m) => `• ${m}`)].join('\n'),
 			) as EmbedBuilder;
 
 		const mentions = [
