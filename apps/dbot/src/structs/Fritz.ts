@@ -12,6 +12,8 @@ import { Command } from './Command.ts';
 import { Event } from './Event.ts';
 import { eventsAutomation } from '../modules/calendar/eventsAutomation.ts';
 import { DiscordEventSync } from '../modules/events/discordEventSync.ts';
+import { SignalRouter } from '../modules/signals/SignalRouter.ts';
+import { SignalHandler } from './SignalHandler.ts';
 
 interface CachedPermission {
 	level: PermissionLevel;
@@ -22,6 +24,9 @@ class Fritz extends Client {
 	public config: any;
 	public commands: Collection<string, Command>;
 	public events: Collection<string, Event>;
+	/** Website → bot signal handlers, by signal type (a type may have several). */
+	public signals: Collection<string, SignalHandler[]>;
+	public signalRouter: SignalRouter;
 	public logger: any;
 	public database: Database;
 	public calendar: any;
@@ -46,11 +51,13 @@ class Fritz extends Client {
 		this.calendar = new Calendar(this, this.config.calendarURLs);
 		this.eventsAutomation = new eventsAutomation(this);
 		this.discordEventSync = new DiscordEventSync(this);
+		this.signalRouter = new SignalRouter(this);
 		this.utils = new Utils(this);
 		this.permissionCache = new Collection();
 
 		this.commands = new Collection();
 		this.events = new Collection();
+		this.signals = new Collection();
 	}
 
 	/**
@@ -311,6 +318,49 @@ class Fritz extends Client {
 	}
 
 	/**
+	 * Load website → bot signal handlers (src/signals/)
+	 */
+	async loadSignalHandlers(): Promise<void> {
+		try {
+			const handlerFiles = await this.getFiles('signals', '.ts');
+			let count = 0;
+
+			for (const filePath of handlerFiles) {
+				try {
+					const fileUrl = pathToFileURL(filePath).href;
+					const handlerModule = await import(fileUrl);
+					const HandlerClass = handlerModule.default ?? Object.values(handlerModule)[0];
+
+					if (!HandlerClass) {
+						this.logger.fail(`No signal handler class found in ${path.basename(filePath)}`);
+						continue;
+					}
+
+					const handler = new (HandlerClass as any)(this);
+
+					if (!handler?.isSignalHandler) {
+						this.logger.fail(`${path.basename(filePath)} does not export a SignalHandler`);
+						continue;
+					}
+
+					this.signals.set(handler.type, [...(this.signals.get(handler.type) ?? []), handler]);
+					count++;
+
+					if (this.config.debug) {
+						this.logger.log(`Loaded signal handler: ${handler.type} (${handler.constructor.name})`);
+					}
+				} catch (error) {
+					this.logger.fail(`Failed to load signal handler ${path.basename(filePath)}: ${error}`);
+				}
+			}
+
+			this.logger.success(`Loaded ${count} signal handlers.`);
+		} catch (error) {
+			this.logger.fail(`Error loading signal handlers: ${error}`);
+		}
+	}
+
+	/**
 	 * Initialize the bot
 	 */
 	async init(): Promise<void> {
@@ -323,6 +373,7 @@ class Fritz extends Client {
 		// Load commands and events
 		await this.loadCommands();
 		await this.loadEvents();
+		await this.loadSignalHandlers();
 
 		// Login to Discord
 		await this.login(this.config.token)
@@ -368,6 +419,7 @@ class Fritz extends Client {
 		this.eventsAutomation.stop();
 		await this.eventsAutomation.cleanupOnShutdown();
 		this.discordEventSync.stop();
+		this.signals.forEach(handlers => handlers.forEach(handler => handler.stop()));
 		await this.database.closeDatabase();
 		await super.destroy();
 		this.logger.shutdown('Client destroyed and database connection closed.');

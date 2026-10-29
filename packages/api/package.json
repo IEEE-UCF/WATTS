@@ -16,6 +16,7 @@
   "dependencies": {
     "@trpc/server": "^11.9.0",
     "@watts/calendar": "workspace:*",
+    "@watts/bot-signals": "workspace:*",
     "@watts/core": "workspace:*",
     "@watts/db": "workspace:*",
     "@watts/permissions": "workspace:*",

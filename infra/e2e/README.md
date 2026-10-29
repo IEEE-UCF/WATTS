@@ -71,6 +71,10 @@ pnpm --filter @watts/bot check:tier          # = `smoke`: bot permission tiers +
 ```
 
 ```bash
+pnpm --filter @watts/bot check:signals       # = `smoke`: website → bot signals (envelope, delivery, router); no DB
+```
+
+```bash
 pnpm e2e                                      # = the `e2e` job
 ```
 

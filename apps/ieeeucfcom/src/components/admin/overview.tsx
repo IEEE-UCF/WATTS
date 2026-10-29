@@ -2,6 +2,7 @@
 
 import { trpc } from '@/lib/trpc/client';
 import { Card } from '@watts/ui/card';
+import { BotSignalTest } from './bot-signal-test';
 
 function Kpi({ value, label, warn }: { value: number | string; label: string; warn?: boolean }) {
 	return (
@@ -121,6 +122,8 @@ export function AdminOverview() {
 					</ul>
 				</Card>
 			)}
+
+			<BotSignalTest />
 		</div>
 	);
 }

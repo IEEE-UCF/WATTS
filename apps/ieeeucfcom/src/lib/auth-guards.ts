@@ -4,8 +4,23 @@ import { cache } from 'react';
 import { getServerSession, type Session } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { db } from '@/lib/database/client';
-import { resolveMemberRoles, type MemberRoles } from '@watts/core/members';
+import {
+	memberRolesFromSessionUser,
+	resolveMemberRoles,
+	type MemberRoles,
+} from '@watts/core/members';
 import { hasCapability, type Capability } from '@watts/permissions';
+
+/**
+ * Roles for a session from THIS request: reuse what the session callback just
+ * resolved from the DB; only query again if it couldn't enrich the user.
+ */
+function rolesFor(session: Session): Promise<MemberRoles | null> {
+	const fromSession = memberRolesFromSessionUser(session.user);
+	return fromSession !== undefined
+		? Promise.resolve(fromSession)
+		: resolveMemberRoles(db, session.user.id);
+}
 
 /**
  * Session + DB-resolved roles for a Server Component / layout. Wrapped in React
@@ -16,16 +31,15 @@ export const getSessionRoles = cache(
 	async (): Promise<{ session: Session | null; roles: MemberRoles | null }> => {
 		const session = await getServerSession(authOptions);
 		if (!session?.user?.id) return { session: null, roles: null };
-		const roles = await resolveMemberRoles(db, session.user.id);
-		return { session, roles };
+		return { session, roles: await rolesFor(session) };
 	},
 );
 
 /**
  * Auth gates for raw Route Handlers (byte streaming, webhooks) — the tRPC procedure
  * ladder can't be used there. Capabilities are resolved from the DB via
- * `resolveMemberRoles`, NOT read off the session token, so a revoked grant takes
- * effect on the next request instead of at the next session refresh.
+ * `resolveMemberRoles` on every request (the database-session callback runs it
+ * inside `getServerSession`), so a revoked grant takes effect on the next request.
  *
  * Each returns either the resolved value or a `Response` to return as-is:
  *
@@ -46,7 +60,7 @@ export async function requireCapability(
 	const session = await getServerSession(authOptions);
 	if (!session?.user?.id) return new Response('Unauthorized', { status: 401 });
 
-	const roles = await resolveMemberRoles(db, session.user.id);
+	const roles = await rolesFor(session);
 	if (!hasCapability(roles, cap)) return new Response('Forbidden', { status: 403 });
 
 	return { session, roles };

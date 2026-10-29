@@ -10,7 +10,12 @@ import { eq } from 'drizzle-orm';
 import type { WattsDb } from '@watts/db';
 import { Members } from '@watts/db/schema';
 import { hasCapability, type Capability } from '@watts/permissions';
-import { resolveMemberRoles, type MemberRoles } from '@watts/core/members';
+import type { BotSignalSender, SignalPayload, SignalType } from '@watts/bot-signals';
+import {
+	memberRolesFromSessionUser,
+	resolveMemberRoles,
+	type MemberRoles,
+} from '@watts/core/members';
 
 const isDev = process.env.NODE_ENV === 'development';
 
@@ -50,6 +55,11 @@ export interface CreateContextOptions {
 	 * `revalidateTag`; this package stays framework-neutral.
 	 */
 	onContentChanged?: (tag: string) => void;
+	/**
+	 * Reaches the Discord bot (signals in @watts/bot-signals). The Next route handler
+	 * passes its webhook-relay sender; unset → signals are skipped.
+	 */
+	botSignals?: BotSignalSender;
 }
 
 export const createTRPCContext = (opts: CreateContextOptions) => {
@@ -61,10 +71,14 @@ export const createTRPCContext = (opts: CreateContextOptions) => {
 	// Per-request memo of the role resolver. Every gate and the `auth.*` router call
 	// this, so a batched request that touches several of them resolves roles once, not
 	// once per procedure.
+	// The session callback already resolved roles from the DB for this request, so
+	// reuse them when present rather than paying for the same query again.
 	let rolesPromise: Promise<MemberRoles | null> | undefined;
 	const getRoles = (): Promise<MemberRoles | null> => {
 		const userId = opts.session?.user?.id;
 		if (!userId) return Promise.resolve(null);
+		const fromSession = memberRolesFromSessionUser(opts.session?.user);
+		if (fromSession !== undefined) return Promise.resolve(fromSession);
 		return (rolesPromise ??= resolveMemberRoles(opts.db, userId));
 	};
 
@@ -75,6 +89,7 @@ export const createTRPCContext = (opts: CreateContextOptions) => {
 		token: opts.headers?.get('Authorization') ?? null,
 		getRoles,
 		onContentChanged: opts.onContentChanged,
+		botSignals: opts.botSignals,
 	};
 };
 
@@ -93,6 +108,18 @@ const t = initTRPC.context<typeof createTRPCContext>().create({
 });
 
 export const createCallerFactory = t.createCallerFactory;
+
+/**
+ * Middleware: after the procedure succeeds, send the Discord bot a signal (batched
+ * per request, posted after the response). Use on procedures whose writes the bot acts
+ * on, e.g. `manageEvents.use(emitsBotSignal('events.changed', {}))`.
+ */
+export const emitsBotSignal = <T extends SignalType>(type: T, payload: SignalPayload<T>) =>
+	t.middleware(async ({ ctx, next }) => {
+		const result = await next();
+		if (result.ok) ctx.botSignals?.emit(type, payload);
+		return result;
+	});
 export const createTRPCRouter = t.router;
 
 /**

@@ -49,36 +49,74 @@ export interface MemberRoles extends CapabilitySubject {
  * straight into `hasCapability`.
  */
 export async function resolveMemberRoles(db: WattsDb, userId: string): Promise<MemberRoles | null> {
-	const [member] = await db
+	// One round-trip (member row LEFT JOIN its live grants) — this runs on every
+	// session check and gated tRPC call, and on Neon each query is its own HTTP
+	// request, so it was two sequential ones. One row per grant (or a single row
+	// with a null permission when there are none).
+	const rows = await db
 		.select({
 			id: Members.id,
 			officerStatus: Members.officerStatus,
 			officerRole: Members.officerRole,
 			administrator: Members.administrator,
+			permission: MemberPermissions.permission,
 		})
 		.from(Members)
-		.where(eq(Members.userId, userId))
-		.limit(1);
-
-	if (!member) return null;
-
-	const grants = await db
-		.select({ permission: MemberPermissions.permission })
-		.from(MemberPermissions)
-		.where(
+		.leftJoin(
+			MemberPermissions,
 			and(
-				eq(MemberPermissions.memberId, member.id),
+				eq(MemberPermissions.memberId, Members.id),
 				eq(MemberPermissions.active, true),
 				or(isNull(MemberPermissions.expiresAt), gt(MemberPermissions.expiresAt, new Date())),
 			),
-		);
+		)
+		.where(eq(Members.userId, userId));
+
+	const member = rows[0];
+	if (!member) return null;
+
+	// Several member rows for one user shouldn't happen, but if it does keep the old
+	// `.limit(1)` semantics: roles come from one member only.
+	const grants = rows.filter((r) => r.id === member.id && r.permission !== null);
 
 	return {
 		memberId: member.id,
 		officerStatus: member.officerStatus,
 		officerRole: member.officerRole ?? null,
 		administrator: member.administrator,
-		permissions: [...new Set(grants.map((g) => g.permission))],
+		permissions: [...new Set(grants.map((g) => g.permission as string))],
+	};
+}
+
+/**
+ * The roles the NextAuth `session` callback already resolved (via
+ * `resolveMemberRoles`) onto `session.user` in THIS request — database sessions
+ * run that callback on every `getServerSession`, so they're as fresh as a new
+ * query. Lets a gate skip re-running the same query.
+ *
+ * `undefined` = the user wasn't enriched (the callback's error path) → the caller
+ * should fall back to `resolveMemberRoles`. `null` = enriched, but no member row.
+ */
+export function memberRolesFromSessionUser(
+	user:
+		| {
+				memberId?: string | null;
+				officerStatus?: boolean;
+				officerRole?: string | null;
+				administrator?: boolean;
+				permissions?: string[];
+		  }
+		| null
+		| undefined,
+): MemberRoles | null | undefined {
+	if (!user || !Array.isArray(user.permissions)) return undefined;
+	if (!user.memberId) return null;
+	return {
+		memberId: user.memberId,
+		officerStatus: Boolean(user.officerStatus),
+		officerRole: user.officerRole ?? null,
+		administrator: Boolean(user.administrator),
+		permissions: user.permissions,
 	};
 }
 

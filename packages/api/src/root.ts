@@ -13,6 +13,7 @@ import { storageRouter } from './routers/storage';
 import { settingsRouter } from './routers/settings';
 import { siteContentRouter } from './routers/site-content';
 import { shortLinkRouter } from './routers/short-link';
+import { botSignalRouter } from './routers/bot-signal';
 
 export const appRouter = createTRPCRouter({
 	member: memberRouter,
@@ -29,6 +30,7 @@ export const appRouter = createTRPCRouter({
 	settings: settingsRouter,
 	siteContent: siteContentRouter,
 	shortLink: shortLinkRouter,
+	botSignal: botSignalRouter,
 });
 
 export type AppRouter = typeof appRouter;

@@ -2,7 +2,7 @@ import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 import { EventPhotos } from '@watts/db/schema';
 import { eq, desc, and, sql } from 'drizzle-orm';
-import { publicProcedure, capabilityProcedure, createTRPCRouter } from '../trpc';
+import { publicProcedure, capabilityProcedure, createTRPCRouter, emitsBotSignal } from '../trpc';
 import { DateTime } from 'luxon';
 import { finalizeUpload } from '@watts/storage/finalize';
 import { getStorage } from '@watts/storage';
@@ -29,6 +29,12 @@ import { listLabels } from '@watts/core/event-labels';
 import { mapDomainError, mapUploadError } from '../map-domain-error';
 
 const manageEvents = capabilityProcedure('manage_events');
+/**
+ * `manageEvents` for mutations that change what the Discord bot mirrors (global
+ * events, room reservations, flyers): on success, signal the bot to sync now. The bot
+ * only polls the DB as a slow fallback — every DB read wakes Neon.
+ */
+const manageEventsSyncsDiscord = manageEvents.use(emitsBotSignal('events.changed', {}));
 const scanAttendance = capabilityProcedure('scan_attendance');
 const managePhotos = capabilityProcedure('manage_event_photos');
 
@@ -252,7 +258,7 @@ export const eventRouter = createTRPCRouter({
 			}
 		}),
 
-	create: manageEvents
+	create: manageEventsSyncsDiscord
 		.input(eventCreateSchema)
 		.mutation(async ({ ctx, input }) => {
 			try {
@@ -264,7 +270,7 @@ export const eventRouter = createTRPCRouter({
 			}
 		}),
 
-	update: manageEvents
+	update: manageEventsSyncsDiscord
 		.input(z.object({ id: z.string().uuid(), data: eventUpdateSchema }))
 		.mutation(async ({ ctx, input }) => {
 			try {
@@ -276,7 +282,7 @@ export const eventRouter = createTRPCRouter({
 			}
 		}),
 
-	delete: manageEvents
+	delete: manageEventsSyncsDiscord
 		.input(z.object({ id: z.string().uuid() }))
 		.mutation(async ({ ctx, input }) => {
 			try {
@@ -289,7 +295,7 @@ export const eventRouter = createTRPCRouter({
 		}),
 
 	/** Undo an archive: reactivate the event and re-publish it to Google Calendar. */
-	restore: manageEvents
+	restore: manageEventsSyncsDiscord
 		.input(z.object({ id: z.string().uuid() }))
 		.mutation(async ({ ctx, input }) => {
 			try {
@@ -302,7 +308,7 @@ export const eventRouter = createTRPCRouter({
 		}),
 
 	/** Permanently remove an event + its attendees + its Google Calendar mirror. */
-	hardDelete: manageEvents
+	hardDelete: manageEventsSyncsDiscord
 		.input(z.object({ id: z.string().uuid() }))
 		.mutation(async ({ ctx, input }) => {
 			try {
@@ -315,7 +321,7 @@ export const eventRouter = createTRPCRouter({
 		}),
 
 	/** Called by the admin UI after a flyer's bytes have landed in the public bucket. */
-	confirmFlyer: manageEvents
+	confirmFlyer: manageEventsSyncsDiscord
 		.input(z.object({ eventId: z.string().uuid(), filename: z.string().max(255).optional() }))
 		.mutation(async ({ ctx, input }) => {
 			try {
@@ -359,7 +365,10 @@ export const eventRouter = createTRPCRouter({
 					sinceIso,
 					importedByUserId: ctx.session.user.id,
 				});
-				if (!input?.dryRun) eventPagesChanged(ctx);
+				if (!input?.dryRun) {
+					eventPagesChanged(ctx);
+					ctx.botSignals?.emit('events.changed', {});
+				}
 				const count = (a: string) => results.filter((r) => r.action === a).length;
 				return {
 					success: true,

@@ -2,9 +2,10 @@
 //
 // The website is the source of truth. An event flagged "global" (isGlobal) that
 // is active + not hidden gets a matching Discord *guild scheduled event* in the
-// ONE main guild (config.servers.main.id) — nothing else, ever. This module polls
-// the shared Postgres DB on an interval (the website and the bot share nothing
-// else) and reconciles:
+// ONE main guild (config.servers.main.id) — nothing else, ever. Each pass reads the
+// shared Postgres DB and reconciles. Passes run when the website signals
+// `events.changed` (src/signals/events-changed.ts), on /syncevents, and on a slow
+// fallback poll (every DB read wakes Neon, so the poll stays long):
 //
 //   wants a Discord event, none linked        → create, store the id on the row
 //   wants one, linked + drifted               → edit
@@ -44,9 +45,15 @@ export class DiscordEventSync {
 	private interval: NodeJS.Timeout | null = null;
 	private running = false;
 	private started = false;
+	/** app_settings row for the room dashboard message; undefined until first read. */
+	private dashboardSetting: { exists: boolean; messageId: string | null } | undefined;
 
 	constructor(client: any) {
 		this.client = client;
+	}
+
+	get enabled(): boolean {
+		return Boolean(this.cfg?.enabled);
 	}
 
 	private get cfg() {
@@ -63,7 +70,7 @@ export class DiscordEventSync {
 		this.client.logger.log('Starting Discord event sync…');
 
 		await this.reconcile();
-		const minutes = this.cfg.intervalMinutes ?? 15;
+		const minutes = this.cfg.intervalMinutes ?? 60;
 		this.interval = setInterval(() => {
 			void this.reconcile();
 		}, minutes * 60 * 1000);
@@ -128,9 +135,19 @@ export class DiscordEventSync {
 		}
 	}
 
-	async reconcile() {
-		if (this.running) return;
+	/** One sync pass. Resolves false if a pass was already running (nothing done). */
+	async reconcile(): Promise<boolean> {
+		if (this.running) return false;
 		this.running = true;
+		try {
+			await this.pass();
+		} finally {
+			this.running = false;
+		}
+		return true;
+	}
+
+	private async pass() {
 		try {
 			const guildId: string = this.client.config.servers.main.id;
 			if (!guildId) {
@@ -147,11 +164,15 @@ export class DiscordEventSync {
 
 			const db = this.client.database.getDB();
 
+			// One reservations read shared by the announcer and the dashboard (they used to
+			// run the same query twice per pass).
+			const reservations = await this.fetchReservations(db);
+
 			// Trigger the Room Reservation Showcase checking
-			await this.reconcileReservations(guild, db);
+			await this.reconcileReservations(guild, db, reservations);
 
 			// Trigger the Live Room Dashboard updates
-			await this.updateRoomDashboard(guild, db);
+			await this.updateRoomDashboard(guild, db, reservations);
 
 			// Rows that either want a Discord event or currently have one linked.
 			const rows: (typeof Events.$inferSelect)[] = await db
@@ -243,13 +264,24 @@ export class DiscordEventSync {
 
 		} catch (err) {
 			this.client.logger.fail(`Discord sync pass failed: ${err}`);
-		} finally {
-			this.running = false;
 		}
 	}
 
+	/** Every room reservation joined with its event and the event's creator. */
+	private fetchReservations(db: any): Promise<any[]> {
+		return db
+			.select({
+				reservation: RoomReservations,
+				event: Events,
+				user: Users,
+			})
+			.from(RoomReservations)
+			.leftJoin(Events, eq(RoomReservations.eventId, Events.id))
+			.leftJoin(Users, eq(Events.createdByUserId, Users.id));
+	}
+
 	// NEW: Room Reservation Embed Showcase System
-	async reconcileReservations(guild: Guild, db: any) {
+	async reconcileReservations(guild: Guild, db: any, reservations: any[]) {
 		try {
 			// Room-reservation status-change announcements go to the default logging channel
 			const logChannelId = this.client.config.servers.main.channels.defaultLogging;
@@ -260,17 +292,6 @@ export class DiscordEventSync {
 				// but this is where it fetches the channel.
 				return;
 			}
-
-			// Query room reservations joined with events and users
-			const reservations = await db
-				.select({
-					reservation: RoomReservations,
-					event: Events,
-					user: Users,
-				})
-				.from(RoomReservations)
-				.leftJoin(Events, eq(RoomReservations.eventId, Events.id))
-				.leftJoin(Users, eq(Events.createdByUserId, Users.id));
 
 			for (const row of reservations) {
 				const { reservation, event, user } = row;
@@ -327,23 +348,12 @@ export class DiscordEventSync {
 	}
 
 	// NEW: Live Room Tracker Dashboard
-	async updateRoomDashboard(guild: Guild, db: any) {
+	async updateRoomDashboard(guild: Guild, db: any, reservations: any[]) {
 		try {
 			// Target the dedicated room-reservation dashboard channel
 			const dashboardChannelId = this.client.config.servers.main.channels.roomDashboard;
 			const channel = await guild.channels.fetch(dashboardChannelId).catch(() => null);
 			if (!channel || !(channel instanceof TextChannel)) return;
-
-			// Fetch all upcoming reservations with user data
-			const reservations = await db
-				.select({
-					reservation: RoomReservations,
-					event: Events,
-					user: Users,
-				})
-				.from(RoomReservations)
-				.leftJoin(Events, eq(RoomReservations.eventId, Events.id))
-				.leftJoin(Users, eq(Events.createdByUserId, Users.id));
 
 			// We only want future events (or events happening right now)
 			const now = Date.now();
@@ -434,8 +444,13 @@ export class DiscordEventSync {
 			const AppSettings = (await import('@watts/db/schema')).AppSettings;
 			const settingKey = 'discord_booking_dashboard_message_id';
 
-			const settingsRow = await db.select().from(AppSettings).where(eq(AppSettings.key, settingKey)).limit(1);
-			let existingMessageId = settingsRow.length > 0 ? settingsRow[0].value : null;
+			// Read the stored id once per process, then keep it in memory — only this bot
+			// writes it, and a DB read every pass just kept Neon awake.
+			if (this.dashboardSetting === undefined) {
+				const [row] = await db.select().from(AppSettings).where(eq(AppSettings.key, settingKey)).limit(1);
+				this.dashboardSetting = { exists: Boolean(row), messageId: row?.value ?? null };
+			}
+			let existingMessageId = this.dashboardSetting.messageId;
 
 			if (existingMessageId) {
 				try {
@@ -454,11 +469,12 @@ export class DiscordEventSync {
 
 			// Save the new ID (Upsert)
 			const jsonValue = JSON.stringify(newMessage.id);
-			if (settingsRow.length > 0) {
+			if (this.dashboardSetting.exists) {
 				await db.update(AppSettings).set({ value: jsonValue }).where(eq(AppSettings.key, settingKey));
 			} else {
 				await db.insert(AppSettings).values({ key: settingKey, value: jsonValue });
 			}
+			this.dashboardSetting = { exists: true, messageId: jsonValue };
 
 			this.client.logger.success('Created new Room Dashboard message!');
 

@@ -65,15 +65,17 @@ export function buildAuthOptions(db: WattsDb): NextAuthOptions {
 				}
 
 				try {
-					const [account] = await db
-						.select()
-						.from(Accounts)
-						.where(eq(Accounts.userId, user.id)) // u.id is the providerAccountId
-						.limit(1);
-
-					// member row flags + active (non-expired) capability grants — one shared
-					// resolver, also used by the tRPC procedure gates.
-					const roles = await resolveMemberRoles(db, user.id);
+					// Independent lookups — run them together (every session check pays for these).
+					const [[account], roles] = await Promise.all([
+						db
+							.select({ providerAccountId: Accounts.providerAccountId })
+							.from(Accounts)
+							.where(eq(Accounts.userId, user.id)) // u.id is the providerAccountId
+							.limit(1),
+						// member row flags + active (non-expired) capability grants — one shared
+						// resolver, also used by the tRPC procedure gates.
+						resolveMemberRoles(db, user.id),
+					]);
 
 					return {
 						...session,
