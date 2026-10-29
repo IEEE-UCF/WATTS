@@ -1,7 +1,12 @@
 import 'server-only';
 
 import { after } from 'next/server';
-import { encodeEnvelope, type BotSignalSender, type SendResult, type Signal } from '@watts/bot-signals';
+import {
+	encodeEnvelope,
+	type BotSignalSender,
+	type SendResult,
+	type Signal,
+} from '@watts/bot-signals';
 
 /**
  * The website's side of website → Discord bot signals (contract: @watts/bot-signals).
@@ -37,7 +42,8 @@ async function post(signals: Signal[]): Promise<SendResult> {
 		if (!res.ok) return { sent: false, reason: `webhook ${res.status}` };
 		return { sent: true };
 	} catch (error) {
-		if (error instanceof Error && error.name === 'TimeoutError') return { sent: false, reason: 'timeout' };
+		if (error instanceof Error && error.name === 'TimeoutError')
+			return { sent: false, reason: 'timeout' };
 		return { sent: false, reason: error instanceof Error ? error.message : 'send failed' };
 	}
 }
