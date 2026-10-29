@@ -69,7 +69,8 @@ check('oversized envelope throws', tooBig);
 // ---------------------------------------------------------------------------
 console.log('\nSignalHandler delivery\n');
 
-const logger = { log() {}, success() {}, warn() {}, fail(msg: string) { console.log(`         (logger.fail) ${msg}`); } };
+const quiet = (): void => undefined;
+const logger = { log: quiet, success: quiet, warn: quiet, fail: (msg: string) => console.log(`         (logger.fail) ${msg}`) };
 const fakeClient: any = { logger, config: { signals: { webhookId: '123', secret: SECRET } } };
 
 class Recorder extends SignalHandler<'bot.test'> {
@@ -132,8 +133,18 @@ router.receive(encodeEnvelope([test], SECRET));
 await wait(20);
 check('no secret configured → fails closed', routed.runs.length === 1 && router.stats.rejected === 3);
 
-const msg = (webhookId: string | null): any => ({ webhookId });
 fakeClient.config.signals.secret = SECRET;
+const hourAgo = Date.now() - 60 * 60 * 1000;
+const backlogged = encodeEnvelope([test], SECRET, { ts: hourAgo });
+router.receive(backlogged, hourAgo + 1500); // posted to Discord an hour ago, drained now
+await wait(20);
+check('backlog: hour-old message, signed when posted → accepted', routed.runs.length === 2, JSON.stringify(router.stats));
+
+router.receive(encodeEnvelope([test], SECRET, { ts: hourAgo }), Date.now()); // captured, re-posted now
+await wait(20);
+check('captured envelope re-posted later → stale', routed.runs.length === 2 && router.stats.rejected === 4);
+
+const msg = (webhookId: string | null): any => ({ webhookId });
 check('message from another webhook is not a signal', !router.isSignalMessage(msg('999')));
 check('ordinary message is not a signal', !router.isSignalMessage(msg(null)));
 check('message from the signal webhook is a signal', router.isSignalMessage(msg('123')));

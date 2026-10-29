@@ -41,6 +41,8 @@ export class ReadyEvent extends Event {
 
 		await this.client.eventsAutomation.start();
 		await this.client.discordEventSync.start();
+		// Website signals posted while the bot was offline are still in the channel.
+		await this.client.signalRouter.drainBacklog();
 
 		// Clean permission cache periodically
 		setInterval(() => {

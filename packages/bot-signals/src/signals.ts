@@ -8,6 +8,13 @@
 import { z } from 'zod';
 
 export const SIGNALS = {
+	/**
+	 * Website events changed in a way the bot mirrors (global events → Discord
+	 * scheduled events, room reservations, flyers). The bot runs one full sync pass, so
+	 * there's nothing to carry.
+	 */
+	'events.changed': z.object({}),
+
 	/** Admin-panel "Send test signal" button → bot posts a confirmation in the logging channel. */
 	'bot.test': z.object({
 		requestedBy: z.string().max(80),

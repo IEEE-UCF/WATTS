@@ -4,6 +4,11 @@
 // Discord channel webhook in a staff-only channel. Every message that webhook posts is
 // ours: verify it, dispatch it, delete it. No inbound port on the VPS, and nothing
 // here touches the database.
+//
+// The channel doubles as a queue: messages posted while the bot is offline wait there
+// and are drained on startup. Freshness is judged against Discord's own timestamp for
+// the message (when it was posted), not the time we read it — so a backlog is still
+// accepted, while a captured envelope re-posted later is stale.
 
 import type { Message } from 'discord.js';
 import { DEFAULT_MAX_SKEW_MS, decodeEnvelope } from '@watts/bot-signals';
@@ -19,7 +24,7 @@ export class SignalRouter {
 		this.client = client;
 	}
 
-	private get cfg(): { webhookId: string; secret: string } {
+	private get cfg(): { webhookId: string; webhookToken: string; secret: string } {
 		return this.client.config.signals;
 	}
 
@@ -34,13 +39,39 @@ export class SignalRouter {
 	 */
 	async fromMessage(message: Message): Promise<boolean> {
 		if (!this.isSignalMessage(message)) return false;
-		this.receive(message.content);
+		this.receive(message.content, message.createdTimestamp);
 		await message.delete().catch(() => null); // needs Manage Messages; harmless if not
 		return true;
 	}
 
-	/** Verify an envelope and enqueue its signals on their handlers. */
-	receive(content: string): void {
+	/**
+	 * Signals posted while the bot was offline: read the webhook's recent messages in
+	 * its channel and handle them oldest first. Called once the client is ready.
+	 */
+	async drainBacklog(): Promise<void> {
+		const { webhookId, webhookToken } = this.cfg;
+		if (!webhookId || !webhookToken) return;
+		try {
+			const webhook = await this.client.fetchWebhook(webhookId, webhookToken);
+			const channel = await this.client.channels.fetch(webhook.channelId);
+			if (!channel?.isTextBased() || !('messages' in channel)) return;
+
+			const recent = await channel.messages.fetch({ limit: 50 });
+			const backlog = [...recent.values()]
+				.filter((message: Message) => this.isSignalMessage(message))
+				.sort((a: Message, b: Message) => a.createdTimestamp - b.createdTimestamp);
+			for (const message of backlog) await this.fromMessage(message);
+			if (backlog.length) this.client.logger.log(`Drained ${backlog.length} bot signal message(s) posted while offline.`);
+		} catch (error) {
+			this.client.logger.warn(`Could not drain the bot signal backlog: ${error}`);
+		}
+	}
+
+	/**
+	 * Verify an envelope and enqueue its signals on their handlers. `postedAt` is when
+	 * the message reached Discord; the envelope must have been signed close to it.
+	 */
+	receive(content: string, postedAt = Date.now()): void {
 		this.stats.received++;
 		if (!this.cfg.secret) {
 			// Fail closed: without the shared secret we can't tell a real signal from a forged one.
@@ -52,7 +83,7 @@ export class SignalRouter {
 			return;
 		}
 
-		const result = decodeEnvelope(content, this.cfg.secret);
+		const result = decodeEnvelope(content, this.cfg.secret, { now: postedAt });
 		if (!result.ok) {
 			this.stats.rejected++;
 			this.client.logger.warn(`Bot signal rejected: ${result.reason}`);

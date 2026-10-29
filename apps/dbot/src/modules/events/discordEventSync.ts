@@ -2,9 +2,10 @@
 //
 // The website is the source of truth. An event flagged "global" (isGlobal) that
 // is active + not hidden gets a matching Discord *guild scheduled event* in the
-// ONE main guild (config.servers.main.id) — nothing else, ever. This module polls
-// the shared Postgres DB on an interval (the website and the bot share nothing
-// else) and reconciles:
+// ONE main guild (config.servers.main.id) — nothing else, ever. Each pass reads the
+// shared Postgres DB and reconciles. Passes run when the website signals
+// `events.changed` (src/signals/events-changed.ts), on /syncevents, and on a slow
+// fallback poll (every DB read wakes Neon, so the poll stays long):
 //
 //   wants a Discord event, none linked        → create, store the id on the row
 //   wants one, linked + drifted               → edit
@@ -44,7 +45,6 @@ export class DiscordEventSync {
 	private interval: NodeJS.Timeout | null = null;
 	private running = false;
 	private started = false;
-	private pendingSync: NodeJS.Timeout | null = null;
 	/** app_settings row for the room dashboard message; undefined until first read. */
 	private dashboardSetting: { exists: boolean; messageId: string | null } | undefined;
 
@@ -81,8 +81,6 @@ export class DiscordEventSync {
 	stop() {
 		if (this.interval) clearInterval(this.interval);
 		this.interval = null;
-		if (this.pendingSync) clearTimeout(this.pendingSync);
-		this.pendingSync = null;
 		if (this.started) this.client.logger.log('Discord event sync stopped.');
 	}
 
@@ -135,28 +133,6 @@ export class DiscordEventSync {
 			this.client.logger.warn(`Discord event sync: flyer fetch failed for ${url}: ${err}`);
 			return null;
 		}
-	}
-
-	/**
-	 * Schedule a pass soon (the website's "events changed" webhook). Debounced so a
-	 * burst — create an event, then upload its flyer — costs one pass, and retried if a
-	 * pass is mid-flight so the change is never missed.
-	 */
-	requestSync(delayMs = 10_000) {
-		if (!this.started || this.pendingSync) return;
-		this.pendingSync = setTimeout(() => {
-			// Clear first: a ping arriving during this pass (which may already have read
-			// the DB) must schedule another one.
-			this.pendingSync = null;
-			void this.reconcile().then((ran) => {
-				if (!ran) this.requestSync(delayMs);
-			});
-		}, delayMs);
-	}
-
-	/** Is this message the website's sync ping? */
-	isSyncPing(webhookId: string | null | undefined): boolean {
-		return Boolean(webhookId) && webhookId === this.cfg?.webhookId;
 	}
 
 	/** One sync pass. Resolves false if a pass was already running (nothing done). */

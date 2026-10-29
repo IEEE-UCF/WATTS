@@ -40,8 +40,6 @@ interface Config {
 				enabled: boolean;
 				intervalMinutes: number;
 				pingEventCreators: boolean;
-				/** Id of the Discord webhook the website posts to after an event change ('' = off). */
-				webhookId: string;
 			};
 			eventReminders: {
 				enabled: boolean;
@@ -63,6 +61,8 @@ interface Config {
 	signals: {
 		/** Id of the Discord webhook the website posts signals through ('' = off). */
 		webhookId: string;
+		/** That webhook's token — lets the bot find its channel to drain the backlog on startup. */
+		webhookToken: string;
 		/** Shared HMAC secret; signals are ignored while it's unset. */
 		secret: string;
 	};
@@ -109,13 +109,10 @@ const config: Config = {
 			},
 			discordEventSync: {
 				enabled: process.env.DISCORD_EVENT_SYNC_ENABLED === 'true',
-				// Fallback poll only — website changes arrive via the webhook below. Each poll
-				// wakes Neon (~5 min billed), so keep this long.
+				// Fallback poll only — website changes arrive as `events.changed` signals. Each
+				// poll wakes Neon (~5 min billed), so keep this long.
 				intervalMinutes: Number(process.env.DISCORD_EVENT_SYNC_INTERVAL_MINS) || 180,
 				pingEventCreators: process.env.PING_EVENT_CREATORS === 'true',
-				// Same webhook URL the website posts to; only its id is needed here.
-				webhookId:
-					process.env.DISCORD_BOT_SYNC_WEBHOOK_URL?.match(/\/webhooks\/(\d+)\//)?.[1] ?? '',
 			},
 			eventReminders: {
 				enabled: process.env.EVENT_REMINDERS_ENABLED !== 'false',
@@ -135,8 +132,9 @@ const config: Config = {
 	},
 
 	signals: {
-		// Same webhook URL the website posts to; only its id is needed here.
+		// Same webhook URL the website posts to: .../webhooks/<id>/<token>
 		webhookId: process.env.BOT_SIGNAL_WEBHOOK_URL?.match(/\/webhooks\/(\d+)\//)?.[1] ?? '',
+		webhookToken: process.env.BOT_SIGNAL_WEBHOOK_URL?.match(/\/webhooks\/\d+\/([\w-]+)/)?.[1] ?? '',
 		secret: process.env.BOT_SIGNAL_SECRET?.trim() ?? '',
 	},
 

@@ -132,6 +132,9 @@ jobs:
       - name: Bot permission-tier checks
         run: pnpm --filter @watts/bot check:tier
 
+      - name: Bot signal checks (envelope, handler delivery, router)
+        run: pnpm --filter @watts/bot check:signals
+
   e2e:
     runs-on: ubuntu-latest
     timeout-minutes: 20

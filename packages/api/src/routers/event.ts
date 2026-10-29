@@ -2,7 +2,7 @@ import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 import { EventPhotos } from '@watts/db/schema';
 import { eq, desc, and, sql } from 'drizzle-orm';
-import { publicProcedure, capabilityProcedure, createTRPCRouter } from '../trpc';
+import { publicProcedure, capabilityProcedure, createTRPCRouter, emitsBotSignal } from '../trpc';
 import { DateTime } from 'luxon';
 import { finalizeUpload } from '@watts/storage/finalize';
 import { getStorage } from '@watts/storage';
@@ -31,14 +31,10 @@ import { mapDomainError, mapUploadError } from '../map-domain-error';
 const manageEvents = capabilityProcedure('manage_events');
 /**
  * `manageEvents` for mutations that change what the Discord bot mirrors (global
- * events, room reservations, flyers): on success, tell the bot to sync now. The bot
+ * events, room reservations, flyers): on success, signal the bot to sync now. The bot
  * only polls the DB as a slow fallback — every DB read wakes Neon.
  */
-const manageEventsSyncsDiscord = manageEvents.use(async ({ ctx, next }) => {
-	const result = await next();
-	if (result.ok) ctx.onEventsChanged?.();
-	return result;
-});
+const manageEventsSyncsDiscord = manageEvents.use(emitsBotSignal('events.changed', {}));
 const scanAttendance = capabilityProcedure('scan_attendance');
 const managePhotos = capabilityProcedure('manage_event_photos');
 
@@ -371,7 +367,7 @@ export const eventRouter = createTRPCRouter({
 				});
 				if (!input?.dryRun) {
 					eventPagesChanged(ctx);
-					ctx.onEventsChanged?.();
+					ctx.botSignals?.emit('events.changed', {});
 				}
 				const count = (a: string) => results.filter((r) => r.action === a).length;
 				return {

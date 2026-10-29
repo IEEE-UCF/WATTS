@@ -10,7 +10,7 @@ import { eq } from 'drizzle-orm';
 import type { WattsDb } from '@watts/db';
 import { Members } from '@watts/db/schema';
 import { hasCapability, type Capability } from '@watts/permissions';
-import type { BotSignalSender } from '@watts/bot-signals';
+import type { BotSignalSender, SignalPayload, SignalType } from '@watts/bot-signals';
 import {
 	memberRolesFromSessionUser,
 	resolveMemberRoles,
@@ -56,12 +56,6 @@ export interface CreateContextOptions {
 	 */
 	onContentChanged?: (tag: string) => void;
 	/**
-	 * Called after an event mutation that the Discord bot mirrors succeeds, so the bot
-	 * can sync now instead of on its slow DB poll. The Next route handler wires this to
-	 * the bot-sync Discord webhook; must not throw or block.
-	 */
-	onEventsChanged?: () => void;
-	/**
 	 * Reaches the Discord bot (signals in @watts/bot-signals). The Next route handler
 	 * passes its webhook-relay sender; unset → signals are skipped.
 	 */
@@ -95,7 +89,6 @@ export const createTRPCContext = (opts: CreateContextOptions) => {
 		token: opts.headers?.get('Authorization') ?? null,
 		getRoles,
 		onContentChanged: opts.onContentChanged,
-		onEventsChanged: opts.onEventsChanged,
 		botSignals: opts.botSignals,
 	};
 };
@@ -115,6 +108,18 @@ const t = initTRPC.context<typeof createTRPCContext>().create({
 });
 
 export const createCallerFactory = t.createCallerFactory;
+
+/**
+ * Middleware: after the procedure succeeds, send the Discord bot a signal (batched
+ * per request, posted after the response). Use on procedures whose writes the bot acts
+ * on, e.g. `manageEvents.use(emitsBotSignal('events.changed', {}))`.
+ */
+export const emitsBotSignal = <T extends SignalType>(type: T, payload: SignalPayload<T>) =>
+	t.middleware(async ({ ctx, next }) => {
+		const result = await next();
+		if (result.ok) ctx.botSignals?.emit(type, payload);
+		return result;
+	});
 export const createTRPCRouter = t.router;
 
 /**
