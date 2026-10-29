@@ -134,6 +134,13 @@
       "when": 1793305567422,
       "tag": "0018_merch_store",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1793312429398,
+      "tag": "0019_merch_product_images",
+      "breakpoints": true
     }
   ]
 }

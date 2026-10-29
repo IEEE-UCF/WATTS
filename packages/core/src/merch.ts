@@ -17,6 +17,7 @@ import {
 	Members,
 	MerchOrderItems,
 	MerchOrders,
+	MerchProductImages,
 	MerchProducts,
 	MerchVariants,
 	Users,
@@ -30,6 +31,8 @@ export const MERCH_PAYMENT_NOTE =
 	'No payment now. Once an officer approves your request, pay in person (cash, Venmo or Zelle) at a GBM or office hours.';
 
 export const MERCH_MAX_QTY_PER_SIZE = 3;
+export const MERCH_MAX_IMAGES = 12;
+export const MERCH_IMAGE_LABEL_MAX = 60;
 export const MERCH_OPEN_STATUSES = ['requested', 'approved', 'paid'] as const satisfies readonly MerchOrderStatus[];
 
 /**
@@ -91,12 +94,20 @@ export interface MerchVariantView {
 	sortOrder: number;
 }
 
+export interface MerchImageView {
+	assetId: string;
+	url: string;
+	label: string | null;
+}
+
 export interface MerchProductView {
 	id: string;
 	name: string;
 	description: string | null;
 	priceCents: number;
-	imageAssetId: string | null;
+	/** In display order; the first is the cover. */
+	images: MerchImageView[];
+	/** The cover photo's URL (images[0]), or null. */
 	imageUrl: string | null;
 	active: boolean;
 	sortOrder: number;
@@ -110,42 +121,55 @@ async function loadProducts(db: WattsDb, onlyActive: boolean): Promise<MerchProd
 			name: MerchProducts.name,
 			description: MerchProducts.description,
 			priceCents: MerchProducts.priceCents,
-			imageAssetId: MerchProducts.imageAssetId,
-			imageUrl: MediaAssets.url,
 			active: MerchProducts.active,
 			sortOrder: MerchProducts.sortOrder,
 		})
 		.from(MerchProducts)
-		.leftJoin(MediaAssets, eq(MediaAssets.id, MerchProducts.imageAssetId))
 		.where(onlyActive ? eq(MerchProducts.active, true) : undefined)
 		.orderBy(asc(MerchProducts.sortOrder), asc(MerchProducts.createdAt));
 	if (products.length === 0) return [];
 
-	const variants = await db
-		.select()
-		.from(MerchVariants)
-		.where(
-			inArray(
-				MerchVariants.productId,
-				products.map((p) => p.id),
-			),
-		)
-		.orderBy(asc(MerchVariants.sortOrder), asc(MerchVariants.createdAt));
+	const productIds = products.map((p) => p.id);
+	const [variants, images] = await Promise.all([
+		db
+			.select()
+			.from(MerchVariants)
+			.where(inArray(MerchVariants.productId, productIds))
+			.orderBy(asc(MerchVariants.sortOrder), asc(MerchVariants.createdAt)),
+		db
+			.select({
+				productId: MerchProductImages.productId,
+				assetId: MerchProductImages.assetId,
+				url: MediaAssets.url,
+				label: MerchProductImages.label,
+			})
+			.from(MerchProductImages)
+			.innerJoin(MediaAssets, eq(MediaAssets.id, MerchProductImages.assetId))
+			.where(inArray(MerchProductImages.productId, productIds))
+			.orderBy(asc(MerchProductImages.sortOrder), asc(MerchProductImages.createdAt)),
+	]);
 
-	return products.map((p) => ({
-		...p,
-		variants: variants
-			.filter((v) => v.productId === p.id)
-			.map((v) => ({
-				id: v.id,
-				label: v.label,
-				stock: v.stock,
-				reserved: v.reserved,
-				left: Math.max(0, v.stock - v.reserved),
-				soldOut: v.stock - v.reserved <= 0,
-				sortOrder: v.sortOrder,
-			})),
-	}));
+	return products.map((p) => {
+		const own = images
+			.filter((img) => img.productId === p.id)
+			.map(({ assetId, url, label }) => ({ assetId, url, label }));
+		return {
+			...p,
+			images: own,
+			imageUrl: own[0]?.url ?? null,
+			variants: variants
+				.filter((v) => v.productId === p.id)
+				.map((v) => ({
+					id: v.id,
+					label: v.label,
+					stock: v.stock,
+					reserved: v.reserved,
+					left: Math.max(0, v.stock - v.reserved),
+					soldOut: v.stock - v.reserved <= 0,
+					sortOrder: v.sortOrder,
+				})),
+		};
+	});
 }
 
 /** Visible products with how many of each size are left. */
@@ -477,7 +501,8 @@ export interface MerchProductInput {
 	name: string;
 	description?: string | null;
 	priceCents: number;
-	imageAssetId?: string | null;
+	/** The product's photos in display order (first = cover). Replaces the current set; omit to keep it. */
+	images?: { assetId: string; label?: string | null }[];
 	active?: boolean;
 }
 
@@ -488,35 +513,126 @@ function checkProduct(input: MerchProductInput) {
 	if (!Number.isInteger(input.priceCents) || input.priceCents < 0 || input.priceCents > 100_000) {
 		throw new DomainError('BAD_REQUEST', 'Enter a price between $0 and $1,000.');
 	}
+	const images: { assetId: string; label: string | null }[] = [];
+	for (const img of input.images ?? []) {
+		if (images.some((i) => i.assetId === img.assetId)) continue;
+		const label = img.label?.trim() || null;
+		if (label && label.length > MERCH_IMAGE_LABEL_MAX) {
+			throw new DomainError('BAD_REQUEST', `A photo label can be at most ${MERCH_IMAGE_LABEL_MAX} characters.`);
+		}
+		images.push({ assetId: img.assetId, label });
+	}
+	if (images.length > MERCH_MAX_IMAGES) {
+		throw new DomainError('BAD_REQUEST', `A product can have at most ${MERCH_MAX_IMAGES} photos.`);
+	}
 	return {
 		name,
 		description: input.description?.trim().slice(0, 1000) || null,
 		priceCents: input.priceCents,
-		imageAssetId: input.imageAssetId ?? null,
-		...(input.active === undefined ? {} : { active: input.active }),
+		images: input.images ? images : null,
+		active: input.active ?? null,
 	};
 }
 
+/** `img (asset_id, label, pos)` rows for a WITH clause, or null when there are none. */
+function imageRows(images: { assetId: string; label: string | null }[] | null): SQL | null {
+	if (!images?.length) return null;
+	return sql.join(
+		images.map((img, i) => sql`(${img.assetId}::uuid, ${img.label}::varchar, ${i}::int)`),
+		sql`, `,
+	);
+}
+
+function productWriteError(e: unknown): never {
+	const { code, constraint } = pgError(e);
+	if (
+		code === '23503' &&
+		(constraint === 'merch_product_images_asset_id_media_assets_id_fk' ||
+			constraint === 'merch_products_image_asset_id_media_assets_id_fk')
+	) {
+		throw new DomainError('BAD_REQUEST', 'One of those photos is gone — upload it again.');
+	}
+	throw e;
+}
+
+/**
+ * Product + photos in one statement. merch_products.image_asset_id still mirrors the
+ * cover photo so code reading the old column keeps working until it's dropped.
+ */
 export async function createMerchProduct(db: WattsDb, input: MerchProductInput): Promise<{ id: string }> {
-	const values = checkProduct(input);
-	const [row] = await db
-		.insert(MerchProducts)
-		.values({
-			...values,
-			sortOrder: sql`(select coalesce(max(sort_order), -1) + 1 from merch_products)`,
-		})
-		.returning();
-	return { id: row!.id };
+	const v = checkProduct(input);
+	const rows = imageRows(v.images);
+	const statement = sql`
+		with p as (
+			insert into merch_products (name, description, price_cents, image_asset_id, active, sort_order)
+			values (
+				${v.name}, ${v.description}, ${v.priceCents}, ${v.images?.[0]?.assetId ?? null}::uuid,
+				coalesce(${v.active}::boolean, true),
+				(select coalesce(max(sort_order), -1) + 1 from merch_products)
+			)
+			returning id
+		)${
+			rows
+				? sql`,
+		img (asset_id, label, pos) as (values ${rows}),
+		ins as (
+			insert into merch_product_images (product_id, asset_id, label, sort_order)
+			select p.id, img.asset_id, img.label, img.pos from p cross join img
+		)`
+				: sql``
+		}
+		select id from p
+	`;
+	try {
+		const [row] = await run<{ id: string }>(db, statement);
+		return { id: row!.id };
+	} catch (e) {
+		productWriteError(e);
+	}
 }
 
 export async function updateMerchProduct(db: WattsDb, id: string, input: MerchProductInput): Promise<void> {
-	const values = checkProduct(input);
-	const rows = await db
-		.update(MerchProducts)
-		.set(values)
-		.where(eq(MerchProducts.id, id))
-		.returning();
-	if (rows.length === 0) throw new DomainError('NOT_FOUND', 'Product not found.');
+	const v = checkProduct(input);
+	const rows = imageRows(v.images);
+	const statement = sql`
+		with p as (
+			update merch_products set
+				name = ${v.name},
+				description = ${v.description},
+				price_cents = ${v.priceCents},
+				image_asset_id = ${v.images ? sql`${v.images[0]?.assetId ?? null}::uuid` : sql`image_asset_id`},
+				active = coalesce(${v.active}::boolean, active),
+				updated_at = now()
+			where id = ${id}::uuid
+			returning id
+		)${
+			v.images === null
+				? sql``
+				: rows
+				? sql`,
+		img (asset_id, label, pos) as (values ${rows}),
+		gone as (
+			delete from merch_product_images i using p
+			where i.product_id = p.id and i.asset_id not in (select asset_id from img)
+		),
+		up as (
+			insert into merch_product_images (product_id, asset_id, label, sort_order)
+			select p.id, img.asset_id, img.label, img.pos from p cross join img
+			on conflict (product_id, asset_id) do update
+			set label = excluded.label, sort_order = excluded.sort_order
+		)`
+				: sql`,
+		gone as (delete from merch_product_images i using p where i.product_id = p.id)`
+		}
+		select id from p
+	`;
+	let result: { id: string }[];
+	try {
+		result = await run<{ id: string }>(db, statement);
+	} catch (e) {
+		productWriteError(e);
+	}
+	if (result.length === 0) throw new DomainError('NOT_FOUND', 'Product not found.');
 }
 
 export async function setMerchProductActive(db: WattsDb, id: string, active: boolean): Promise<void> {

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import type { MerchImageView } from '@watts/core/merch';
 import { trpc } from '@/lib/trpc/client';
 import { cn } from '@watts/ui/cn';
 import { Banner } from '@/components/admin/site-content/shared';
@@ -91,14 +92,11 @@ export function Storefront() {
 								key={p.id}
 								className="flex flex-col overflow-hidden rounded-xl border border-border bg-card/60 shadow-lg shadow-black/40"
 							>
-								<div className="relative flex h-64 items-center justify-center bg-zinc-900">
-									<ProductImage url={p.imageUrl} alt={p.name} />
-									{allSoldOut && (
-										<span className="absolute top-3 left-3 rounded-md bg-red-500/90 px-2 py-0.5 text-xs font-bold text-white">
-											Sold out
-										</span>
-									)}
-								</div>
+								<ProductGallery
+									images={p.images}
+									name={p.name}
+									soldOut={allSoldOut}
+								/>
 								<div className="flex flex-1 flex-col gap-3.5 p-5">
 									<div className="flex items-baseline justify-between gap-3">
 										<h2 className="text-lg font-bold">{p.name}</h2>
@@ -278,6 +276,69 @@ export function Storefront() {
 						});
 					}}
 				/>
+			)}
+		</div>
+	);
+}
+
+/** The product's photos: the selected one large (with its label), thumbnails to switch. */
+function ProductGallery({
+	images,
+	name,
+	soldOut,
+}: {
+	images: MerchImageView[];
+	name: string;
+	soldOut: boolean;
+}) {
+	const [index, setIndex] = useState(0);
+	const current = images[Math.min(index, images.length - 1)];
+	return (
+		<div className="flex flex-col bg-zinc-900">
+			<div className="relative flex h-64 items-center justify-center">
+				<ProductImage
+					url={current?.url ?? null}
+					alt={current?.label ? `${name} — ${current.label}` : name}
+				/>
+				{soldOut && (
+					<span className="absolute top-3 left-3 rounded-md bg-red-500/90 px-2 py-0.5 text-xs font-bold text-white">
+						Sold out
+					</span>
+				)}
+				{current?.label && (
+					<span className="absolute bottom-3 left-3 rounded-md bg-black/70 px-2 py-0.5 text-xs font-semibold text-white">
+						{current.label}
+					</span>
+				)}
+			</div>
+			{images.length > 1 && (
+				<div className="flex gap-2 overflow-x-auto px-3 pb-3">
+					{images.map((img, i) => (
+						<button
+							key={img.assetId}
+							type="button"
+							aria-label={img.label ? `Show ${img.label}` : `Show photo ${i + 1}`}
+							aria-pressed={img === current}
+							title={img.label ?? undefined}
+							onClick={() => setIndex(i)}
+							className={cn(
+								'flex shrink-0 flex-col items-center gap-1 rounded-md p-1 text-[11px] text-muted-foreground',
+								img === current
+									? 'bg-ieee-dark-yellow/15 ring-2 ring-ieee-dark-yellow'
+									: 'hover:bg-zinc-800',
+							)}
+						>
+							{/* eslint-disable-next-line @next/next/no-img-element */}
+							<img
+								src={img.url}
+								alt=""
+								loading="lazy"
+								className="size-12 rounded object-cover"
+							/>
+							{img.label && <span className="max-w-16 truncate">{img.label}</span>}
+						</button>
+					))}
+				</div>
 			)}
 		</div>
 	);
