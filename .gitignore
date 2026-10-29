@@ -35,6 +35,8 @@ blob-report/
 playwright/.cache/
 **/screenshots/
 **/e2e/.auth/
+# permission audit reports (contain member names)
+infra/seed/.audit/
 
 # --- logs ---
 *.log

@@ -107,6 +107,32 @@ export abstract class Command {
 	}
 
 	/**
+	 * Pre-run checks shared by every way a command can be triggered (slash command,
+	 * command button): enabled, guild-only, permission tier, cooldown. Returns the
+	 * embed to reply with when the user is blocked, or null when the command may run.
+	 */
+	async gate(userId: string, inGuild: boolean): Promise<EmbedBuilder | null> {
+		if (!this.enabled) {
+			return this.client.createEmbed()
+				.setTitle('❌ Command Disabled')
+				.setDescription('This command is currently disabled.');
+		}
+		if (this.guildOnly && !inGuild) {
+			return this.client.createEmbed()
+				.setTitle('🏠 Guild Only Command')
+				.setDescription('This command can only be used in a server.');
+		}
+		// hasPermission fails closed (false) if the tier lookup throws.
+		if (!(await this.hasPermission(userId))) {
+			return this.getPermissionEmbed(this.permissionLevel);
+		}
+		if (this.isOnCooldown(userId)) {
+			return this.getCooldownEmbed(this.getCooldownTime(userId));
+		}
+		return null;
+	}
+
+	/**
 	 * Get cooldown embed message
 	 */
 	getCooldownEmbed(timeLeft: number): EmbedBuilder {

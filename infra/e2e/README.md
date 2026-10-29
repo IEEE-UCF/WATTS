@@ -17,7 +17,10 @@ product.
 | `tests/auth-gates.spec.ts` | `chromium` | Anonymous → `/dashboard`, `/settings`, `/admin/*`, `/staff` all redirect to `/auth/signin`. |
 | `tests/integrations.spec.ts` | `chromium` | `/api/auth/providers` lists Discord · a public tRPC query returns without a 5xx (DB reachable) · `/api/auth/session` responds · a gated file route 401/403s for anon (storage adapter loads). |
 | `tests/authed.spec.ts` | `authenticated` | The gated pages render (no redirect to sign-in) and get screenshotted. `/settings` + `/admin/members` are skipped (`test.fixme`) **only against a `next dev` target** (`E2E_BASE_URL=…:3050`), where `useSession` + static optimization 500s; they run against `next start` (CI + the default local run). Fix is `export const dynamic` on those pages. |
-| `tests/role-matrix.spec.ts` | `authenticated` | Per-role access — see [What role-matrix does to your account](#what-role-matrix-does-to-your-account). |
+| `tests/perm-pages.spec.ts` | `permissions` | Every gated page × every [persona](#the-permission-suite) → renders / 404 / `/dashboard` / sign-in, exactly as `lib/access-matrix.ts` says. |
+| `tests/perm-trpc.spec.ts` | `permissions` | Every tRPC procedure × every persona → allowed / 403 / 401 (side-effect free probe). |
+| `tests/perm-routes.spec.ts` | `permissions` | The file + upload routes × every persona. |
+| `tests/perm-scoped.spec.ts` | `permissions` | Per-record rules: chair / lead / page editor scope, cross-project join requests, own short links, officer delegation, revocation. |
 
 The `authenticated` project runs when **either**:
 
@@ -29,6 +32,10 @@ The `authenticated` project runs when **either**:
   (a DB-only test fixture, deleted in teardown). This is the CI path.
 
 Otherwise it does not exist, and only the anonymous `chromium` specs run.
+
+The `permissions` project runs whenever `DATABASE_URL` points at a local / CI
+Postgres (it brings its own synthetic personas — see
+[The permission suite](#the-permission-suite)).
 
 ---
 
@@ -52,7 +59,15 @@ pnpm exec turbo run typecheck lint build     # = the `verify` job
 ```
 
 ```bash
+pnpm --filter @watts/e2e matrix:check        # = `verify`: every procedure/page/route classified, docs/PERMISSIONS.md current
+```
+
+```bash
 pnpm --filter @watts/bot check:whois         # = the `smoke` job (@watts/core /whois vs the seeded DB)
+```
+
+```bash
+pnpm --filter @watts/bot check:tier          # = `smoke`: bot permission tiers + the command/button gate
 ```
 
 ```bash
@@ -93,22 +108,17 @@ pnpm --filter @watts/e2e auth
 ```
 
 That writes `infra/e2e/.auth/user.json` (gitignored). Then run the full suite
-(anon + `authed` + `role-matrix`) against your dev server:
+(anon + `authed` + `permissions`) against your dev server:
 
 ```powershell
 $env:E2E_BASE_URL = "https://localhost:3050"; pnpm --filter @watts/e2e test; $env:E2E_BASE_URL = $null
 ```
 
-**Expect: 42 passed, 2 fixme** (the two `next dev` quirks above). Your `members`
-row is snapshotted before and restored after — see below.
+Expect everything green except the two `next dev` `fixme`s above. Nothing in the
+suite changes your own `members` row.
 
 Re-run `pnpm --filter @watts/e2e auth` after the session expires or after a
 `pnpm db:reset`.
-
-To exercise the **admin** rows of the matrix as your real self, either set
-`DEV_ADMIN_DISCORD_ID` to your Discord id before seeding, or flip
-`members.administrator` for your row in Drizzle Studio (`http://127.0.0.1:3055`) —
-`role-matrix` will still restore whatever it snapshotted.
 
 ### Synthetic session (CI / local without a Discord login)
 
@@ -160,10 +170,6 @@ pnpm --filter @watts/e2e exec playwright show-report   # open the last HTML repo
 ```
 
 ```bash
-pnpm --filter @watts/e2e role-restore                  # recover your row after a killed run (see below)
-```
-
-```bash
 pnpm --filter @watts/e2e session-clean                 # remove a leftover synthetic session after a killed run
 ```
 
@@ -179,49 +185,46 @@ pnpm infra:down    # stop containers, keep data  (infra:reset wipes the volumes)
 
 ---
 
-## What role-matrix does to your account
+## The permission suite
 
-**Yes — `role-matrix.spec.ts` temporarily changes the permission level of
-whichever user the `authenticated` project is running as, then puts it back.**
-That's your **captured Discord user** locally, or the **synthetic user** in CI /
-when no session is captured (in which case teardown deletes it wholesale anyway).
-Specifically:
+`lib/access-matrix.ts` is **the** permission matrix: every tRPC procedure, page and
+HTTP route with its gate, written as a spec of who *should* get in. The
+`permissions` project proves the running app agrees, and `scripts/matrix.mts`
+renders it to [`docs/PERMISSIONS.md`](../../docs/PERMISSIONS.md).
 
-1. **`beforeAll` → `snapshot()`** reads that user's current `members` row
-   (`administrator`, `officer_status`, `officer_role`) and **every** row in
-   `member_permissions` for them, and writes it to
-   `infra/e2e/.auth/role-backup.json`.
-2. **Each `describe` → `setRole('member' | 'officer' | 'admin', caps[])`** runs
-   `UPDATE members SET administrator = …, officer_status = …` and rewrites
-   `member_permissions` — the same writes the members-manager UI makes. One
-   describe also does `setRole('member', ['scan_attendance'])` to check a lone
-   capability grant, and the last test revokes `officer_status` mid-page on
-   purpose.
-3. **`afterAll` → `restore(original)`** writes `administrator`, `officer_status`,
-   `officer_role` **and** the exact `member_permissions` rows back, then deletes
-   `role-backup.json`. It's wrapped in `try/finally`; if the restore itself throws
-   it prints the recovery command and re-raises.
+**Personas** (`lib/personas.ts`) — one dedicated synthetic identity per kind of
+access: anonymous, signed-in-but-unregistered, plain member, a member holding each
+capability (plus expired / inactive / committee-scoped grants), committee chair (via
+`is_chair` and via `chair_id`), project lead, page editor, officer, officer chairing
+a committee, exec officer, admin. `global-setup.ts` creates them all
+(`lib/persona-db.ts`: `e2e-perm-<key>@watts.local`, each with its own session
+cookie in `.auth/perm-<key>.json`) plus fixtures — committees A/B, projects A/B, a
+pending join request on each, two short links, an event with a members-only photo.
+Teardown deletes all of it. Same local / CI-only host allowlist as the synthetic
+session; nothing touches a real member row.
 
-Guardrails:
+**How the probes stay side-effect free:**
 
-- Targets a **local / CI** Postgres only (`DATABASE_URL` host in
-  `localhost` / `127.0.0.1` / `::1` / `postgres`) — the same un-bypassable
-  allowlist the synthetic session uses. Never a deployed DB.
-- The authenticated run is pinned to **`workers: 1`** so nothing else touches the
-  DB while roles are toggled.
-- If a run is **killed** before `afterAll` (Ctrl-C, crash), `role-backup.json`
-  stays on disk — recover with:
+- **tRPC** — each procedure that takes input is sent a bare string no schema
+  accepts. Gates run before input parsing, so a denied persona gets 401/403 and an
+  allowed one gets 400 — the procedure body never runs. Queries without input are
+  just reads; mutations without input are only probed where a denial is expected.
+- **Pages** — plain HTTP GETs with redirects not followed, so the test sees exactly
+  what middleware or the server guard decided.
+- **Routes** — inputs chosen so an allowed caller stops at validation or a missing
+  file (e.g. résumé export `?gy=1900` → 404, uploads with an unsupported type → 400).
 
-  ```bash
-  pnpm --filter @watts/e2e role-restore
-  ```
+`perm-scoped.spec.ts` is the exception: it makes real calls on the fixtures to
+prove per-record rules (only its own `grant_target` / `revoke_officer` personas
+change mid-run).
 
-- It mutates the **real member row of the account you captured**. If you don't
-  want your own account touched, capture a throwaway Discord account instead
-  (see step 2).
-- Edge case seen once: `officer_role` can also be changed by the app while you're
-  clicked-in during a run; `restore()` covers it, but if your `officer_role` looks
-  wrong afterward, set it in Drizzle Studio.
+**Coverage guard.** `pnpm --filter @watts/e2e matrix:check` (CI `verify`) fails if a
+procedure, `page.tsx` or `route.ts` exists that the matrix doesn't classify, if the
+persona capability lists drift from `@watts/permissions`, or if
+`docs/PERMISSIONS.md` is stale (`matrix:doc` rewrites it).
+
+**Who has what in real data** is a separate, read-only tool: `pnpm perm:audit`
+(run it against the prod mirror — see `docs/PERMISSIONS.md`).
 
 ---
 
@@ -232,8 +235,9 @@ official Playwright container, against a throwaway `postgres:15`. It builds
 `@watts/web`, migrates the schema (no seed), then `pnpm --filter @watts/e2e test`.
 Because `DATABASE_URL` is the CI Postgres and there's no `.auth/user.json` (it's
 gitignored), `global-setup.ts` mints a
-[synthetic session](#synthetic-session-ci--local-without-a-discord-login) and
-**both projects run — the full 44** (anon `chromium` + `authenticated`). It
+[synthetic session](#synthetic-session-ci--local-without-a-discord-login) plus the
+permission personas, and **all three projects run** (anon `chromium`,
+`authenticated`, `permissions`). It
 uploads `infra/e2e/playwright-report/` + `infra/e2e/screenshots/` as the
 `e2e-report` artifact.
 
@@ -254,12 +258,15 @@ It does **not** validate the Discord OAuth login — see the deferred note above
 ## Extending the suite
 
 - **New public page** — one entry in `tests/pages.spec.ts`'s `publicPages`.
-- **New gated route** — add it to `auth-gates.spec.ts`'s `gatedRoutes` (anon
-  redirect) and a row to `role-matrix.spec.ts`'s `MATRIX` (`R` = renders, `D` =
-  redirects to `/dashboard`, per role).
-- **Capability check** — a `describe` with `beforeAll(() => setRole('member', ['<cap>']))`.
-  Remember `admin/layout.tsx`'s officer-or-admin floor: a bare grant only opens
-  `/staff`, not `/admin/*`.
+- **New gated page, route or tRPC procedure** — classify it in
+  `lib/access-matrix.ts` (CI's `matrix:check` fails until you do), then
+  `pnpm --filter @watts/e2e matrix:doc`. The `permissions` project picks it up for
+  every persona automatically. Add the anon redirect to `auth-gates.spec.ts` too if
+  it's a page.
+- **New kind of access** (a new capability, role or per-record rule) — add a
+  persona to `lib/personas.ts` (and its rows in `lib/persona-db.ts` if it needs
+  links), update the policy functions in `lib/access-matrix.ts`, and add a
+  `perm-scoped.spec.ts` case for any per-record rule.
 - **A flow** (e.g. résumé upload) — a new `tests/<flow>.spec.ts` in the
   `authenticated` project; drive the UI with `page`, assert the outcome + one
   security check.

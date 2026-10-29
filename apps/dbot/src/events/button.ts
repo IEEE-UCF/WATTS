@@ -25,6 +25,14 @@ export class button extends Event {
 			return;
 		}
 
+		// A button runs the command directly, so it must pass the same gate as the slash
+		// command — otherwise a button for an admin command would skip the tier check.
+		const blocked = await command.gate(interaction.user.id, Boolean(interaction.guild));
+		if (blocked) {
+			await interaction.reply({ embeds: [blocked], flags: 64 }); // ephemeral
+			return;
+		}
+
 		try {
 			// Defer the button response first
 			await interaction.deferReply({ flags: 64 }); // ephemeral
@@ -57,6 +65,7 @@ export class button extends Event {
 
 			// Run the command with the fake interaction
 			await command.run(fakeInteraction as any);
+			command.setCooldown(interaction.user.id);
 		} catch (error) {
 			console.error(`Error executing command ${commandName} from button:`, error);
 

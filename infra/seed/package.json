@@ -10,13 +10,15 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "import:site-content": "tsx src/import-site-content.ts",
-    "inspect:site-content": "tsx src/inspect-site-content.ts"
+    "inspect:site-content": "tsx src/inspect-site-content.ts",
+    "audit:permissions": "tsx src/audit-permissions.ts"
   },
   "dependencies": {
     "@watts/calendar": "workspace:*",
     "@watts/config": "workspace:*",
     "@watts/core": "workspace:*",
     "@watts/db": "workspace:*",
+    "@watts/permissions": "workspace:*",
     "@watts/storage": "workspace:*",
     "drizzle-orm": "0.45.2",
     "postgres": "3.4.8"

@@ -9,7 +9,7 @@ import { dbHostAllowed } from './lib/session';
 const baseURL = process.env.E2E_BASE_URL ?? 'http://localhost:3000';
 const external = Boolean(process.env.E2E_BASE_URL);
 
-// The authed / role-matrix specs run when EITHER:
+// The authed specs run when EITHER:
 //   - a REAL Discord session has been captured (`pnpm --filter @watts/e2e auth`
 //     -> .auth/user.json) — the highest-fidelity local path; or
 //   - DATABASE_URL points at a local / CI Postgres, in which case global-setup
@@ -18,6 +18,9 @@ const external = Boolean(process.env.E2E_BASE_URL);
 //     OAuth; that gap is tracked in README.md.
 const authFile = '.auth/user.json';
 const runAuthed = existsSync(authFile) || dbHostAllowed();
+// The permission suite (perm-*.spec.ts) needs its own synthetic personas, so a local /
+// CI database is required — see lib/personas.ts.
+const runPerms = dbHostAllowed();
 
 export default defineConfig({
 	testDir: './tests',
@@ -26,10 +29,10 @@ export default defineConfig({
 	fullyParallel: true,
 	forbidOnly: Boolean(process.env.CI),
 	retries: process.env.CI ? 1 : 0,
-	// One worker whenever the authenticated run is active — CI included:
-	// role-matrix.spec.ts mutates the shared member row, so nothing else may run
-	// against the DB concurrently.
-	workers: runAuthed ? 1 : process.env.CI ? 2 : undefined,
+	// One worker whenever the DB-backed runs are active — CI included: the authed
+	// specs write fixtures and perm-scoped mutates its personas mid-run, so keep a
+	// single writer against the DB.
+	workers: runAuthed || runPerms ? 1 : process.env.CI ? 2 : undefined,
 	// A `next dev` target (E2E_BASE_URL=https://localhost:3050) compiles routes on
 	// first hit — give those a generous ceiling. A prod `next start` is far faster.
 	timeout: external ? 60_000 : 30_000,
@@ -45,17 +48,20 @@ export default defineConfig({
 		{
 			name: 'chromium',
 			use: { ...devices['Desktop Chrome'] },
-			testIgnore: /(authed|role-matrix)\.spec\.ts/,
+			testIgnore: /(authed|perm-[a-z]+)\.spec\.ts/,
 		},
 		...(runAuthed
 			? [
 					{
 						name: 'authenticated',
-						testMatch: /(authed|role-matrix)\.spec\.ts/,
+						testMatch: /authed\.spec\.ts/,
 						use: { ...devices['Desktop Chrome'], storageState: authFile },
 					},
 				]
 			: []),
+		// Who-can-do-what, persona by persona, against lib/access-matrix.ts. Each spec
+		// signs in per request with the persona's own storageState.
+		...(runPerms ? [{ name: 'permissions', testMatch: /perm-[a-z]+\.spec\.ts/ }] : []),
 	],
 	// Only manage a server for the default local run. `pnpm --filter` works from
 	// this workspace dir.

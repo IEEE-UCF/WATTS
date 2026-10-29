@@ -3,6 +3,11 @@
 // ./index.ts. Lives here so the bot (and later apps/jobs) share one definition;
 // the website does not use it.
 
+import { EXECUTIVE_OFFICER_ROLES } from './index';
+
+/** Officer roles that map to EXECUTIVE rather than plain OFFICER (shared with the website's isExecutive). */
+export { EXECUTIVE_OFFICER_ROLES };
+
 export enum PermissionLevel {
 	GUEST = 0, // not in the database
 	MEMBER = 1, // registered member
@@ -24,14 +29,6 @@ export const PermissionLevelNames: Record<PermissionLevel, string> = {
 	[PermissionLevel.EXECUTIVE]: 'Executive',
 	[PermissionLevel.ADMINISTRATOR]: 'Administrator',
 };
-
-/** Officer roles that map to EXECUTIVE rather than plain OFFICER. */
-export const EXECUTIVE_OFFICER_ROLES = [
-	'Executive Chair',
-	'Vice Chair',
-	'Secretary',
-	'Treasurer',
-] as const;
 
 export interface RoleTierFacts {
 	administrator: boolean;

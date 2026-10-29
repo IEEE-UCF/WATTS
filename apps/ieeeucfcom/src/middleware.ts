@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { hasStaffCapability } from '@watts/permissions';
+import { hasCapability, hasStaffCapability, type Capability } from '@watts/permissions';
 
 export async function middleware(request: NextRequest) {
 	const { pathname } = request.nextUrl;
@@ -12,12 +12,13 @@ export async function middleware(request: NextRequest) {
 
 	// Capability-gated routes: reachable by admins, officers, or a member holding the
 	// named granular permission. Checked before the admin routes (more specific).
-	const capabilityRoutes: { prefix: string; capability: string }[] = [
+	const capabilityRoutes: { prefix: string; capability: Capability }[] = [
 		{ prefix: '/admin/events', capability: 'manage_events' },
 		{ prefix: '/admin/photos', capability: 'manage_event_photos' },
 		{ prefix: '/admin/resumes', capability: 'review_resumes' },
 		{ prefix: '/admin/site-content', capability: 'manage_site_content' },
 		{ prefix: '/admin/links', capability: 'manage_links' },
+		{ prefix: '/admin/projects', capability: 'manage_projects' },
 	];
 	const capabilityRoute = capabilityRoutes.find((r) => pathname.startsWith(r.prefix));
 
@@ -61,6 +62,7 @@ export async function middleware(request: NextRequest) {
 	let user: {
 		administrator?: boolean;
 		officerStatus?: boolean;
+		officerRole?: string | null;
 		permissions?: unknown;
 	} | null = null;
 	try {
@@ -89,9 +91,8 @@ export async function middleware(request: NextRequest) {
 	const perms: string[] = Array.isArray(user.permissions) ? (user.permissions as string[]) : [];
 	let allowed: boolean;
 	if (capabilityRoute) {
-		allowed = Boolean(
-			user.administrator || user.officerStatus || perms.includes(capabilityRoute.capability),
-		);
+		// The same rule as every server-side check (some capabilities are executive-only).
+		allowed = hasCapability({ ...user, permissions: perms }, capabilityRoute.capability);
 	} else if (isStaffRoute) {
 		allowed = Boolean(user.administrator || user.officerStatus || hasStaffCapability(perms));
 	} else if (isOfficerAdminRoute) {

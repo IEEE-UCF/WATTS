@@ -20,7 +20,7 @@ const TITLE_PREFIX = 'E2E CRUD ';
 const SEED_LABEL_SLUG = 'e2e-category';
 
 // CI's e2e job migrates but does not seed, so `event_labels` is empty there.
-// This suite manages its own data (like lib/role.ts / lib/session.ts) — seed one
+// This suite manages its own data (like lib/persona-db.ts / lib/session.ts) — seed one
 // active label so the category select has something to pick, and remove it after.
 let seededLabel = false;
 

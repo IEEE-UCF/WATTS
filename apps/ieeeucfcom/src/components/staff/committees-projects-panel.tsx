@@ -23,11 +23,13 @@ export function CommitteesProjectsPanel() {
 					id: c.id,
 					title: c.title,
 					memberCount: c.memberCount,
+					canManage: c.canManage,
 				}))
 			: (projects.data ?? []).map((p) => ({
 					id: p.id,
 					title: p.title,
 					memberCount: undefined as number | undefined,
+					canManage: true, // any officer manages any project
 				}));
 
 	return (
@@ -82,7 +84,11 @@ export function CommitteesProjectsPanel() {
 						</button>
 						{expandedId === row.id && (
 							<div className="border-t border-input p-3">
-								<MembershipEditor kind={kind} id={row.id} />
+								<MembershipEditor
+									kind={kind}
+									id={row.id}
+									canManage={row.canManage}
+								/>
 							</div>
 						)}
 					</div>
@@ -169,7 +175,19 @@ function CreateForm({ kind, onDone }: { kind: 'committee' | 'project'; onDone: (
 	);
 }
 
-function MembershipEditor({ kind, id }: { kind: 'committee' | 'project'; id: string }) {
+/**
+ * canManage=false → read-only member list: only an executive officer or the committee's
+ * own chair may change a committee's members (enforced server-side by committee.*).
+ */
+function MembershipEditor({
+	kind,
+	id,
+	canManage,
+}: {
+	kind: 'committee' | 'project';
+	id: string;
+	canManage: boolean;
+}) {
 	const [query, setQuery] = useState('');
 	const [pickedId, setPickedId] = useState('');
 	const utils = trpc.useUtils();
@@ -182,7 +200,7 @@ function MembershipEditor({ kind, id }: { kind: 'committee' | 'project'; id: str
 		{ projectId: id },
 		{ enabled: kind === 'project' },
 	);
-	const allMembers = trpc.member.listForAdmin.useQuery();
+	const allMembers = trpc.member.listForAdmin.useQuery(undefined, { enabled: canManage });
 
 	const members =
 		kind === 'committee'
@@ -232,64 +250,76 @@ function MembershipEditor({ kind, id }: { kind: 'committee' | 'project'; id: str
 							</span>
 						)}
 					</span>
-					<span className="flex items-center gap-2">
-						<button
-							type="button"
-							onClick={() =>
-								kind === 'committee'
-									? chairCommittee.mutate({
-											committeeId: id,
-											memberId: m.memberId,
-											isChair: !m.lead,
-										})
-									: leadProject.mutate({
-											projectId: id,
-											memberId: m.memberId,
-											isLead: !m.lead,
-										})
-							}
-							className="text-muted-foreground hover:text-foreground"
-						>
-							{m.lead ? `remove ${m.label}` : `make ${m.label}`}
-						</button>
-						<button
-							type="button"
-							onClick={() =>
-								kind === 'committee'
-									? removeCommittee.mutate({
-											committeeId: id,
-											memberId: m.memberId,
-										})
-									: removeProject.mutate({ projectId: id, memberId: m.memberId })
-							}
-							className="text-red-400 hover:underline"
-						>
-							remove
-						</button>
-					</span>
+					{canManage && (
+						<span className="flex items-center gap-2">
+							<button
+								type="button"
+								onClick={() =>
+									kind === 'committee'
+										? chairCommittee.mutate({
+												committeeId: id,
+												memberId: m.memberId,
+												isChair: !m.lead,
+											})
+										: leadProject.mutate({
+												projectId: id,
+												memberId: m.memberId,
+												isLead: !m.lead,
+											})
+								}
+								className="text-muted-foreground hover:text-foreground"
+							>
+								{m.lead ? `remove ${m.label}` : `make ${m.label}`}
+							</button>
+							<button
+								type="button"
+								onClick={() =>
+									kind === 'committee'
+										? removeCommittee.mutate({
+												committeeId: id,
+												memberId: m.memberId,
+											})
+										: removeProject.mutate({
+												projectId: id,
+												memberId: m.memberId,
+											})
+								}
+								className="text-red-400 hover:underline"
+							>
+								remove
+							</button>
+						</span>
+					)}
 				</div>
 			))}
 
-			<div className="mt-1 flex gap-1.5">
-				<input
-					value={query}
-					onChange={(e) => {
-						setQuery(e.target.value);
-						setPickedId('');
-					}}
-					placeholder="Search a member…"
-					className="flex-1 rounded-md border border-input bg-card px-2 py-1 text-xs"
-				/>
-				<button
-					type="button"
-					disabled={!pickedId}
-					onClick={add}
-					className="rounded-md bg-secondary px-2.5 py-1 text-xs text-foreground disabled:opacity-40"
-				>
-					Add
-				</button>
-			</div>
-			{query && !pickedId && candidates.length > 0 && (
+			{!canManage && (
+				<p className="text-xs text-muted-foreground-dim">
+					Only an executive officer or this committee&apos;s chair can change its members.
+				</p>
+			)}
+			{canManage && (
+				<div className="mt-1 flex gap-1.5">
+					<input
+						value={query}
+						onChange={(e) => {
+							setQuery(e.target.value);
+							setPickedId('');
+						}}
+						placeholder="Search a member…"
+						className="flex-1 rounded-md border border-input bg-card px-2 py-1 text-xs"
+					/>
+					<button
+						type="button"
+						disabled={!pickedId}
+						onClick={add}
+						className="rounded-md bg-secondary px-2.5 py-1 text-xs text-foreground disabled:opacity-40"
+					>
+						Add
+					</button>
+				</div>
+			)}
+			{canManage && query && !pickedId && candidates.length > 0 && (
 				<div className="flex flex-col rounded-md border border-input">
 					{candidates.slice(0, 5).map((c) => (
 						<button
